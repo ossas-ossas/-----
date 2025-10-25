@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/child-info/child-info",
+    "pages/assessment/assessment",
+    "pages/result/result",
+    "pages/history/history"
+  ],
+  "subPackages": [],
+  "window": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "知动儿童综合发育测评",
+    "navigationBarBackgroundColor": "#A8D8EA",
+    "backgroundColor": "#F5F9FA"
+  },
+  "usingComponents": {}
+}
