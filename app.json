@@ -1,0 +1,20 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/child-info/child-info",
+    "pages/assessment/assessment",
+    "pages/result/result",
+    "pages/history/history"
+  ],
+  "subPackages": [],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "知动儿童综合发育测评",
+    "navigationBarBackgroundColor": "#E8F4FD",
+    "backgroundColor": "#F8F9FA"
+  },
+  "usingComponents": {},
+  "appid": "__UNI__F50B1BC",
+  "projectname": "知动儿童综合发育测评",
+  "description": "儿童发育评估小程序"
+}

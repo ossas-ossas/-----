@@ -1,0 +1,13 @@
+{
+  "name": "zhidong-child-assessment",
+  "version": "1.0.0",
+  "description": "知动儿童综合发育测评小程序",
+  "scripts": {
+    "dev": "npm run fix-appid && echo '请在HBuilderX中运行项目'",
+    "fix-appid": "node fix-appid.js",
+    "build": "npm run fix-appid && echo '构建完成，请检查 unpackage/dist/dev/mp-weixin/ 目录'"
+  },
+  "keywords": ["uni-app", "miniprogram", "child-assessment"],
+  "author": "Developer",
+  "license": "MIT"
+}

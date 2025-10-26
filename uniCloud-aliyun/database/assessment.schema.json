@@ -1,0 +1,72 @@
+{
+  "bsonType": "object",
+  "required": ["parentName", "contact", "answers", "createdAt"],
+  "permission": {
+    "read": true,
+    "create": true,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "parentName": {
+      "bsonType": "string",
+      "label": "家长姓名",
+      "trim": "both"
+    },
+    "contact": {
+      "bsonType": "string",
+      "label": "联系方式（手机号/微信/邮箱）",
+      "trim": "both"
+    },
+    "childName": {
+      "bsonType": "string",
+      "label": "儿童姓名",
+      "trim": "both"
+    },
+    "ageMonths": {
+      "bsonType": "int",
+      "label": "月龄（向下取整）",
+      "defaultValue": null
+    },
+    "mode": {
+      "bsonType": "string",
+      "label": "评估模式",
+      "enum": ["band", "cumulative"],
+      "defaultValue": "cumulative"
+    },
+    "bands": {
+      "bsonType": "array",
+      "label": "命中的年龄段",
+      "items": { "bsonType": "object" }
+    },
+    "answers": {
+      "bsonType": "object",
+      "label": "作答数据（按领域分组）"
+    },
+    "domainScores": {
+      "bsonType": ["object", "null"],
+      "label": "各领域统计（可选）"
+    },
+    "createdAt": {
+      "bsonType": "long",
+      "label": "创建时间戳(ms)",
+      "forceDefaultValue": {
+        "$env": "now"
+      }
+    },
+    "clientIP": {
+      "bsonType": "string",
+      "label": "客户端IP"
+    },
+    "clientUA": {
+      "bsonType": "string",
+      "label": "客户端UA"
+    }
+  },
+  "indexes": {
+    "idx_createdAt": {
+      "fields": { "createdAt": 1 },
+      "unique": false
+    }
+  }
+}

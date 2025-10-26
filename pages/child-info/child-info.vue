@@ -67,6 +67,7 @@
 				<!-- 年龄显示 -->
 				<view class="age-display" v-if="formData.birthDate">
 					<text class="age-text">年龄：{{ calculatedAge }}</text>
+					<text class="age-range-text">评估范围：{{ ageRangeText }}</text>
 				</view>
 			</view>
 			
@@ -212,6 +213,13 @@
 				return `${age}岁`
 			},
 			
+			// 计算年龄段文本
+			ageRangeText() {
+				if (!this.formData.birthDate) return ''
+				const ageInMonths = this.calculateAgeInMonths(this.formData.birthDate)
+				return this.getAgeRangeText(ageInMonths)
+			},
+			
 			// 表单验证
 			isFormValid() {
 				return this.formData.name && 
@@ -227,6 +235,37 @@
 			this.today = today.toISOString().split('T')[0]
 		},
 		methods: {
+			// 计算年龄（月）
+			calculateAgeInMonths(birthDate) {
+				if (!birthDate) return 0
+				const birth = new Date(birthDate)
+				const today = new Date()
+				let ageInMonths = (today.getFullYear() - birth.getFullYear()) * 12
+				ageInMonths += today.getMonth() - birth.getMonth()
+				
+				// 如果日期还没到，减1个月
+				if (today.getDate() < birth.getDate()) {
+					ageInMonths--
+				}
+				
+				return Math.max(0, ageInMonths)
+			},
+			
+			// 获取年龄段文本
+			getAgeRangeText(ageInMonths) {
+				if (ageInMonths < 3) return '1-3个月'
+				if (ageInMonths < 6) return '3-6个月'
+				if (ageInMonths < 9) return '6-9个月'
+				if (ageInMonths < 12) return '9-12个月'
+				if (ageInMonths < 18) return '1-1.5岁'
+				if (ageInMonths < 24) return '1.5-2岁'
+				if (ageInMonths < 30) return '2-2.5岁'
+				if (ageInMonths < 36) return '2.5-3岁'
+				if (ageInMonths < 48) return '3-4岁'
+				if (ageInMonths < 60) return '4-5岁'
+				return '5-6岁'
+			},
+			
 			// 选择性别
 			selectGender(gender) {
 				this.formData.gender = gender
@@ -439,6 +478,15 @@
 		background: rgba(135, 206, 235, 0.1);
 		padding: 10rpx 20rpx;
 		border-radius: 20rpx;
+		margin-bottom: 8rpx;
+	}
+	
+	.age-range-text {
+		font-size: 22rpx;
+		color: #7F8C8D;
+		background: rgba(127, 140, 141, 0.1);
+		padding: 8rpx 16rpx;
+		border-radius: 15rpx;
 	}
 	
 	/* 文本域 */

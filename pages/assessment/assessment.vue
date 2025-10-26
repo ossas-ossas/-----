@@ -1,69 +1,86 @@
 <template>
 	<view class="container">
-		<!-- 进度条 -->
+		<!-- 年龄段和模式信息 -->
+		<view class="age-info" v-if="currentAgeBand">
+			<text class="age-text">{{ currentAgeBand.label }} 发育评估</text>
+			<text class="mode-text" v-if="isCorrectedAge">（纠正后）</text>
+			<view class="mode-switch">
+				<button 
+					class="mode-btn" 
+					:class="{ active: assessmentMode === 'band' }"
+					@click="switchMode('band')"
+				>
+					精准模式
+				</button>
+				<button 
+					class="mode-btn" 
+					:class="{ active: assessmentMode === 'cumulative' }"
+					@click="switchMode('cumulative')"
+				>
+					累进模式
+				</button>
+			</view>
+		</view>
+		
+		<!-- 进度信息 -->
 		<view class="progress-container">
+			<text class="progress-text">已完成 {{ checkedCount }} / {{ totalCount }} 题</text>
 			<view class="progress-bar">
 				<view class="progress-fill" :style="{ width: progressPercent + '%' }"></view>
 			</view>
-			<text class="progress-text">{{ currentQuestionIndex + 1 }} / {{ totalQuestions }}</text>
 		</view>
 		
-		<!-- 问题卡片 -->
-		<view class="question-card" v-if="currentQuestion">
-			<!-- 问题标题 -->
-			<view class="question-header">
-				<text class="question-title">{{ currentQuestion.title }}</text>
-				<text class="question-category">{{ currentQuestion.category }}</text>
-			</view>
-			
-			<!-- 问题描述 -->
-			<view class="question-description" v-if="currentQuestion.description">
-				<text class="description-text">{{ currentQuestion.description }}</text>
-			</view>
-			
-			<!-- 选项列表 -->
-			<view class="options-container">
-				<view 
-					class="option-item" 
-					v-for="(option, index) in currentQuestion.options" 
-					:key="index"
-					:class="{ 
-						active: selectedAnswer === option.value,
-						disabled: isSubmitting
-					}"
-					@click="selectOption(option.value)"
-				>
-					<view class="option-icon">
-						<text class="icon-text">{{ option.icon }}</text>
-					</view>
-					<view class="option-content">
-						<text class="option-text">{{ option.text }}</text>
-						<text class="option-score" v-if="option.score !== undefined">得分：{{ option.score }}</text>
-					</view>
-					<view class="option-check" v-if="selectedAnswer === option.value">
-						<text class="check-icon">✓</text>
+		<!-- 领域分组题目 -->
+		<view class="questions-container" v-if="totalCount > 0">
+			<view 
+				v-for="(list, domain) in formState" 
+				:key="domain"
+				class="domain-section"
+			>
+				<view class="domain-header" @click="toggleDomain(domain)">
+					<text class="domain-title">{{ domain }}</text>
+					<text class="domain-count">{{ list.length }} 题</text>
+					<text class="domain-toggle">{{ expandedDomains[domain] ? '▼' : '▶' }}</text>
+				</view>
+				
+				<view class="domain-questions" v-if="expandedDomains[domain]">
+					<view 
+						class="card"
+						:class="{ 'selected': q.checked }"
+						v-for="(q, idx) in list"
+						:key="q.id"
+					>
+						<view class="card-hd">
+							<text class="no">{{ idx + 1 }}</text>
+							<text class="title">{{ q.text }}</text>
+						</view>
+						
+						<checkbox-group @change="q.checked = !q.checked; onCheckChanged()">
+							<label class="chk">
+								<checkbox :value="q.id" :checked="q.checked" />
+								<text>孩子能否完成此项目</text>
+							</label>
+						</checkbox-group>
 					</view>
 				</view>
 			</view>
 		</view>
 		
+		<!-- 无题目提示 -->
+		<view class="no-questions" v-else>
+			<text class="no-questions-text">该年龄段暂无评估题目</text>
+			<text class="no-questions-hint">请联系老师补充题库</text>
+		</view>
+		
 		<!-- 底部按钮 -->
 		<view class="button-container">
 			<button 
-				class="prev-button" 
-				@click="previousQuestion" 
-				:disabled="currentQuestionIndex === 0 || isSubmitting"
-			>
-				<text class="button-text">上一题</text>
-			</button>
-			
-			<button 
-				class="next-button" 
-				@click="nextQuestion" 
-				:disabled="!selectedAnswer || isSubmitting"
+				class="submit-button" 
+				@click="submitAssessment" 
+				:disabled="isSubmitting || totalCount === 0"
 			>
 				<text class="button-text">
-					{{ currentQuestionIndex === totalQuestions - 1 ? '完成评估' : '下一题' }}
+					{{ isSubmitting ? '提交中...' : '提交评估' }}
 				</text>
 			</button>
 		</view>
@@ -79,241 +96,201 @@
 </template>
 
 <script>
+	import { ageBands, questions, getAgeBandByMonths, pickQuestionsByAgeMonths } from '@/common/questionBank.js'
+	
 	export default {
 		data() {
 			return {
-				currentQuestionIndex: 0,
-				selectedAnswer: null,
-				isSubmitting: false,
-				answers: [],
 				childInfo: {},
-				// 评估问题数据
-				questions: [
-					{
-						id: 1,
-						category: '大运动',
-						title: '孩子能否独立坐稳？',
-						description: '请观察孩子在没有支撑的情况下能否保持坐姿',
-						options: [
-							{ value: 'yes', text: '能够独立坐稳', icon: '✅', score: 3 },
-							{ value: 'partial', text: '需要轻微支撑', icon: '⚠️', score: 2 },
-							{ value: 'no', text: '无法独立坐稳', icon: '❌', score: 1 }
-						]
-					},
-					{
-						id: 2,
-						category: '精细动作',
-						title: '孩子能否用拇指和食指捏取小物品？',
-						description: '观察孩子是否能精确地抓取小颗粒物品',
-						options: [
-							{ value: 'yes', text: '能够精确捏取', icon: '✅', score: 3 },
-							{ value: 'partial', text: '动作不够精确', icon: '⚠️', score: 2 },
-							{ value: 'no', text: '无法完成动作', icon: '❌', score: 1 }
-						]
-					},
-					{
-						id: 3,
-						category: '语言理解',
-						title: '孩子能否理解简单的指令？',
-						description: '测试孩子对"过来"、"坐下"等简单指令的理解',
-						options: [
-							{ value: 'yes', text: '完全理解并执行', icon: '✅', score: 3 },
-							{ value: 'partial', text: '部分理解', icon: '⚠️', score: 2 },
-							{ value: 'no', text: '不理解指令', icon: '❌', score: 1 }
-						]
-					},
-					{
-						id: 4,
-						category: '语言表达',
-						title: '孩子能否说出简单的词语？',
-						description: '观察孩子是否能主动说出"妈妈"、"爸爸"等词语',
-						options: [
-							{ value: 'yes', text: '能说多个词语', icon: '✅', score: 3 },
-							{ value: 'partial', text: '能说少量词语', icon: '⚠️', score: 2 },
-							{ value: 'no', text: '不会说话', icon: '❌', score: 1 }
-						]
-					},
-					{
-						id: 5,
-						category: '社交行为',
-						title: '孩子是否会主动与人互动？',
-						description: '观察孩子是否会主动寻求关注或与他人互动',
-						options: [
-							{ value: 'yes', text: '主动互动频繁', icon: '✅', score: 3 },
-							{ value: 'partial', text: '偶尔主动互动', icon: '⚠️', score: 2 },
-							{ value: 'no', text: '很少主动互动', icon: '❌', score: 1 }
-						]
-					},
-					{
-						id: 6,
-						category: '认知能力',
-						title: '孩子能否模仿简单的动作？',
-						description: '测试孩子是否能模仿拍手、挥手等简单动作',
-						options: [
-							{ value: 'yes', text: '模仿能力强', icon: '✅', score: 3 },
-							{ value: 'partial', text: '能模仿部分动作', icon: '⚠️', score: 2 },
-							{ value: 'no', text: '不会模仿', icon: '❌', score: 1 }
-						]
-					},
-					{
-						id: 7,
-						category: '自理能力',
-						title: '孩子能否自己进食？',
-						description: '观察孩子是否能独立使用餐具进食',
-						options: [
-							{ value: 'yes', text: '完全独立进食', icon: '✅', score: 3 },
-							{ value: 'partial', text: '需要部分帮助', icon: '⚠️', score: 2 },
-							{ value: 'no', text: '完全需要喂食', icon: '❌', score: 1 }
-						]
-					},
-					{
-						id: 8,
-						category: '情绪调节',
-						title: '孩子情绪是否稳定？',
-						description: '观察孩子日常情绪变化和调节能力',
-						options: [
-							{ value: 'yes', text: '情绪稳定', icon: '✅', score: 3 },
-							{ value: 'partial', text: '偶尔情绪波动', icon: '⚠️', score: 2 },
-							{ value: 'no', text: '情绪波动较大', icon: '❌', score: 1 }
-						]
-					}
-				]
+				currentAgeBand: null,
+				isCorrectedAge: false,
+				assessmentMode: 'band', // 'band' 或 'cumulative'
+				formState: {},
+				expandedDomains: {},
+				isSubmitting: false,
+				totalCount: 0,
+				checkedCount: 0
 			}
 		},
 		computed: {
-			currentQuestion() {
-				return this.questions[this.currentQuestionIndex]
-			},
-			totalQuestions() {
-				return this.questions.length
-			},
 			progressPercent() {
-				return ((this.currentQuestionIndex + 1) / this.totalQuestions) * 100
+				return this.totalCount > 0 ? Math.round((this.checkedCount / this.totalCount) * 100) : 0
 			}
 		},
 		onLoad() {
-			// 获取儿童信息
-			this.childInfo = uni.getStorageSync('childInfo') || {}
-			
-			// 如果没有儿童信息，返回上一页
-			if (!this.childInfo.name) {
-				uni.showToast({
-					title: '请先填写儿童信息',
-					icon: 'none'
-				})
-				setTimeout(() => {
-					uni.navigateBack()
-				}, 1500)
-			}
+			this.loadChildInfo()
+			this.loadQuestions()
 		},
 		methods: {
-			// 选择选项
-			selectOption(value) {
-				if (this.isSubmitting) return
-				this.selectedAnswer = value
-			},
-			
-			// 下一题
-			nextQuestion() {
-				if (!this.selectedAnswer || this.isSubmitting) return
+			// 加载儿童信息
+			loadChildInfo() {
+				this.childInfo = uni.getStorageSync('childInfo') || {}
+				console.log('=== 儿童信息 ===')
+				console.log('儿童信息:', this.childInfo)
 				
-				// 保存当前答案
-				this.answers.push({
-					questionId: this.currentQuestion.id,
-					answer: this.selectedAnswer,
-					score: this.currentQuestion.options.find(opt => opt.value === this.selectedAnswer).score
-				})
-				
-				// 如果是最后一题，完成评估
-				if (this.currentQuestionIndex === this.totalQuestions - 1) {
-					this.completeAssessment()
+				if (!this.childInfo.name) {
+					uni.showToast({
+						title: '请先填写儿童信息',
+						icon: 'none'
+					})
+					setTimeout(() => {
+						uni.navigateBack()
+					}, 1500)
 					return
 				}
 				
-				// 进入下一题
-				this.currentQuestionIndex++
-				this.selectedAnswer = null
+				// 计算月龄
+				const ageMonths = this.calculateAgeInMonths(this.childInfo.birthDate)
+				console.log('出生日期:', this.childInfo.birthDate)
+				console.log('计算月龄:', ageMonths)
+				
+				// 计算纠正月龄（如果是早产儿）
+				if (this.childInfo.isPremature && this.childInfo.prematureWeeks) {
+					const correctedAgeMonths = Math.max(0, ageMonths - Math.floor(this.childInfo.prematureWeeks / 4))
+					console.log('早产周数:', this.childInfo.prematureWeeks)
+					console.log('纠正月龄:', correctedAgeMonths)
+					this.isCorrectedAge = true
+					this.currentAgeBand = getAgeBandByMonths(correctedAgeMonths)
+				} else {
+					this.currentAgeBand = getAgeBandByMonths(ageMonths)
+				}
+				
+				console.log('当前年龄段:', this.currentAgeBand)
 			},
 			
-			// 上一题
-			previousQuestion() {
-				if (this.currentQuestionIndex === 0 || this.isSubmitting) return
+			// 加载题目
+			loadQuestions() {
+				if (!this.childInfo.birthDate) return
 				
-				// 移除上一题的答案
-				this.answers.pop()
+				const months = this.calculateAgeInMonths(this.childInfo.birthDate)
+				const band = getAgeBandByMonths(months)
+				const mode = this.assessmentMode
 				
-				this.currentQuestionIndex--
-				this.selectedAnswer = null
+				console.log('[assessment] months=', months, 'band=', band, 'mode=', mode)
+				
+				const grouped = pickQuestionsByAgeMonths(months, mode)
+				console.log('[assessment] picked:', { total: Object.values(grouped).reduce((n, arr) => n + arr.length, 0), domains: Object.keys(grouped) })
+				
+				// 标准化题库结构
+				const normalize = (g) => {
+					console.log('[assessment] normalize input:', Object.keys(g))
+					const doms = ["粗大动作","精细动作","社会互动","认知","语言","感知觉","口腔动作"]
+					const out = {}
+					doms.forEach(d => out[d] = Array.isArray(g[d]) ? g[d] : [])
+					Object.keys(g || {}).forEach(k => { 
+						if(!out[k] && Array.isArray(g[k])) out["认知"] = out["认知"].concat(g[k])
+					})
+					console.log('[assessment] normalize output:', Object.keys(out), 'total:', Object.values(out).reduce((n,arr)=>n+arr.length,0))
+					return out
+				}
+				// 使用Vue.set确保响应式更新
+				this.$set(this, 'formState', normalize(grouped))
+				
+				// 计算统计
+				this.totalCount = Object.values(this.formState).reduce((n, arr) => n + arr.length, 0)
+				this.checkedCount = Object.values(this.formState).reduce((n, arr) => n + arr.filter(i => !!i.checked).length, 0)
+				
+				console.log('[assessment] final formState:', Object.keys(this.formState))
+				console.log('[assessment] totalCount:', this.totalCount, 'checkedCount:', this.checkedCount)
+				
+				// 如果没有题目，自动切换到累进模式
+				if (this.totalCount === 0 && this.assessmentMode === 'band') {
+					console.log('精准模式无题目，切换到累进模式')
+					this.assessmentMode = 'cumulative'
+					this.loadQuestions()
+					return
+				}
+				
+				// 初始化领域展开状态
+				this.initExpandedDomains()
+				
+				// 保存状态
+				uni.setStorageSync('assessmentForm', this.formState)
+				uni.setStorageSync('assessmentMode', this.assessmentMode)
+				uni.setStorageSync('assessmentBand', band)
 			},
 			
-			// 完成评估
-			completeAssessment() {
+			// 初始化领域展开状态
+			initExpandedDomains() {
+				const domains = Object.keys(this.formState)
+				domains.forEach(domain => {
+					this.$set(this.expandedDomains, domain, true) // 默认展开
+				})
+			},
+			
+			// 勾选变化处理
+			onCheckChanged() {
+				this.checkedCount = Object.values(this.formState).reduce((n, arr) => n + arr.filter(i => !!i.checked).length, 0)
+				uni.setStorageSync('assessmentForm', this.formState)
+			},
+			
+			// 切换评估模式
+			switchMode(mode) {
+				if (this.assessmentMode === mode) return
+				
+				this.assessmentMode = mode
+				this.loadQuestions()
+				
+				uni.showToast({
+					title: `已切换到${mode === 'band' ? '精准' : '累进'}模式`,
+					icon: 'none'
+				})
+			},
+			
+			// 切换领域展开状态
+			toggleDomain(domain) {
+				this.$set(this.expandedDomains, domain, !this.expandedDomains[domain])
+			},
+			
+			// 计算年龄（月）
+			calculateAgeInMonths(birthDate) {
+				if (!birthDate) return 0
+				const birth = new Date(birthDate)
+				const today = new Date()
+				let ageInMonths = (today.getFullYear() - birth.getFullYear()) * 12
+				ageInMonths += today.getMonth() - birth.getMonth()
+				
+				// 如果日期还没到，减1个月
+				if (today.getDate() < birth.getDate()) {
+					ageInMonths--
+				}
+				
+				return Math.max(0, ageInMonths)
+			},
+			
+			// 提交评估
+			submitAssessment() {
+				if (this.isSubmitting || this.totalCount === 0) return
+				
 				this.isSubmitting = true
 				
-				// 计算总分
-				const totalScore = this.answers.reduce((sum, answer) => sum + answer.score, 0)
-				const maxScore = this.totalQuestions * 3
-				const scorePercent = Math.round((totalScore / maxScore) * 100)
+				console.log('=== 提交评估 ===')
+				console.log('已完成题目:', this.checkedCount)
+				console.log('总题目数:', this.totalCount)
+				console.log('完成率:', this.progressPercent + '%')
 				
 				// 生成评估结果
 				const assessmentResult = {
 					childInfo: this.childInfo,
-					answers: this.answers,
-					totalScore: totalScore,
-					maxScore: maxScore,
-					scorePercent: scorePercent,
-					assessmentDate: new Date().toISOString(),
-					recommendations: this.generateRecommendations(scorePercent)
+					ageBand: this.currentAgeBand,
+					assessmentMode: this.assessmentMode,
+					isCorrectedAge: this.isCorrectedAge,
+					formState: this.formState,
+					checkedCount: this.checkedCount,
+					totalCount: this.totalCount,
+					progressPercent: this.progressPercent,
+					assessmentDate: new Date().toISOString()
 				}
 				
 				// 保存评估结果
 				uni.setStorageSync('assessmentResult', assessmentResult)
 				
-				// 保存到历史记录
-				this.saveToHistory(assessmentResult)
-				
-				// 延迟跳转，显示加载效果
+				// 延迟跳转
 				setTimeout(() => {
 					uni.redirectTo({
 						url: '/pages/result/result'
 					})
 				}, 2000)
-			},
-			
-			// 生成建议
-			generateRecommendations(scorePercent) {
-				if (scorePercent >= 80) {
-					return [
-						'孩子发育状况良好，继续保持',
-						'建议定期进行发育监测',
-						'可以适当增加一些挑战性活动'
-					]
-				} else if (scorePercent >= 60) {
-					return [
-						'孩子发育基本正常，有提升空间',
-						'建议加强薄弱环节的训练',
-						'可以寻求专业指导'
-					]
-				} else {
-					return [
-						'建议及时咨询专业医生',
-						'进行详细的发育评估',
-						'制定个性化的干预计划'
-					]
-				}
-			},
-			
-			// 保存到历史记录
-			saveToHistory(result) {
-				let history = uni.getStorageSync('assessmentHistory') || []
-				history.unshift(result)
-				
-				// 只保留最近10次记录
-				if (history.length > 10) {
-					history = history.slice(0, 10)
-				}
-				
-				uni.setStorageSync('assessmentHistory', history)
 			}
 		}
 	}
@@ -327,7 +304,53 @@
 		position: relative;
 	}
 	
-	/* 进度条 */
+	/* 年龄段和模式信息 */
+	.age-info {
+		background: rgba(135, 206, 235, 0.1);
+		border-radius: 15rpx;
+		padding: 20rpx 30rpx;
+		margin-bottom: 30rpx;
+		text-align: center;
+		border: 2rpx solid rgba(135, 206, 235, 0.3);
+	}
+	
+	.age-text {
+		font-size: 28rpx;
+		color: #2C3E50;
+		font-weight: bold;
+		display: block;
+		margin-bottom: 10rpx;
+	}
+	
+	.mode-text {
+		font-size: 24rpx;
+		color: #7F8C8D;
+		margin-left: 10rpx;
+	}
+	
+	.mode-switch {
+		display: flex;
+		gap: 20rpx;
+		justify-content: center;
+		margin-top: 15rpx;
+	}
+	
+	.mode-btn {
+		padding: 10rpx 20rpx;
+		border-radius: 20rpx;
+		border: 2rpx solid #87CEEB;
+		background: #FFFFFF;
+		color: #87CEEB;
+		font-size: 24rpx;
+		transition: all 0.3s ease;
+	}
+	
+	.mode-btn.active {
+		background: #87CEEB;
+		color: #FFFFFF;
+	}
+	
+	/* 进度信息 */
 	.progress-container {
 		background: rgba(255, 255, 255, 0.9);
 		border-radius: 20rpx;
@@ -336,13 +359,20 @@
 		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
 	}
 	
+	.progress-text {
+		text-align: center;
+		font-size: 26rpx;
+		color: #7F8C8D;
+		font-weight: 500;
+		margin-bottom: 15rpx;
+	}
+	
 	.progress-bar {
 		width: 100%;
 		height: 12rpx;
 		background: #E8F4FD;
 		border-radius: 6rpx;
 		overflow: hidden;
-		margin-bottom: 15rpx;
 	}
 	
 	.progress-fill {
@@ -350,13 +380,6 @@
 		background: linear-gradient(90deg, #87CEEB, #98FB98);
 		border-radius: 6rpx;
 		transition: width 0.3s ease;
-	}
-	
-	.progress-text {
-		text-align: center;
-		font-size: 26rpx;
-		color: #7F8C8D;
-		font-weight: 500;
 	}
 	
 	/* 问题卡片 */
@@ -381,6 +404,13 @@
 		margin-bottom: 15rpx;
 	}
 	
+	.question-meta {
+		display: flex;
+		flex-direction: column;
+		gap: 8rpx;
+		margin-top: 15rpx;
+	}
+	
 	.question-category {
 		display: inline-block;
 		font-size: 24rpx;
@@ -389,6 +419,16 @@
 		padding: 8rpx 16rpx;
 		border-radius: 20rpx;
 		font-weight: 500;
+		align-self: flex-start;
+	}
+	
+	.question-subcategory {
+		font-size: 22rpx;
+		color: #7F8C8D;
+		background: rgba(127, 140, 141, 0.1);
+		padding: 6rpx 12rpx;
+		border-radius: 15rpx;
+		align-self: flex-start;
 	}
 	
 	.question-description {
@@ -405,48 +445,43 @@
 		line-height: 1.5;
 	}
 	
-	/* 选项容器 */
-	.options-container {
-		display: flex;
-		flex-direction: column;
-		gap: 20rpx;
+	/* 评估选项 */
+	.assessment-option {
+		margin-top: 40rpx;
 	}
 	
-	.option-item {
+	.option-box {
 		display: flex;
 		align-items: center;
-		padding: 25rpx 20rpx;
-		background: #F8F9FA;
-		border-radius: 15rpx;
-		border: 2rpx solid transparent;
-		transition: all 0.3s;
-		position: relative;
+		padding: 30rpx;
+		background: rgba(255, 255, 255, 0.9);
+		border: 3rpx solid #E8F4FD;
+		border-radius: 20rpx;
+		transition: all 0.3s ease;
 	}
 	
-	.option-item.active {
-		background: linear-gradient(135deg, rgba(135, 206, 235, 0.1), rgba(152, 251, 152, 0.1));
+	.option-box.selected {
+		background: rgba(135, 206, 235, 0.1);
 		border-color: #87CEEB;
-		transform: translateY(-2rpx);
-		box-shadow: 0 4rpx 15rpx rgba(135, 206, 235, 0.2);
-	}
-	
-	.option-item.disabled {
-		opacity: 0.6;
+		box-shadow: 0 4rpx 20rpx rgba(135, 206, 235, 0.3);
 	}
 	
 	.option-icon {
-		width: 60rpx;
-		height: 60rpx;
-		background: rgba(135, 206, 235, 0.1);
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		font-size: 40rpx;
 		margin-right: 20rpx;
+		transition: all 0.3s ease;
 	}
 	
-	.option-item.active .option-icon {
-		background: linear-gradient(135deg, #87CEEB, #98FB98);
+	.option-text {
+		font-size: 28rpx;
+		color: #2C3E50;
+		font-weight: 500;
+		flex: 1;
+	}
+	
+	.option-box.selected .option-text {
+		color: #87CEEB;
+		font-weight: bold;
 	}
 	
 	.icon-text {
@@ -496,44 +531,45 @@
 		background: rgba(255, 255, 255, 0.95);
 		backdrop-filter: blur(10rpx);
 		border-top: 1rpx solid #E8F4FD;
-		display: flex;
-		gap: 20rpx;
 	}
 	
-	.prev-button, .next-button {
-		flex: 1;
+	.submit-button {
+		width: 100%;
 		height: 80rpx;
 		border-radius: 40rpx;
 		border: none;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		line-height: 80rpx;
+		padding: 0;
 		font-size: 28rpx;
-		font-weight: bold;
+		font-weight: 600;
+		overflow: hidden;
 		transition: all 0.3s;
-	}
-	
-	.prev-button {
-		background: #F8F9FA;
-		color: #7F8C8D;
-	}
-	
-	.prev-button:disabled {
-		opacity: 0.5;
-	}
-	
-	.next-button {
 		background: linear-gradient(135deg, #87CEEB, #98FB98);
 		color: #FFFFFF;
 		box-shadow: 0 4rpx 15rpx rgba(135, 206, 235, 0.3);
 	}
 	
-	.next-button:disabled {
+	.submit-button:disabled {
 		background: #BDC3C7;
 		box-shadow: none;
+		opacity: 0.6;
+	}
+	
+	button.submit-button::after {
+		border: none;
 	}
 	
 	.button-text {
+		height: 100%;
+		line-height: 80rpx;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		margin: 0;
+		padding: 0;
 		font-size: 28rpx;
 		font-weight: bold;
 	}
@@ -581,5 +617,153 @@
 		font-size: 28rpx;
 		color: #2C3E50;
 		font-weight: 500;
+	}
+	
+	/* 子分类头部 */
+	.subcategory-header {
+		background: rgba(135, 206, 235, 0.1);
+		padding: 30rpx;
+		margin: 20rpx;
+		border-radius: 20rpx;
+		border-left: 6rpx solid #87CEEB;
+	}
+	
+	.subcategory-title {
+		font-size: 32rpx;
+		font-weight: bold;
+		color: #2C3E50;
+		display: block;
+		margin-bottom: 10rpx;
+	}
+	
+	.subcategory-count {
+		font-size: 24rpx;
+		color: #7F8C8D;
+	}
+	
+	/* 领域分组 */
+	.domain-section {
+		margin-bottom: 30rpx;
+	}
+	
+	.domain-header {
+		background: rgba(135, 206, 235, 0.1);
+		padding: 20rpx 30rpx;
+		border-radius: 15rpx;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 15rpx;
+		border-left: 6rpx solid #87CEEB;
+	}
+	
+	.domain-title {
+		font-size: 28rpx;
+		font-weight: bold;
+		color: #2C3E50;
+		flex: 1;
+	}
+	
+	.domain-count {
+		font-size: 24rpx;
+		color: #7F8C8D;
+		margin-right: 20rpx;
+	}
+	
+	.domain-toggle {
+		font-size: 24rpx;
+		color: #87CEEB;
+		font-weight: bold;
+	}
+	
+	.domain-questions {
+		padding: 0 20rpx;
+	}
+	
+	/* 题目列表容器 */
+	.questions-container {
+		padding: 0 20rpx;
+		margin-bottom: 120rpx;
+	}
+	
+	/* 无题目提示 */
+	.no-questions {
+		text-align: center;
+		padding: 100rpx 30rpx;
+	}
+	
+	.no-questions-text {
+		font-size: 32rpx;
+		color: #7F8C8D;
+		display: block;
+		margin-bottom: 20rpx;
+	}
+	
+	.no-questions-hint {
+		font-size: 24rpx;
+		color: #BDC3C7;
+	}
+	
+	/* 卡片样式 */
+	.card {
+		background: #fff;
+		border-radius: 12rpx;
+		padding: 20rpx;
+		margin-bottom: 20rpx;
+		box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
+		transition: background-color 0.25s ease, border-color 0.25s ease;
+		border: 1rpx solid #eef2f7;
+	}
+	
+	.card.selected {
+		background: #E8F5E9 !important;
+		border-color: #4CAF50;
+	}
+	
+	/* 卡片头部 */
+	.card-hd {
+		display: flex;
+		align-items: flex-start;
+		margin-bottom: 15rpx;
+	}
+	
+	.no {
+		color: #2196F3;
+		margin-right: 8rpx;
+		font-size: 24rpx;
+		font-weight: bold;
+		min-width: 40rpx;
+	}
+	
+	.title {
+		font-weight: 600;
+		font-size: 28rpx;
+		color: #2C3E50;
+		line-height: 1.5;
+		flex: 1;
+	}
+	
+	/* 描述区域 */
+	.desc {
+		margin-bottom: 15rpx;
+		padding: 15rpx;
+		border-radius: 8rpx;
+		font-size: 24rpx;
+		color: #7F8C8D;
+		line-height: 1.4;
+	}
+	
+	.neutral-bg {
+		background: transparent !important;
+	}
+	
+	/* checkbox 样式 */
+	.chk {
+		display: flex;
+		align-items: center;
+		gap: 12rpx;
+		margin-top: 12rpx;
+		font-size: 26rpx;
+		color: #2C3E50;
 	}
 </style>
