@@ -1,241 +1,176 @@
 <template>
 	<view class="container">
-		<!-- 进度条 -->
-		<view class="progress-container">
-			<view class="progress-bar">
-				<view class="progress-fill" style="width: 33.33%"></view>
-			</view>
-			<view class="progress-text">Step 1 of 3</view>
-		</view>
-		
 		<!-- 页面标题 -->
 		<view class="page-header">
-			<view class="header-title">儿童基本信息</view>
-			<view class="header-subtitle">请填写您孩子的基本信息，以便进行准确的发育评估</view>
+			<text class="page-title">儿童基本信息</text>
+			<text class="page-subtitle">请填写孩子的详细信息，以便进行准确的发育评估</text>
 		</view>
 		
 		<!-- 表单区域 -->
 		<view class="form-container">
-			<!-- 姓名 -->
-			<view class="form-item">
-				<view class="label">姓名 <text class="required">*</text></view>
-				<input 
-					class="input" 
-					v-model="childInfo.name" 
-					placeholder="请输入孩子姓名"
-					maxlength="20"
-				/>
-			</view>
-			
-			<!-- 性别 -->
-			<view class="form-item">
-				<view class="label">性别 <text class="required">*</text></view>
-				<view class="radio-group">
-					<view 
-						class="radio-item" 
-						:class="{ active: childInfo.gender === 'male' }"
-						@click="selectGender('male')"
-					>
-						<view class="radio-icon">👦</view>
-						<text>男</text>
+			<!-- 基本信息 -->
+			<view class="form-section">
+				<view class="section-title">
+					<text class="title-text">基本信息</text>
+				</view>
+				
+				<!-- 姓名 -->
+				<view class="form-item">
+					<text class="label">姓名</text>
+					<input 
+						class="input" 
+						v-model="formData.name" 
+						placeholder="请输入孩子姓名"
+						placeholder-style="color: #BDC3C7"
+					/>
+				</view>
+				
+				<!-- 性别 -->
+				<view class="form-item">
+					<text class="label">性别</text>
+					<view class="radio-group">
+						<view 
+							class="radio-item" 
+							:class="{ active: formData.gender === 'male' }"
+							@click="selectGender('male')"
+						>
+							<text class="radio-text">男</text>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: formData.gender === 'female' }"
+							@click="selectGender('female')"
+						>
+							<text class="radio-text">女</text>
+						</view>
 					</view>
-					<view 
-						class="radio-item" 
-						:class="{ active: childInfo.gender === 'female' }"
-						@click="selectGender('female')"
+				</view>
+				
+				<!-- 出生日期 -->
+				<view class="form-item">
+					<text class="label">出生日期</text>
+					<picker 
+						mode="date" 
+						:value="formData.birthDate" 
+						@change="onBirthDateChange"
+						:end="today"
 					>
-						<view class="radio-icon">👧</view>
-						<text>女</text>
-					</view>
+						<view class="picker-view">
+							<text class="picker-text" :class="{ placeholder: !formData.birthDate }">
+								{{ formData.birthDate || '请选择出生日期' }}
+							</text>
+							<text class="picker-icon">📅</text>
+						</view>
+					</picker>
+				</view>
+				
+				<!-- 年龄显示 -->
+				<view class="age-display" v-if="formData.birthDate">
+					<text class="age-text">年龄：{{ calculatedAge }}</text>
 				</view>
 			</view>
 			
-			<!-- 出生日期 -->
-			<view class="form-item">
-				<view class="label">出生日期 <text class="required">*</text></view>
-				<picker 
-					mode="date" 
-					:value="childInfo.birthDate" 
-					@change="onBirthDateChange"
-					:end="today"
-				>
-					<view class="picker-input">
-						<text v-if="childInfo.birthDate">{{ childInfo.birthDate }}</text>
-						<text v-else class="placeholder">请选择出生日期</text>
-						<text class="picker-arrow">></text>
+			<!-- 家庭信息 -->
+			<view class="form-section">
+				<view class="section-title">
+					<text class="title-text">家庭信息</text>
+				</view>
+				
+				<!-- 主要照顾者 -->
+				<view class="form-item">
+					<text class="label">主要照顾者</text>
+					<view class="radio-group">
+						<view 
+							class="radio-item" 
+							:class="{ active: formData.caregiver === 'mother' }"
+							@click="selectCaregiver('mother')"
+						>
+							<text class="radio-text">母亲</text>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: formData.caregiver === 'father' }"
+							@click="selectCaregiver('father')"
+						>
+							<text class="radio-text">父亲</text>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: formData.caregiver === 'grandparent' }"
+							@click="selectCaregiver('grandparent')"
+						>
+							<text class="radio-text">祖父母</text>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: formData.caregiver === 'other' }"
+							@click="selectCaregiver('other')"
+						>
+							<text class="radio-text">其他</text>
+						</view>
 					</view>
-				</picker>
-			</view>
-			
-			<!-- 当前年龄显示 -->
-			<view class="form-item" v-if="childInfo.birthDate">
-				<view class="label">当前年龄</view>
-				<view class="age-display">{{ calculatedAge }}</view>
-			</view>
-			
-			<!-- 诊断类型 -->
-			<view class="form-item">
-				<view class="label">诊断类型</view>
-				<view class="checkbox-group">
-					<view 
-						class="checkbox-item" 
-						:class="{ active: childInfo.diagnosisTypes.includes('developmental_delay') }"
-						@click="toggleDiagnosisType('developmental_delay')"
-					>
-						<view class="checkbox-icon">⏰</view>
-						<text>发育迟缓</text>
-					</view>
-					<view 
-						class="checkbox-item" 
-						:class="{ active: childInfo.diagnosisTypes.includes('cerebral_palsy') }"
-						@click="toggleDiagnosisType('cerebral_palsy')"
-					>
-						<view class="checkbox-icon">🧠</view>
-						<text>脑瘫</text>
-					</view>
-					<view 
-						class="checkbox-item" 
-						:class="{ active: childInfo.diagnosisTypes.includes('autism') }"
-						@click="toggleDiagnosisType('autism')"
-					>
-						<view class="checkbox-icon">🌟</view>
-						<text>孤独症</text>
-					</view>
-					<view 
-						class="checkbox-item" 
-						:class="{ active: childInfo.diagnosisTypes.includes('rare_disease') }"
-						@click="toggleDiagnosisType('rare_disease')"
-					>
-						<view class="checkbox-icon">🔬</view>
-						<text>罕见病</text>
-					</view>
+				</view>
+				
+				<!-- 联系电话 -->
+				<view class="form-item">
+					<text class="label">联系电话</text>
+					<input 
+						class="input" 
+						v-model="formData.phone" 
+						placeholder="请输入联系电话"
+						placeholder-style="color: #BDC3C7"
+						type="number"
+					/>
 				</view>
 			</view>
 			
-			<!-- 行走情况 -->
-			<view class="form-item">
-				<view class="label">行走情况</view>
-				<view class="radio-group">
-					<view 
-						class="radio-item" 
-						:class="{ active: childInfo.walkingStatus === 'before_18months' }"
-						@click="selectWalkingStatus('before_18months')"
-					>
-						<view class="radio-icon">🚶</view>
-						<text>1岁半前</text>
-					</view>
-					<view 
-						class="radio-item" 
-						:class="{ active: childInfo.walkingStatus === 'after_18months' }"
-						@click="selectWalkingStatus('after_18months')"
-					>
-						<view class="radio-icon">🚶‍♂️</view>
-						<text>1岁半后</text>
-					</view>
-					<view 
-						class="radio-item" 
-						:class="{ active: childInfo.walkingStatus === 'not_yet' }"
-						@click="selectWalkingStatus('not_yet')"
-					>
-						<view class="radio-icon">🦽</view>
-						<text>尚不会</text>
+			<!-- 发育相关 -->
+			<view class="form-section">
+				<view class="section-title">
+					<text class="title-text">发育相关</text>
+				</view>
+				
+				<!-- 是否有发育迟缓史 -->
+				<view class="form-item">
+					<text class="label">是否有发育迟缓史</text>
+					<view class="radio-group">
+						<view 
+							class="radio-item" 
+							:class="{ active: formData.hasDelayHistory === 'no' }"
+							@click="selectDelayHistory('no')"
+						>
+							<text class="radio-text">无</text>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: formData.hasDelayHistory === 'yes' }"
+							@click="selectDelayHistory('yes')"
+						>
+							<text class="radio-text">有</text>
+						</view>
 					</view>
 				</view>
-			</view>
-			
-			<!-- 爬行情况 -->
-			<view class="form-item">
-				<view class="label">爬行情况</view>
-				<view class="radio-group">
-					<view 
-						class="radio-item" 
-						:class="{ active: childInfo.crawlingStatus === 'can_crawl' }"
-						@click="selectCrawlingStatus('can_crawl')"
-					>
-						<view class="radio-icon">🐛</view>
-						<text>会</text>
-					</view>
-					<view 
-						class="radio-item" 
-						:class="{ active: childInfo.crawlingStatus === 'cannot_crawl' }"
-						@click="selectCrawlingStatus('cannot_crawl')"
-					>
-						<view class="radio-icon">❌</view>
-						<text>不会</text>
-					</view>
-					<view 
-						class="radio-item" 
-						:class="{ active: childInfo.crawlingStatus === 'walk_first' }"
-						@click="selectCrawlingStatus('walk_first')"
-					>
-						<view class="radio-icon">🚶‍♀️</view>
-						<text>先走后爬</text>
-					</view>
+				
+				<!-- 备注 -->
+				<view class="form-item">
+					<text class="label">备注信息</text>
+					<textarea 
+						class="textarea" 
+						v-model="formData.notes" 
+						placeholder="如有其他需要说明的情况，请在此填写"
+						placeholder-style="color: #BDC3C7"
+						maxlength="200"
+					/>
+					<text class="char-count">{{ formData.notes.length }}/200</text>
 				</view>
-			</view>
-			
-			<!-- 惯用手 -->
-			<view class="form-item">
-				<view class="label">惯用手</view>
-				<view class="radio-group">
-					<view 
-						class="radio-item" 
-						:class="{ active: childInfo.handedness === 'left' }"
-						@click="selectHandedness('left')"
-					>
-						<view class="radio-icon">👈</view>
-						<text>左</text>
-					</view>
-					<view 
-						class="radio-item" 
-						:class="{ active: childInfo.handedness === 'right' }"
-						@click="selectHandedness('right')"
-					>
-						<view class="radio-icon">👉</view>
-						<text>右</text>
-					</view>
-				</view>
-			</view>
-			
-			<!-- 视觉与听觉 -->
-			<view class="form-item">
-				<view class="label">视觉与听觉</view>
-				<view class="radio-group">
-					<view 
-						class="radio-item" 
-						:class="{ active: childInfo.sensoryStatus === 'normal' }"
-						@click="selectSensoryStatus('normal')"
-					>
-						<view class="radio-icon">👁️👂</view>
-						<text>常态</text>
-					</view>
-					<view 
-						class="radio-item" 
-						:class="{ active: childInfo.sensoryStatus === 'abnormal' }"
-						@click="selectSensoryStatus('abnormal')"
-					>
-						<view class="radio-icon">⚠️</view>
-						<text>异常</text>
-					</view>
-				</view>
-			</view>
-			
-			<!-- 备注信息 -->
-			<view class="form-item">
-				<view class="label">备注</view>
-				<textarea 
-					class="textarea" 
-					v-model="childInfo.notes" 
-					placeholder="如有特殊情况或需要特别关注的地方，请在此说明"
-					maxlength="200"
-				></textarea>
 			</view>
 		</view>
 		
 		<!-- 底部按钮 -->
-		<view class="footer-actions">
-			<button class="btn-secondary" @click="goBack">返回</button>
-			<button class="btn-primary" @click="nextStep" :disabled="!canProceed">保存并继续</button>
+		<view class="button-container">
+			<button class="next-button" @click="goToAssessment" :disabled="!isFormValid">
+				<text class="button-text">开始评估</text>
+			</button>
 		</view>
 	</view>
 </template>
@@ -244,15 +179,13 @@
 	export default {
 		data() {
 			return {
-				childInfo: {
+				formData: {
 					name: '',
 					gender: '',
 					birthDate: '',
-					diagnosisTypes: [],
-					walkingStatus: '',
-					crawlingStatus: '',
-					handedness: '',
-					sensoryStatus: '',
+					caregiver: '',
+					phone: '',
+					hasDelayHistory: '',
 					notes: ''
 				},
 				today: ''
@@ -261,182 +194,138 @@
 		computed: {
 			// 计算年龄
 			calculatedAge() {
-				if (!this.childInfo.birthDate) return '';
-				const birth = new Date(this.childInfo.birthDate);
-				const today = new Date();
-				const ageInMonths = (today.getFullYear() - birth.getFullYear()) * 12 + 
-								   (today.getMonth() - birth.getMonth());
+				if (!this.formData.birthDate) return ''
+				const birth = new Date(this.formData.birthDate)
+				const today = new Date()
+				let age = today.getFullYear() - birth.getFullYear()
+				const monthDiff = today.getMonth() - birth.getMonth()
 				
-				if (ageInMonths < 12) {
-					return `${ageInMonths}个月`;
-				} else {
-					const years = Math.floor(ageInMonths / 12);
-					const months = ageInMonths % 12;
-					return months > 0 ? `${years}岁${months}个月` : `${years}岁`;
+				if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+					age--
 				}
+				
+				if (age < 1) {
+					const months = Math.floor((today - birth) / (1000 * 60 * 60 * 24 * 30))
+					return `${months}个月`
+				}
+				
+				return `${age}岁`
 			},
-			// 检查是否可以进入下一步
-			canProceed() {
-				return this.childInfo.name.trim() && 
-					   this.childInfo.gender && 
-					   this.childInfo.birthDate;
+			
+			// 表单验证
+			isFormValid() {
+				return this.formData.name && 
+					   this.formData.gender && 
+					   this.formData.birthDate && 
+					   this.formData.caregiver && 
+					   this.formData.phone
 			}
 		},
 		onLoad() {
 			// 设置今天的日期作为最大可选日期
-			const today = new Date();
-			this.today = today.toISOString().split('T')[0];
+			const today = new Date()
+			this.today = today.toISOString().split('T')[0]
 		},
 		methods: {
 			// 选择性别
 			selectGender(gender) {
-				this.childInfo.gender = gender;
+				this.formData.gender = gender
+			},
+			
+			// 选择主要照顾者
+			selectCaregiver(caregiver) {
+				this.formData.caregiver = caregiver
+			},
+			
+			// 选择是否有发育迟缓史
+			selectDelayHistory(hasDelay) {
+				this.formData.hasDelayHistory = hasDelay
 			},
 			
 			// 出生日期改变
 			onBirthDateChange(e) {
-				this.childInfo.birthDate = e.detail.value;
+				this.formData.birthDate = e.detail.value
 			},
 			
-			// 切换诊断类型
-			toggleDiagnosisType(type) {
-				const index = this.childInfo.diagnosisTypes.indexOf(type);
-				if (index > -1) {
-					this.childInfo.diagnosisTypes.splice(index, 1);
-				} else {
-					this.childInfo.diagnosisTypes.push(type);
-				}
-			},
-			
-			// 选择行走情况
-			selectWalkingStatus(status) {
-				this.childInfo.walkingStatus = status;
-			},
-			
-			// 选择爬行情况
-			selectCrawlingStatus(status) {
-				this.childInfo.crawlingStatus = status;
-			},
-			
-			// 选择惯用手
-			selectHandedness(hand) {
-				this.childInfo.handedness = hand;
-			},
-			
-			// 选择视觉与听觉状态
-			selectSensoryStatus(status) {
-				this.childInfo.sensoryStatus = status;
-			},
-			
-			// 返回上一页
-			goBack() {
-				uni.navigateBack();
-			},
-			
-			// 进入下一步
-			nextStep() {
-				// 表单验证
-				if (!this.childInfo.name.trim()) {
+			// 跳转到评估页面
+			goToAssessment() {
+				if (!this.isFormValid) {
 					uni.showToast({
-						title: '请输入孩子姓名',
+						title: '请完善必填信息',
 						icon: 'none'
-					});
-					return;
+					})
+					return
 				}
 				
-				if (!this.childInfo.gender) {
-					uni.showToast({
-						title: '请选择孩子性别',
-						icon: 'none'
-					});
-					return;
-				}
-				
-				if (!this.childInfo.birthDate) {
-					uni.showToast({
-						title: '请选择出生日期',
-						icon: 'none'
-					});
-					return;
-				}
-				
-				// 保存儿童信息到全局存储
-				uni.setStorageSync('childInfo', this.childInfo);
+				// 保存儿童信息到本地存储
+				uni.setStorageSync('childInfo', this.formData)
 				
 				// 跳转到评估页面
 				uni.navigateTo({
 					url: '/pages/assessment/assessment'
-				});
+				})
 			}
 		}
 	}
 </script>
 
-<style scoped>
+<style>
 	.container {
 		min-height: 100vh;
-		background-color: #F5F9FA;
+		background: linear-gradient(135deg, #E8F4FD 0%, #F0F8FF 100%);
 		padding: 30rpx;
 	}
 	
-	/* 进度条样式 */
-	.progress-container {
-		background-color: white;
-		border-radius: 15rpx;
-		padding: 30rpx;
-		margin-bottom: 30rpx;
-		box-shadow: 0 4rpx 20rpx rgba(168, 216, 234, 0.1);
-	}
-	
-	.progress-bar {
-		height: 8rpx;
-		background-color: #E8F4F8;
-		border-radius: 4rpx;
-		overflow: hidden;
-		margin-bottom: 15rpx;
-	}
-	
-	.progress-fill {
-		height: 100%;
-		background: linear-gradient(90deg, #A8D8EA 0%, #7BC4D4 100%);
-		transition: width 0.3s ease;
-	}
-	
-	.progress-text {
-		text-align: center;
-		font-size: 24rpx;
-		color: #666;
-		font-weight: 500;
-	}
-	
+	/* 页面标题 */
 	.page-header {
 		text-align: center;
 		margin-bottom: 40rpx;
 	}
 	
-	.header-title {
+	.page-title {
+		display: block;
 		font-size: 40rpx;
 		font-weight: bold;
-		color: #2C405A;
+		color: #2C3E50;
 		margin-bottom: 15rpx;
 	}
 	
-	.header-subtitle {
-		font-size: 28rpx;
-		color: #666;
-		line-height: 1.4;
+	.page-subtitle {
+		display: block;
+		font-size: 26rpx;
+		color: #7F8C8D;
+		line-height: 1.5;
 	}
 	
+	/* 表单容器 */
 	.form-container {
-		background-color: white;
-		border-radius: 20rpx;
-		padding: 40rpx 30rpx;
-		margin-bottom: 40rpx;
-		box-shadow: 0 4rpx 20rpx rgba(168, 216, 234, 0.1);
+		margin-bottom: 120rpx;
 	}
 	
+	/* 表单分组 */
+	.form-section {
+		background: rgba(255, 255, 255, 0.9);
+		border-radius: 20rpx;
+		padding: 30rpx;
+		margin-bottom: 30rpx;
+		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+	}
+	
+	.section-title {
+		margin-bottom: 30rpx;
+		padding-bottom: 15rpx;
+		border-bottom: 2rpx solid #E8F4FD;
+	}
+	
+	.title-text {
+		font-size: 32rpx;
+		font-weight: bold;
+		color: #34495E;
+	}
+	
+	/* 表单项 */
 	.form-item {
-		margin-bottom: 50rpx;
+		margin-bottom: 30rpx;
 	}
 	
 	.form-item:last-child {
@@ -444,214 +333,173 @@
 	}
 	
 	.label {
-		font-size: 32rpx;
-		color: #333;
-		margin-bottom: 25rpx;
-		font-weight: 600;
-	}
-	
-	.required {
-		color: #FFB6C1;
-		margin-left: 8rpx;
+		display: block;
 		font-size: 28rpx;
+		color: #2C3E50;
+		margin-bottom: 15rpx;
+		font-weight: 500;
 	}
 	
+	/* 输入框 */
 	.input {
 		width: 100%;
-		height: 90rpx;
-		border: 2rpx solid #E8F4F8;
-		border-radius: 12rpx;
-		padding: 0 25rpx;
-		font-size: 32rpx;
-		background-color: #FAFAFA;
-		transition: all 0.3s ease;
+		height: 80rpx;
+		background: #F8F9FA;
+		border-radius: 15rpx;
+		padding: 0 20rpx;
+		font-size: 28rpx;
+		color: #2C3E50;
+		border: 2rpx solid transparent;
+		transition: all 0.3s;
 	}
 	
 	.input:focus {
-		border-color: #A8D8EA;
-		background-color: white;
-		box-shadow: 0 0 0 4rpx rgba(168, 216, 234, 0.1);
+		border-color: #87CEEB;
+		background: #FFFFFF;
 	}
 	
+	/* 单选框组 */
 	.radio-group {
 		display: flex;
-		gap: 20rpx;
 		flex-wrap: wrap;
+		gap: 15rpx;
 	}
 	
 	.radio-item {
 		flex: 1;
-		min-width: 150rpx;
-		height: 110rpx;
-		border: 2rpx solid #E8F4F8;
+		min-width: 120rpx;
+		height: 70rpx;
+		background: #F8F9FA;
 		border-radius: 15rpx;
 		display: flex;
-		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		background-color: #FAFAFA;
-		transition: all 0.3s ease;
-		cursor: pointer;
+		border: 2rpx solid transparent;
+		transition: all 0.3s;
 	}
 	
 	.radio-item.active {
-		border-color: #A8D8EA;
-		background-color: #E8F4F8;
-		transform: translateY(-2rpx);
-		box-shadow: 0 4rpx 15rpx rgba(168, 216, 234, 0.2);
+		background: linear-gradient(135deg, #87CEEB, #98FB98);
+		border-color: #87CEEB;
 	}
 	
-	.radio-icon {
-		font-size: 45rpx;
-		margin-bottom: 10rpx;
-	}
-	
-	.radio-item text {
-		font-size: 28rpx;
-		color: #333;
+	.radio-text {
+		font-size: 26rpx;
+		color: #2C3E50;
 		font-weight: 500;
 	}
 	
-	.picker-input {
-		height: 90rpx;
-		border: 2rpx solid #E8F4F8;
-		border-radius: 12rpx;
-		padding: 0 25rpx;
-		background-color: #FAFAFA;
+	.radio-item.active .radio-text {
+		color: #FFFFFF;
+		font-weight: bold;
+	}
+	
+	/* 日期选择器 */
+	.picker-view {
+		width: 100%;
+		height: 80rpx;
+		background: #F8F9FA;
+		border-radius: 15rpx;
+		padding: 0 20rpx;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		font-size: 32rpx;
-		transition: all 0.3s ease;
+		border: 2rpx solid transparent;
+		transition: all 0.3s;
 	}
 	
-	.picker-input:active {
-		border-color: #A8D8EA;
-		background-color: white;
+	.picker-view:active {
+		border-color: #87CEEB;
+		background: #FFFFFF;
 	}
 	
-	.placeholder {
-		color: #999;
-	}
-	
-	.picker-arrow {
-		color: #A8D8EA;
+	.picker-text {
 		font-size: 28rpx;
-		font-weight: bold;
+		color: #2C3E50;
 	}
 	
+	.picker-text.placeholder {
+		color: #BDC3C7;
+	}
+	
+	.picker-icon {
+		font-size: 24rpx;
+	}
+	
+	/* 年龄显示 */
 	.age-display {
-		font-size: 32rpx;
-		color: #A8D8EA;
-		font-weight: bold;
-		padding: 25rpx;
-		background-color: #E8F4F8;
-		border-radius: 12rpx;
 		text-align: center;
-		border: 2rpx solid #A8D8EA;
+		margin-top: 15rpx;
 	}
 	
-	.checkbox-group {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 20rpx;
+	.age-text {
+		font-size: 26rpx;
+		color: #87CEEB;
+		font-weight: bold;
+		background: rgba(135, 206, 235, 0.1);
+		padding: 10rpx 20rpx;
+		border-radius: 20rpx;
 	}
 	
-	.checkbox-item {
-		height: 130rpx;
-		border: 2rpx solid #E8F4F8;
-		border-radius: 15rpx;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		background-color: #FAFAFA;
-		transition: all 0.3s ease;
-		cursor: pointer;
-	}
-	
-	.checkbox-item.active {
-		border-color: #A8D8EA;
-		background-color: #E8F4F8;
-		transform: translateY(-2rpx);
-		box-shadow: 0 4rpx 15rpx rgba(168, 216, 234, 0.2);
-	}
-	
-	.checkbox-icon {
-		font-size: 45rpx;
-		margin-bottom: 10rpx;
-	}
-	
-	.checkbox-item text {
-		font-size: 28rpx;
-		color: #333;
-		font-weight: 500;
-	}
-	
+	/* 文本域 */
 	.textarea {
 		width: 100%;
-		min-height: 140rpx;
-		border: 2rpx solid #E8F4F8;
-		border-radius: 12rpx;
-		padding: 25rpx;
-		font-size: 32rpx;
-		background-color: #FAFAFA;
-		transition: all 0.3s ease;
-		line-height: 1.5;
+		min-height: 120rpx;
+		background: #F8F9FA;
+		border-radius: 15rpx;
+		padding: 20rpx;
+		font-size: 28rpx;
+		color: #2C3E50;
+		border: 2rpx solid transparent;
+		transition: all 0.3s;
 	}
 	
 	.textarea:focus {
-		border-color: #A8D8EA;
-		background-color: white;
-		box-shadow: 0 0 0 4rpx rgba(168, 216, 234, 0.1);
+		border-color: #87CEEB;
+		background: #FFFFFF;
 	}
 	
-	.footer-actions {
-		display: flex;
-		gap: 20rpx;
-		padding: 0 10rpx;
-		margin-bottom: 30rpx;
+	.char-count {
+		display: block;
+		text-align: right;
+		font-size: 22rpx;
+		color: #BDC3C7;
+		margin-top: 10rpx;
 	}
 	
-	.btn-secondary {
-		flex: 1;
+	/* 底部按钮 */
+	.button-container {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		padding: 30rpx;
+		background: rgba(255, 255, 255, 0.95);
+		backdrop-filter: blur(10rpx);
+		border-top: 1rpx solid #E8F4FD;
+	}
+	
+	.next-button {
+		width: 100%;
 		height: 90rpx;
-		background-color: white;
-		color: #666;
-		border: 2rpx solid #E8F4F8;
+		background: linear-gradient(135deg, #87CEEB, #98FB98);
 		border-radius: 45rpx;
-		font-size: 32rpx;
-		font-weight: 500;
-		transition: all 0.3s ease;
-	}
-	
-	.btn-secondary:active {
-		background-color: #F5F9FA;
-		border-color: #A8D8EA;
-	}
-	
-	.btn-primary {
-		flex: 2;
-		height: 90rpx;
-		background: linear-gradient(135deg, #A8D8EA 0%, #7BC4D4 100%);
-		color: white;
 		border: none;
-		border-radius: 45rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 8rpx 25rpx rgba(135, 206, 235, 0.4);
+		transition: all 0.3s;
+	}
+	
+	.next-button:disabled {
+		background: #BDC3C7;
+		box-shadow: none;
+	}
+	
+	.button-text {
 		font-size: 32rpx;
 		font-weight: bold;
-		box-shadow: 0 8rpx 25rpx rgba(168, 216, 234, 0.4);
-		transition: all 0.3s ease;
-	}
-	
-	.btn-primary:active {
-		transform: translateY(2rpx);
-		box-shadow: 0 4rpx 15rpx rgba(168, 216, 234, 0.4);
-	}
-	
-	.btn-primary:disabled {
-		background: #E8F4F8;
-		color: #999;
-		box-shadow: none;
-		transform: none;
+		color: #FFFFFF;
 	}
 </style>

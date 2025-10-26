@@ -4,48 +4,48 @@
 			"path": "pages/index/index",
 			"style": {
 				"navigationBarTitleText": "知动儿童综合发育测评",
-				"navigationBarBackgroundColor": "#A8D8EA",
-				"navigationBarTextStyle": "white"
+				"navigationBarBackgroundColor": "#E8F4FD",
+				"navigationBarTextStyle": "black"
 			}
 		},
 		{
 			"path": "pages/child-info/child-info",
 			"style": {
 				"navigationBarTitleText": "儿童信息",
-				"navigationBarBackgroundColor": "#A8D8EA",
-				"navigationBarTextStyle": "white"
+				"navigationBarBackgroundColor": "#E8F4FD",
+				"navigationBarTextStyle": "black"
 			}
 		},
 		{
 			"path": "pages/assessment/assessment",
 			"style": {
 				"navigationBarTitleText": "发育评估",
-				"navigationBarBackgroundColor": "#A8D8EA",
-				"navigationBarTextStyle": "white"
+				"navigationBarBackgroundColor": "#E8F4FD",
+				"navigationBarTextStyle": "black"
 			}
 		},
 		{
 			"path": "pages/result/result",
 			"style": {
-				"navigationBarTitleText": "评估报告",
-				"navigationBarBackgroundColor": "#A8D8EA",
-				"navigationBarTextStyle": "white"
+				"navigationBarTitleText": "评估结果",
+				"navigationBarBackgroundColor": "#E8F4FD",
+				"navigationBarTextStyle": "black"
 			}
 		},
 		{
 			"path": "pages/history/history",
 			"style": {
 				"navigationBarTitleText": "历史记录",
-				"navigationBarBackgroundColor": "#A8D8EA",
-				"navigationBarTextStyle": "white"
+				"navigationBarBackgroundColor": "#E8F4FD",
+				"navigationBarTextStyle": "black"
 			}
 		}
 	],
 	"globalStyle": {
-		"navigationBarTextStyle": "white",
+		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "知动儿童综合发育测评",
-		"navigationBarBackgroundColor": "#A8D8EA",
-		"backgroundColor": "#F5F9FA"
+		"navigationBarBackgroundColor": "#E8F4FD",
+		"backgroundColor": "#F8F9FA"
 	},
 	"uniIdRouter": {}
 }

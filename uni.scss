@@ -1,76 +1,114 @@
 /**
- * 这里是uni-app内置的常用样式变量
- *
- * uni-app 官方扩展插件及插件市场（https://ext.dcloud.net.cn）上很多三方插件均使用了这些样式变量
- * 如果你是插件开发者，建议你使用scss预处理，并在插件代码中直接使用这些变量（无需 import 这个文件），方便用户通过搭积木的方式开发整体风格一致的App
- *
+ * 知动儿童综合发育测评 - 全局样式变量
+ * 使用 pastel 柔和配色方案，适合儿童发育评估应用
  */
 
-/**
- * 如果你是App开发者（插件使用者），你可以通过修改这些变量来定制自己的插件主题，实现自定义主题功能
- *
- * 如果你的项目同样使用了scss预处理，你也可以直接在你的 scss 代码中使用如下变量，同时无需 import 这个文件
- */
+/* Pastel 柔和配色方案 */
+/* 主色调 - 天空蓝 */
+$uni-color-primary: #87CEEB; // 天蓝色
+$uni-color-primary-light: #E8F4FD; // 浅天蓝
+$uni-color-primary-dark: #5DADE2; // 深天蓝
 
-/* 颜色变量 - Pastel 柔和配色 */
+/* 辅助色 - 薄荷绿 */
+$uni-color-success: #98FB98; // 薄荷绿
+$uni-color-success-light: #F0FFF0; // 浅薄荷绿
+$uni-color-success-dark: #90EE90; // 深薄荷绿
 
-/* 行为相关颜色 - 儿童发育评估专用配色 */
-$uni-color-primary: #A8D8EA; /* 柔和蓝色 */
-$uni-color-success: #B8E6B8; /* 柔和绿色 */
-$uni-color-warning: #FFE4B5; /* 柔和黄色 */
-$uni-color-error: #FFB6C1; /* 柔和红色 */
+/* 警告色 - 珊瑚粉 */
+$uni-color-warning: #FFB6C1; // 珊瑚粉
+$uni-color-warning-light: #FFF0F5; // 浅珊瑚粉
+$uni-color-warning-dark: #FFA07A; // 深珊瑚粉
 
-/* 文字基本颜色 */
-$uni-text-color:#333;//基本色
-$uni-text-color-inverse:#fff;//反色
-$uni-text-color-grey:#999;//辅助灰色，如加载更多的提示信息
-$uni-text-color-placeholder: #808080;
-$uni-text-color-disable:#c0c0c0;
+/* 错误色 - 柔和红 */
+$uni-color-error: #FFA0A0; // 柔和红
+$uni-color-error-light: #FFE0E0; // 浅柔和红
+$uni-color-error-dark: #FF7F7F; // 深柔和红
 
-/* 背景颜色 - 柔和背景色 */
-$uni-bg-color:#ffffff;
-$uni-bg-color-grey:#F5F9FA; /* 柔和灰蓝色背景 */
-$uni-bg-color-hover:#E8F4F8; /* 柔和悬停色 */
-$uni-bg-color-mask:rgba(168, 216, 234, 0.3); /* 柔和遮罩颜色 */
+/* 文字颜色 */
+$uni-text-color: #2C3E50; // 深蓝灰 - 主要文字
+$uni-text-color-secondary: #34495E; // 中蓝灰 - 次要文字
+$uni-text-color-light: #7F8C8D; // 浅蓝灰 - 辅助文字
+$uni-text-color-inverse: #FFFFFF; // 反色文字
+$uni-text-color-placeholder: #BDC3C7; // 占位符文字
+$uni-text-color-disable: #D5DBDB; // 禁用文字
+
+/* 背景颜色 */
+$uni-bg-color: #FFFFFF; // 主背景
+$uni-bg-color-page: #F8F9FA; // 页面背景
+$uni-bg-color-card: rgba(255, 255, 255, 0.9); // 卡片背景
+$uni-bg-color-section: #F8F9FA; // 区域背景
+$uni-bg-color-hover: rgba(135, 206, 235, 0.1); // 悬停背景
+$uni-bg-color-mask: rgba(0, 0, 0, 0.5); // 遮罩背景
 
 /* 边框颜色 */
-$uni-border-color:#c8c7cc;
+$uni-border-color: #E8F4FD; // 主边框
+$uni-border-color-light: #F0F8FF; // 浅边框
+$uni-border-color-dark: #D6EAF8; // 深边框
+
+/* 渐变背景 */
+$uni-gradient-primary: linear-gradient(135deg, #87CEEB 0%, #98FB98 100%); // 主渐变
+$uni-gradient-secondary: linear-gradient(135deg, #E8F4FD 0%, #F0F8FF 100%); // 次渐变
+$uni-gradient-warm: linear-gradient(135deg, #FFB6C1 0%, #FFA07A 100%); // 暖色渐变
 
 /* 尺寸变量 */
-
-/* 文字尺寸 */
-$uni-font-size-sm:12px;
-$uni-font-size-base:14px;
-$uni-font-size-lg:16px;
+$uni-font-size-xs: 20rpx; // 超小字体
+$uni-font-size-sm: 24rpx; // 小字体
+$uni-font-size-base: 28rpx; // 基础字体
+$uni-font-size-lg: 32rpx; // 大字体
+$uni-font-size-xl: 36rpx; // 超大字体
+$uni-font-size-xxl: 40rpx; // 特大字体
 
 /* 图片尺寸 */
-$uni-img-size-sm:20px;
-$uni-img-size-base:26px;
-$uni-img-size-lg:40px;
+$uni-img-size-xs: 40rpx; // 超小图片
+$uni-img-size-sm: 60rpx; // 小图片
+$uni-img-size-base: 80rpx; // 基础图片
+$uni-img-size-lg: 120rpx; // 大图片
+$uni-img-size-xl: 160rpx; // 超大图片
 
-/* Border Radius */
-$uni-border-radius-sm: 2px;
-$uni-border-radius-base: 3px;
-$uni-border-radius-lg: 6px;
-$uni-border-radius-circle: 50%;
+/* 圆角尺寸 */
+$uni-border-radius-xs: 8rpx; // 超小圆角
+$uni-border-radius-sm: 12rpx; // 小圆角
+$uni-border-radius-base: 15rpx; // 基础圆角
+$uni-border-radius-lg: 20rpx; // 大圆角
+$uni-border-radius-xl: 30rpx; // 超大圆角
+$uni-border-radius-circle: 50%; // 圆形
 
-/* 水平间距 */
-$uni-spacing-row-sm: 5px;
-$uni-spacing-row-base: 10px;
-$uni-spacing-row-lg: 15px;
+/* 间距变量 */
+$uni-spacing-xs: 10rpx; // 超小间距
+$uni-spacing-sm: 15rpx; // 小间距
+$uni-spacing-base: 20rpx; // 基础间距
+$uni-spacing-lg: 30rpx; // 大间距
+$uni-spacing-xl: 40rpx; // 超大间距
+$uni-spacing-xxl: 60rpx; // 特大间距
 
-/* 垂直间距 */
-$uni-spacing-col-sm: 4px;
-$uni-spacing-col-base: 8px;
-$uni-spacing-col-lg: 12px;
+/* 阴影变量 */
+$uni-shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.05); // 小阴影
+$uni-shadow-base: 0 4rpx 20rpx rgba(0, 0, 0, 0.08); // 基础阴影
+$uni-shadow-lg: 0 8rpx 25rpx rgba(135, 206, 235, 0.3); // 大阴影
+$uni-shadow-xl: 0 12rpx 40rpx rgba(0, 0, 0, 0.15); // 超大阴影
 
 /* 透明度 */
-$uni-opacity-disabled: 0.3; // 组件禁用态的透明度
+$uni-opacity-disabled: 0.3; // 禁用透明度
+$uni-opacity-hover: 0.8; // 悬停透明度
+$uni-opacity-mask: 0.5; // 遮罩透明度
 
-/* 文章场景相关 */
-$uni-color-title: #2C405A; // 文章标题颜色
-$uni-font-size-title:20px;
-$uni-color-subtitle: #555555; // 二级标题颜色
-$uni-font-size-subtitle:26px;
-$uni-color-paragraph: #3F536E; // 文章段落颜色
-$uni-font-size-paragraph:15px;
+/* 动画时长 */
+$uni-transition-fast: 0.2s; // 快速过渡
+$uni-transition-base: 0.3s; // 基础过渡
+$uni-transition-slow: 0.5s; // 慢速过渡
+
+/* 评分等级颜色 */
+$uni-score-excellent: #98FB98; // 优秀 - 薄荷绿
+$uni-score-good: #87CEEB; // 良好 - 天蓝色
+$uni-score-normal: #FFB6C1; // 正常 - 珊瑚粉
+$uni-score-attention: #FFA07A; // 关注 - 深珊瑚粉
+$uni-score-warning: #FFA0A0; // 警告 - 柔和红
+
+/* 功能区域颜色 */
+$uni-color-motor: #87CEEB; // 大运动 - 天蓝
+$uni-color-fine: #98FB98; // 精细动作 - 薄荷绿
+$uni-color-language: #FFB6C1; // 语言 - 珊瑚粉
+$uni-color-social: #FFA07A; // 社交 - 深珊瑚粉
+$uni-color-cognitive: #DDA0DD; // 认知 - 淡紫色
+$uni-color-selfcare: #F0E68C; // 自理 - 卡其色
+$uni-color-emotion: #FFB6C1; // 情绪 - 珊瑚粉
