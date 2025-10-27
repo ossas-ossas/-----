@@ -125,47 +125,6 @@
 				</view>
 			</view>
 			
-			<!-- 发育相关 -->
-			<view class="form-section">
-				<view class="section-title">
-					<text class="title-text">发育相关</text>
-				</view>
-				
-				<!-- 是否有发育迟缓史 -->
-				<view class="form-item">
-					<text class="label">是否有发育迟缓史</text>
-					<view class="radio-group">
-						<view 
-							class="radio-item" 
-							:class="{ active: formData.hasDelayHistory === 'no' }"
-							@click="selectDelayHistory('no')"
-						>
-							<text class="radio-text">无</text>
-						</view>
-						<view 
-							class="radio-item" 
-							:class="{ active: formData.hasDelayHistory === 'yes' }"
-							@click="selectDelayHistory('yes')"
-						>
-							<text class="radio-text">有</text>
-						</view>
-					</view>
-				</view>
-				
-				<!-- 备注 -->
-				<view class="form-item">
-					<text class="label">备注信息</text>
-					<textarea 
-						class="textarea" 
-						v-model="formData.notes" 
-						placeholder="如有其他需要说明的情况，请在此填写"
-						placeholder-style="color: #BDC3C7"
-						maxlength="200"
-					/>
-					<text class="char-count">{{ formData.notes.length }}/200</text>
-				</view>
-			</view>
-			
 			<!-- 临床与行为信息 -->
 			<view class="form-section">
 				<view class="section-title">
@@ -469,6 +428,26 @@
 					</view>
 				</view>
 			</view>
+			
+			<!-- 备注信息 -->
+			<view class="form-section">
+				<view class="section-title">
+					<text class="title-text">备注信息</text>
+				</view>
+				
+				<!-- 备注 -->
+				<view class="form-item">
+					<text class="label">其他需要说明的情况</text>
+					<textarea 
+						class="textarea" 
+						v-model="formData.notes" 
+						placeholder="如有其他需要说明的情况，请在此填写"
+						placeholder-style="color: #BDC3C7"
+						maxlength="200"
+					/>
+					<text class="char-count">{{ formData.notes.length }}/200</text>
+				</view>
+			</view>
 		</view>
 		
 		<!-- 底部按钮 -->
@@ -592,11 +571,6 @@
 			// 选择主要照顾者
 			selectCaregiver(caregiver) {
 				this.formData.caregiver = caregiver
-			},
-			
-			// 选择是否有发育迟缓史
-			selectDelayHistory(hasDelay) {
-				this.formData.hasDelayHistory = hasDelay
 			},
 			
 			// 出生日期改变

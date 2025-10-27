@@ -1,71 +1,121 @@
 <template>
 	<view class="container">
-		<!-- 评估标题 -->
-		<view class="age-info">
-			<text class="age-text">发育评估</text>
-		</view>
-		
-		<!-- 进度信息 -->
-		<view class="progress-container">
-			<text class="progress-text">已完成 {{ checkedCount }} / {{ totalCount }} 题</text>
-			<view class="progress-bar">
-				<view class="progress-fill" :style="{ width: progressPercent + '%' }"></view>
+		<!-- 顶部工具条（吸顶） -->
+		<view class="top-bar">
+			<view class="top-header">
+				<text class="page-title">发育评估</text>
+				<text class="global-stats">{{ derivedStats.global.selected }}/{{ derivedStats.global.total }} ({{ derivedStats.global.ratio }}%)</text>
+			</view>
+			
+			<!-- 搜索框 -->
+			<view class="search-box">
+				<input
+					class="search-input"
+					v-model="filters.keyword"
+					placeholder="搜索题目..."
+					@input="applyFilters"
+				/>
+				<text class="search-icon">🔍</text>
+			</view>
+			
+			<!-- 筛选开关 -->
+			<view class="filter-switch">
+				<switch :checked="filters.onlyUnfinished" @change="onUnfinishedToggle" />
+				<text class="switch-label">仅看未完成</text>
 			</view>
 		</view>
 		
-		<!-- 领域分组题目 -->
-		<view class="questions-container" v-if="totalCount > 0">
-			<view 
-				v-for="(list, domain) in formState" 
-				:key="domain"
-				class="domain-section"
-			>
+		<!-- 主列表 -->
+		<view class="questions-container">
+			<!-- 按 domain 分组 -->
+			<template v-for="domain in allDomains">
+				<view v-if="hasMatchingQuestionsInDomain(domain)" :key="domain" class="domain-section">
+					<!-- domain 头部 -->
 				<view class="domain-header" @click="toggleDomain(domain)">
-					<text class="domain-title">{{ domain }}</text>
-					<text class="domain-count">{{ list.length }} 题</text>
-					<text class="domain-toggle">{{ expandedDomains[domain] ? '▼' : '▶' }}</text>
+						<text class="domain-title">{{ getDomainLabel(domain) }}</text>
+						<text class="domain-stats" v-if="getDomainStats(domain)">
+							{{ getDomainStats(domain).selected }}/{{ getDomainStats(domain).total }}
+							({{ getDomainStats(domain).ratio }}%)
+						</text>
+						<view class="domain-actions">
+							<text class="action-btn" @click.stop="selectAllInDomain(domain)">全选</text>
+							<text class="action-btn" @click.stop="clearDomain(domain)">清空</text>
+						</view>
+						<text class="domain-toggle">
+							{{ expandedDomains[domain] ? '▼' : '▶' }}
+						</text>
 				</view>
 				
-				<view class="domain-questions" v-if="expandedDomains[domain]">
+				<!-- subdomain 列表（仅当 domain 展开时渲染） -->
+				<view v-if="expandedDomains[domain]" class="domain-content">
+					<template v-for="subdomain in getSubdomainsInDomain(domain)">
 					<view 
-						class="card"
-						:class="{ 'selected': q.checked }"
-						v-for="(q, idx) in list"
-						:key="q.id"
-					>
-						<view class="card-hd">
-							<text class="no">{{ idx + 1 }}</text>
-							<text class="title">{{ q.text }}</text>
+							v-if="hasMatchingQuestionsInSubdomain(domain, subdomain)"
+							:key="`${domain}::${subdomain}`"
+							class="subdomain-section"
+						>
+							<!-- subdomain 头部 -->
+							<view class="subdomain-header" @click="toggleSubdomain(`${domain}::${subdomain}`)">
+								<text class="subdomain-title">{{ getSubdomainLabel(subdomain) }}</text>
+								<text class="subdomain-stats" v-if="getSubdomainStats(domain, subdomain)">
+									{{ getSubdomainStats(domain, subdomain).selected }}/{{ getSubdomainStats(domain, subdomain).total }}
+									({{ getSubdomainStats(domain, subdomain).ratio }}%)
+								</text>
+								<view class="subdomain-actions">
+									<text class="action-btn" @click.stop="selectAllInSubdomain(domain, subdomain)">全选</text>
+									<text class="action-btn" @click.stop="clearSubdomain(domain, subdomain)">清空</text>
+								</view>
+								<text class="subdomain-toggle">
+									{{ expandedSubdomains[`${domain}::${subdomain}`] ? '▼' : '▶' }}
+								</text>
 						</view>
 						
-						<checkbox-group @change="q.checked = !q.checked; onCheckChanged()">
-							<label class="chk">
-								<checkbox :value="q.id" :checked="q.checked" />
-								<text>孩子能否完成此项目</text>
-							</label>
-						</checkbox-group>
-					</view>
+							<!-- 题目列表（仅当 subdomain 展开时渲染） -->
+							<view v-if="expandedSubdomains[`${domain}::${subdomain}`]" class="subdomain-questions">
+								<view
+									class="question-card"
+									:class="{ selected: answers[q.id] === 1 }"
+									v-for="q in getVisibleQuestions(domain, subdomain)"
+									:key="q.id"
+									@click="toggleAnswer(q.id)"
+								>
+									<view class="question-content">
+										<checkbox-group>
+											<label class="question-label">
+												<checkbox :value="q.id" :checked="answers[q.id] === 1" />
+												<text class="question-text">{{ q.text }}</text>
+											</label>
+										</checkbox-group>
+									</view>
+								</view>
+							</view>
+						</view>
+					</template>
 				</view>
 			</view>
+		</template>
+	</view>
+		
+		<!-- 底部操作条（吸底） -->
+		<view class="bottom-bar">
+			<view class="progress-bar-container">
+				<text class="progress-text">{{ derivedStats.global.selected }}/{{ derivedStats.global.total }}</text>
+				<view class="progress-bar">
+					<view class="progress-fill" :style="{ width: derivedStats.global.ratio + '%' }"></view>
+				</view>
 		</view>
 		
-		<!-- 无题目提示 -->
-		<view class="no-questions" v-else>
-			<text class="no-questions-text">该年龄段暂无评估题目</text>
-			<text class="no-questions-hint">请联系老师补充题库</text>
-		</view>
-		
-		<!-- 底部按钮 -->
-		<view class="button-container">
-			<button 
-				class="submit-button" 
-				@click="submitAssessment" 
-				:disabled="isSubmitting || totalCount === 0"
-			>
-				<text class="button-text">
-					{{ isSubmitting ? '提交中...' : '提交评估' }}
-				</text>
+			<view class="bottom-actions">
+				<button class="action-btn" @click="saveDraft">
+					<text>保存草稿</text>
+				</button>
+				<button class="action-btn primary" @click="submitAssessment" :disabled="isSubmitting">
+					<text>{{ isSubmitting ? '提交中...' : '提交评估' }}</text>
+				</button>
+				<button class="action-btn" @click="scrollToTop">
+					<text>回到顶部</text>
 			</button>
+			</view>
 		</view>
 		
 		<!-- 加载遮罩 -->
@@ -79,155 +129,454 @@
 </template>
 
 <script>
-	import { questions } from '@/common/questionBank.js'
+import { questions } from '@/common/questionBank.js'
+
+// 领域标签映射
+const domainLabels = {
+	'感知觉': '感知觉',
+	'粗大动作': '粗大动作',
+	'精细动作': '精细动作',
+	'认知': '认知',
+	'语言': '语言',
+	'社会情绪': '社会情绪',
+	'社会互动': '社会互动'
+}
+
+// 子领域标签映射
+const subdomainLabels = {
+	'OSV': '视知觉',
+	'OSH': '听知觉',
+	'OST': '触知觉',
+	'ISP': '本体运动知觉',
+	'ISV': '前庭平衡知觉',
+	'GM': '躯肢体粗大动作',
+	'UEM': '双上肢粗大动作',
+	'FM': '精细动作',
+	'SIP': '社会互动',
+	'SIE': '社会情绪',
+	'COG': '认知',
+	'LANG': '语言',
+	'OM': '口腔动作'
+}
 	
 	export default {
 		data() {
 			return {
-				childInfo: {},
-				formState: {},
+			// 题目数据（按 domain -> subdomain 分组）
+			questionsByDomain: {},
+			
+			// 展开状态
 				expandedDomains: {},
+			expandedSubdomains: {},
+			
+			// 答案（1=完成，0=未完成）
+			answers: {},
+			
+			// 筛选器
+			filters: {
+				keyword: '',
+				domains: [],
+				onlyUnfinished: false
+			},
+			
+			// 提交状态
 				isSubmitting: false,
-				totalCount: 0,
-				checkedCount: 0
+			
+			// 儿童信息
+			childInfo: {}
 			}
 		},
 		computed: {
-			progressPercent() {
-				return this.totalCount > 0 ? Math.round((this.checkedCount / this.totalCount) * 100) : 0
+		// 所有领域
+		allDomains() {
+			const domains = new Set()
+			questions.forEach(q => {
+				if (q.domain) domains.add(q.domain)
+			})
+			return Array.from(domains).sort()
+		},
+		
+		// 统计信息
+		derivedStats() {
+			const stats = {
+				global: { selected: 0, total: 0, ratio: 0 },
+				byDomain: {}
+			}
+			
+			// 统计全局
+			const totalQs = Object.values(this.questionsByDomain).reduce((sum, subdomains) => {
+				return sum + Object.values(subdomains).reduce((s, qs) => s + qs.length, 0)
+			}, 0)
+			
+			const selectedQs = Object.values(this.answers).filter(v => v === 1).length
+			
+			stats.global.total = totalQs
+			stats.global.selected = selectedQs
+			if (totalQs > 0) {
+				stats.global.ratio = Math.round((selectedQs / totalQs) * 100)
+			}
+			
+			// 统计每个 domain
+			this.allDomains.forEach(domain => {
+				const domainQs = this.getQuestionsInDomain(domain)
+				const selected = domainQs.filter(q => this.answers[q.id] === 1).length
+				stats.byDomain[domain] = {
+					selected,
+					total: domainQs.length,
+					ratio: domainQs.length > 0 ? Math.round((selected / domainQs.length) * 100) : 0
+				}
+			})
+			
+			return stats
 			}
 		},
 		onLoad() {
+		console.log('[assessment] onLoad start')
 			this.loadChildInfo()
-			this.loadQuestions()
+		const draft = uni.getStorageSync('assessmentDraft')
+		const hasDraft = draft && Object.keys(draft).length > 0
+		
+		this.initData()
+		
+		if (!hasDraft) {
+			// 首次进入：只展开第一个 domain 的第一个 subdomain
+			this.allDomains.forEach((domain, idx) => {
+				if (idx === 0 && this.hasQuestionsInDomain(domain)) {
+					this.$set(this.expandedDomains, domain, true)
+					const subdomains = this.getSubdomainsInDomain(domain)
+					if (subdomains.length > 0) {
+						this.$set(this.expandedSubdomains, `${domain}::${subdomains[0]}`, true)
+					}
+				} else {
+					this.$set(this.expandedDomains, domain, false)
+				}
+			})
+		}
+		
+		this.loadDraft()
+		
+		// 对于没有草稿答案的题目，初始化为0
+		questions.forEach(q => {
+			if (this.answers[q.id] === undefined) {
+				this.answers[q.id] = 0
+			}
+		})
+		
+		console.log('[assessment] onLoad end')
+	},
+	beforeDestroy() {
+		this.saveDraft()
 		},
 		methods: {
+		// 初始化数据
+		initData() {
+			console.log('[assessment] initData start, questions count:', questions.length)
+			
+			// 按 domain -> subdomain 分组题目
+			this.questionsByDomain = {}
+			questions.forEach(q => {
+				const domain = q.domain || '认知'
+				if (!this.questionsByDomain[domain]) {
+					this.questionsByDomain[domain] = {}
+				}
+				const subdomain = q.subdomain || 'other'
+				if (!this.questionsByDomain[domain][subdomain]) {
+					this.questionsByDomain[domain][subdomain] = []
+				}
+				this.questionsByDomain[domain][subdomain].push(q)
+			})
+			
+			console.log('[assessment] grouped by domain, keys:', Object.keys(this.questionsByDomain))
+			console.log('[assessment] initData end')
+		},
+		
 			// 加载儿童信息
 			loadChildInfo() {
 				this.childInfo = uni.getStorageSync('childInfo') || {}
-				console.log('=== 儿童信息 ===')
-				console.log('儿童信息:', this.childInfo)
-				
-				if (!this.childInfo.name) {
-					uni.showToast({
-						title: '请先填写儿童信息',
-						icon: 'none'
-					})
-					setTimeout(() => {
-						uni.navigateBack()
-					}, 1500)
-					return
-				}
-			},
+		},
+		
+		// 加载草稿
+		loadDraft() {
+			const draft = uni.getStorageSync('assessmentDraft')
+			if (draft) {
+				if (draft.answers) this.answers = draft.answers
+				if (draft.expandedDomains) this.expandedDomains = draft.expandedDomains
+				if (draft.expandedSubdomains) this.expandedSubdomains = draft.expandedSubdomains
+				if (draft.filters) this.filters = draft.filters
+			}
+		},
+		
+		// 保存草稿
+		saveDraft() {
+			uni.setStorageSync('assessmentDraft', {
+				answers: this.answers,
+				expandedDomains: this.expandedDomains,
+				expandedSubdomains: this.expandedSubdomains,
+				filters: this.filters
+			})
+		},
+		
+		// 切换 domain
+		toggleDomain(domain) {
+			this.$set(this.expandedDomains, domain, !this.expandedDomains[domain])
+			this.saveDraft()
+		},
+		
+		// 切换 subdomain
+		toggleSubdomain(key) {
+			this.$set(this.expandedSubdomains, key, !this.expandedSubdomains[key])
+			this.saveDraft()
+		},
+		
+		// 获取 domain 中的题目
+		getQuestionsInDomain(domain) {
+			const questions = []
+			Object.values(this.questionsByDomain[domain] || {}).forEach(list => {
+				questions.push(...list)
+			})
+			return questions
+		},
+		
+		// 获取 domain 中的 subdomains
+		getSubdomainsInDomain(domain) {
+			return Object.keys(this.questionsByDomain[domain] || {}).sort()
+		},
+		
+		// 检查 domain 是否有题目
+		hasQuestionsInDomain(domain) {
+			return this.questionsByDomain[domain] && Object.keys(this.questionsByDomain[domain]).length > 0
+		},
+		
+		// 获取领域统计
+		getDomainStats(domain) {
+			const questions = this.getQuestionsInDomain(domain)
+			const selected = questions.filter(q => this.answers[q.id] === 1).length
+			return {
+				selected,
+				total: questions.length,
+				ratio: questions.length > 0 ? Math.round((selected / questions.length) * 100) : 0
+			}
+		},
+		
+		// 获取子领域统计
+		getSubdomainStats(domain, subdomain) {
+			const questions = this.questionsByDomain[domain]?.[subdomain] || []
+			const selected = questions.filter(q => this.answers[q.id] === 1).length
+			return {
+				selected,
+				total: questions.length,
+				ratio: questions.length > 0 ? Math.round((selected / questions.length) * 100) : 0
+			}
+		},
+		
+		// 获取领域标签
+		getDomainLabel(domain) {
+			return domainLabels[domain] || domain
+		},
+		
+		// 获取子领域标签
+		getSubdomainLabel(subdomain) {
+			return subdomainLabels[subdomain] || subdomain
+		},
+		
+		// 检查 domain 是否有匹配的题目
+		hasMatchingQuestionsInDomain(domain) {
+			if (!this.hasQuestionsInDomain(domain)) return false
 			
-			// 加载题目 - 加载所有题目，不筛选
-			loadQuestions() {
-				console.log('[assessment] 加载所有题目')
-				
-				// 按领域分组所有题目
-				const grouped = {}
-				questions.forEach(q => {
-					const domain = q.domain || '认知'
-					if (!grouped[domain]) {
-						grouped[domain] = []
+			// 如果没有搜索条件，返回 true
+			if (!this.filters.keyword && this.filters.domains.length === 0 && !this.filters.onlyUnfinished) {
+				return true
+			}
+			
+			// 检查是否有匹配的题目
+			const questions = this.getQuestionsInDomain(domain)
+			return this.applyFiltersToQuestions(questions).length > 0
+		},
+		
+		// 检查 subdomain 是否有匹配的题目
+		hasMatchingQuestionsInSubdomain(domain, subdomain) {
+			const questions = this.questionsByDomain[domain]?.[subdomain] || []
+			if (questions.length === 0) return false
+			
+			// 如果没有搜索条件，返回 true
+			if (!this.filters.keyword && this.filters.domains.length === 0 && !this.filters.onlyUnfinished) {
+				return true
+			}
+			
+			// 检查是否有匹配的题目
+			return this.applyFiltersToQuestions(questions).length > 0
+		},
+		
+		// 获取可见的题目（应用筛选）
+		getVisibleQuestions(domain, subdomain) {
+			let questions = this.questionsByDomain[domain]?.[subdomain] || []
+			
+			// 应用筛选
+			return this.applyFiltersToQuestions(questions)
+		},
+		
+		// 对题目应用筛选
+		applyFiltersToQuestions(questions) {
+			return questions.filter(q => {
+				// 关键词筛选
+				if (this.filters.keyword) {
+					const keyword = this.filters.keyword.toLowerCase()
+					if (!q.text.toLowerCase().includes(keyword)) {
+						return false
 					}
-					grouped[domain].push({
-						...q,
-						checked: false
-					})
-				})
-				
-				console.log('[assessment] 分组结果:', Object.keys(grouped), 'total:', Object.values(grouped).reduce((n, arr) => n + arr.length, 0))
-				
-				// 标准化题库结构
-				const doms = ["粗大动作","精细动作","社会互动","认知","语言","感知觉","口腔动作"]
-				const out = {}
-				doms.forEach(d => {
-					out[d] = grouped[d] || []
-				})
-				
-				// 使用Vue.set确保响应式更新
-				this.$set(this, 'formState', out)
-				
-				// 计算统计
-				this.totalCount = Object.values(this.formState).reduce((n, arr) => n + arr.length, 0)
-				this.checkedCount = Object.values(this.formState).reduce((n, arr) => n + arr.filter(i => !!i.checked).length, 0)
-				
-				console.log('[assessment] totalCount:', this.totalCount, 'checkedCount:', this.checkedCount)
-				
-				// 初始化领域展开状态
-				this.initExpandedDomains()
-				
-				// 保存状态
-				uni.setStorageSync('assessmentForm', this.formState)
-			},
-			
-			// 初始化领域展开状态
-			initExpandedDomains() {
-				const domains = Object.keys(this.formState)
-				domains.forEach(domain => {
-					this.$set(this.expandedDomains, domain, true) // 默认展开
-				})
-			},
-			
-			// 勾选变化处理
-			onCheckChanged() {
-				this.checkedCount = Object.values(this.formState).reduce((n, arr) => n + arr.filter(i => !!i.checked).length, 0)
-				uni.setStorageSync('assessmentForm', this.formState)
-			},
-			
-			
-			// 切换领域展开状态
-			toggleDomain(domain) {
-				this.$set(this.expandedDomains, domain, !this.expandedDomains[domain])
-			},
-			
-			// 计算年龄（月）- 保留以防其他地方使用
-			calculateAgeInMonths(birthDate) {
-				if (!birthDate) return 0
-				const birth = new Date(birthDate)
-				const today = new Date()
-				let ageInMonths = (today.getFullYear() - birth.getFullYear()) * 12
-				ageInMonths += today.getMonth() - birth.getMonth()
-				
-				// 如果日期还没到，减1个月
-				if (today.getDate() < birth.getDate()) {
-					ageInMonths--
 				}
 				
-				return Math.max(0, ageInMonths)
+				// 领域筛选
+				if (this.filters.domains.length > 0 && !this.filters.domains.includes(q.domain)) {
+					return false
+				}
+				
+				// 仅看未完成
+				if (this.filters.onlyUnfinished && this.answers[q.id] === 1) {
+					return false
+				}
+				
+				return true
+			})
+		},
+		
+		// 切换答案
+		toggleAnswer(qid) {
+			this.$set(this.answers, qid, this.answers[qid] === 1 ? 0 : 1)
+			this.saveDraft()
+		},
+		
+		// 领域筛选切换
+		toggleDomainFilter(domain) {
+			const idx = this.filters.domains.indexOf(domain)
+			if (idx >= 0) {
+				this.filters.domains.splice(idx, 1)
+			} else {
+				this.filters.domains.push(domain)
+			}
+			this.saveDraft()
+		},
+		
+		// 仅看未完成开关
+		onUnfinishedToggle(e) {
+			this.filters.onlyUnfinished = e.detail.value
+			this.saveDraft()
+		},
+		
+		// 应用筛选（搜索时）
+		applyFilters() {
+			// 如果有搜索关键词，自动展开包含匹配题目的 domain 和 subdomain
+			if (this.filters.keyword) {
+				this.allDomains.forEach(domain => {
+					if (this.hasMatchingQuestionsInDomain(domain)) {
+						// 展开 domain
+						this.$set(this.expandedDomains, domain, true)
+						
+						// 展开有匹配题目的 subdomain
+						const subdomains = this.getSubdomainsInDomain(domain)
+						subdomains.forEach(subdomain => {
+							if (this.hasMatchingQuestionsInSubdomain(domain, subdomain)) {
+								this.$set(this.expandedSubdomains, `${domain}::${subdomain}`, true)
+							}
+						})
+					}
+				})
+				this.saveDraft()
+			}
+			
+			this.$forceUpdate()
+		},
+		
+		// 全选本领域
+		selectAllInDomain(domain) {
+			const questions = this.getQuestionsInDomain(domain)
+			questions.forEach(q => {
+				this.$set(this.answers, q.id, 1)
+			})
+			this.saveDraft()
+		},
+		
+		// 清空本领域
+		clearDomain(domain) {
+			const questions = this.getQuestionsInDomain(domain)
+			questions.forEach(q => {
+				this.$set(this.answers, q.id, 0)
+			})
+			this.saveDraft()
+		},
+		
+		// 全选本子领域
+		selectAllInSubdomain(domain, subdomain) {
+			const questions = this.questionsByDomain[domain]?.[subdomain] || []
+			questions.forEach(q => {
+				this.$set(this.answers, q.id, 1)
+			})
+			this.saveDraft()
+		},
+		
+		// 清空本子领域
+		clearSubdomain(domain, subdomain) {
+			const questions = this.questionsByDomain[domain]?.[subdomain] || []
+			questions.forEach(q => {
+				this.$set(this.answers, q.id, 0)
+			})
+			this.saveDraft()
 			},
 			
 			// 提交评估
 			submitAssessment() {
-				if (this.isSubmitting || this.totalCount === 0) return
+			if (this.isSubmitting) return
 				
 				this.isSubmitting = true
-				
-				console.log('=== 提交评估 ===')
-				console.log('已完成题目:', this.checkedCount)
-				console.log('总题目数:', this.totalCount)
-				console.log('完成率:', this.progressPercent + '%')
 				
 				// 生成评估结果
 				const assessmentResult = {
 					childInfo: this.childInfo,
-					formState: this.formState,
-					checkedCount: this.checkedCount,
-					totalCount: this.totalCount,
-					progressPercent: this.progressPercent,
+				answers: this.answers,
+				formState: this.formatFormState(),
+				checkedCount: this.derivedStats.global.selected,
+				totalCount: this.derivedStats.global.total,
+				progressPercent: this.derivedStats.global.ratio,
 					assessmentDate: new Date().toISOString()
 				}
 				
 				// 保存评估结果
 				uni.setStorageSync('assessmentResult', assessmentResult)
+			
+			// 清除草稿
+			uni.removeStorageSync('assessmentDraft')
 				
 				// 延迟跳转
 				setTimeout(() => {
 					uni.redirectTo({
 						url: '/pages/result/result'
 					})
-				}, 2000)
+			}, 1000)
+		},
+		
+		// 格式化 formState（兼容旧格式）
+		formatFormState() {
+			const formState = {}
+			Object.keys(this.questionsByDomain).forEach(domain => {
+				formState[domain] = []
+				Object.values(this.questionsByDomain[domain]).forEach(list => {
+					list.forEach(q => {
+						formState[domain].push({
+							...q,
+							checked: this.answers[q.id] === 1
+						})
+					})
+				})
+			})
+			return formState
+		},
+		
+		// 回到顶部
+		scrollToTop() {
+			uni.pageScrollTo({
+				scrollTop: 0,
+				duration: 300
+			})
 			}
 		}
 	}
@@ -236,258 +585,289 @@
 <style>
 	.container {
 		min-height: 100vh;
-		background: linear-gradient(135deg, #E8F4FD 0%, #F0F8FF 100%);
-		padding: 30rpx;
-		position: relative;
-	}
-	
-	/* 年龄段和模式信息 */
-	.age-info {
-		background: rgba(135, 206, 235, 0.1);
-		border-radius: 15rpx;
-		padding: 20rpx 30rpx;
-		margin-bottom: 30rpx;
-		text-align: center;
-		border: 2rpx solid rgba(135, 206, 235, 0.3);
-	}
-	
-	.age-text {
-		font-size: 28rpx;
+	background: #F8F9FA;
+	padding-bottom: 180rpx;
+}
+
+/* 顶部工具条（吸顶） */
+.top-bar {
+	position: sticky;
+	top: 0;
+	z-index: 100;
+	background: #FFFFFF;
+	padding: 20rpx;
+	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.top-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20rpx;
+}
+
+.page-title {
+	font-size: 36rpx;
+	font-weight: bold;
 		color: #2C3E50;
-		font-weight: bold;
-		display: block;
-		margin-bottom: 10rpx;
-	}
-	
-	.mode-text {
-		font-size: 24rpx;
+}
+
+.global-stats {
+	font-size: 28rpx;
+	color: #87CEEB;
+	font-weight: 600;
+}
+
+.search-box {
+	position: relative;
+	margin-bottom: 20rpx;
+}
+
+.search-input {
+	width: 100%;
+	height: 70rpx;
+	background: #F8F9FA;
+	border-radius: 35rpx;
+	padding: 0 70rpx 0 30rpx;
+	font-size: 26rpx;
+}
+
+.search-icon {
+	position: absolute;
+	right: 30rpx;
+	top: 50%;
+	transform: translateY(-50%);
+	font-size: 28rpx;
+}
+
+.domain-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 15rpx;
+	margin-bottom: 20rpx;
+}
+
+.chip {
+	padding: 8rpx 20rpx;
+	background: #F8F9FA;
+	border: 2rpx solid #E8F4FD;
+	border-radius: 30rpx;
+	font-size: 24rpx;
 		color: #7F8C8D;
-		margin-left: 10rpx;
-	}
-	
-	
-	/* 进度信息 */
-	.progress-container {
-		background: rgba(255, 255, 255, 0.9);
-		border-radius: 20rpx;
-		padding: 25rpx 30rpx;
+}
+
+.chip.active {
+	background: #87CEEB;
+	color: #FFFFFF;
+	border-color: #87CEEB;
+}
+
+.filter-switch {
+	display: flex;
+	align-items: center;
+	gap: 15rpx;
+}
+
+.switch-label {
+	font-size: 26rpx;
+	color: #2C3E50;
+}
+
+/* 主列表 */
+.questions-container {
+	padding: 20rpx;
+}
+
+.domain-section {
 		margin-bottom: 30rpx;
-		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
 	}
 	
-	.progress-text {
-		text-align: center;
-		font-size: 26rpx;
-		color: #7F8C8D;
-		font-weight: 500;
+.domain-header {
+	background: linear-gradient(135deg, #87CEEB, #98FB98);
+	padding: 25rpx 30rpx;
+	border-radius: 15rpx;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
 		margin-bottom: 15rpx;
 	}
 	
-	.progress-bar {
-		width: 100%;
-		height: 12rpx;
-		background: #E8F4FD;
-		border-radius: 6rpx;
-		overflow: hidden;
-	}
-	
-	.progress-fill {
-		height: 100%;
-		background: linear-gradient(90deg, #87CEEB, #98FB98);
-		border-radius: 6rpx;
-		transition: width 0.3s ease;
-	}
-	
-	/* 问题卡片 */
-	.question-card {
-		background: rgba(255, 255, 255, 0.9);
-		border-radius: 20rpx;
-		padding: 40rpx 30rpx;
-		margin-bottom: 120rpx;
-		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
-	}
-	
-	.question-header {
-		margin-bottom: 30rpx;
-	}
-	
-	.question-title {
-		display: block;
-		font-size: 36rpx;
-		font-weight: bold;
-		color: #2C3E50;
-		line-height: 1.4;
-		margin-bottom: 15rpx;
-	}
-	
-	.question-meta {
-		display: flex;
-		flex-direction: column;
-		gap: 8rpx;
-		margin-top: 15rpx;
-	}
-	
-	.question-category {
-		display: inline-block;
-		font-size: 24rpx;
-		color: #87CEEB;
-		background: rgba(135, 206, 235, 0.1);
-		padding: 8rpx 16rpx;
-		border-radius: 20rpx;
-		font-weight: 500;
-		align-self: flex-start;
-	}
-	
-	.question-subcategory {
+.domain-title {
+	font-size: 32rpx;
+	font-weight: bold;
+	color: #FFFFFF;
+}
+
+.domain-stats {
+	font-size: 26rpx;
+	color: #FFFFFF;
+	margin: 0 15rpx;
+}
+
+.domain-actions {
+	display: flex;
+	gap: 20rpx;
+}
+
+.action-btn {
 		font-size: 22rpx;
-		color: #7F8C8D;
-		background: rgba(127, 140, 141, 0.1);
-		padding: 6rpx 12rpx;
-		border-radius: 15rpx;
-		align-self: flex-start;
-	}
-	
-	.question-description {
-		margin-bottom: 40rpx;
-		padding: 20rpx;
-		background: rgba(135, 206, 235, 0.05);
-		border-radius: 15rpx;
-		border-left: 4rpx solid #87CEEB;
-	}
-	
-	.description-text {
-		font-size: 26rpx;
-		color: #7F8C8D;
-		line-height: 1.5;
-	}
-	
-	/* 评估选项 */
-	.assessment-option {
-		margin-top: 40rpx;
-	}
-	
-	.option-box {
+	color: #FFFFFF;
+	padding: 5rpx 15rpx;
+	border: 1rpx solid rgba(255,255,255,0.5);
+	border-radius: 10rpx;
+	background: rgba(255,255,255,0.2);
+}
+
+.domain-toggle {
+	font-size: 28rpx;
+	color: #FFFFFF;
+}
+
+.domain-content {
+	padding-left: 20rpx;
+}
+
+.subdomain-section {
+	margin-bottom: 20rpx;
+}
+
+.subdomain-header {
+	background: #E8F4FD;
+	padding: 20rpx 25rpx;
+	border-radius: 12rpx;
 		display: flex;
 		align-items: center;
-		padding: 30rpx;
-		background: rgba(255, 255, 255, 0.9);
-		border: 3rpx solid #E8F4FD;
-		border-radius: 20rpx;
-		transition: all 0.3s ease;
-	}
-	
-	.option-box.selected {
-		background: rgba(135, 206, 235, 0.1);
-		border-color: #87CEEB;
-		box-shadow: 0 4rpx 20rpx rgba(135, 206, 235, 0.3);
-	}
-	
-	.option-icon {
-		font-size: 40rpx;
-		margin-right: 20rpx;
-		transition: all 0.3s ease;
-	}
-	
-	.option-text {
-		font-size: 28rpx;
-		color: #2C3E50;
-		font-weight: 500;
-		flex: 1;
-	}
-	
-	.option-box.selected .option-text {
-		color: #87CEEB;
-		font-weight: bold;
-	}
-	
-	.icon-text {
-		font-size: 28rpx;
-	}
-	
-	.option-content {
-		flex: 1;
-	}
-	
-	.option-text {
-		display: block;
-		font-size: 28rpx;
-		color: #2C3E50;
-		font-weight: 500;
-		margin-bottom: 5rpx;
-	}
-	
-	.option-score {
-		font-size: 22rpx;
-		color: #7F8C8D;
-	}
-	
-	.option-check {
-		width: 40rpx;
-		height: 40rpx;
-		background: #87CEEB;
-		border-radius: 50%;
+	justify-content: space-between;
+	margin-bottom: 10rpx;
+}
+
+.subdomain-title {
+	font-size: 28rpx;
+	font-weight: 600;
+	color: #2C3E50;
+}
+
+.subdomain-stats {
+	font-size: 24rpx;
+	color: #87CEEB;
+	margin-left: 15rpx;
+}
+
+.subdomain-actions {
+	display: flex;
+	gap: 20rpx;
+	margin-left: auto;
+}
+
+.subdomain-toggle {
+	font-size: 24rpx;
+	color: #7F8C8D;
+	margin-left: 15rpx;
+}
+
+.subdomain-questions {
+	padding: 0 10rpx;
+}
+
+.question-card {
+	background: #FFFFFF;
+	padding: 20rpx;
+	margin-bottom: 15rpx;
+	border-radius: 12rpx;
+	border: 2rpx solid transparent;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+	transition: all 0.3s;
+}
+
+.question-card.selected {
+	background: #F0F8FF;
+	border-color: #87CEEB;
+}
+
+.question-content {
+	line-height: 1.5;
+}
+
+.question-label {
 		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-	
-	.check-icon {
-		font-size: 24rpx;
-		color: #FFFFFF;
-		font-weight: bold;
-	}
-	
-	/* 底部按钮 */
-	.button-container {
+	align-items: flex-start;
+	gap: 15rpx;
+}
+
+.question-text {
+	font-size: 26rpx;
+	color: #2C3E50;
+	flex: 1;
+}
+
+.show-more-btn {
+	text-align: center;
+	padding: 20rpx;
+	color: #87CEEB;
+	font-size: 26rpx;
+	background: #F0F8FF;
+	border-radius: 12rpx;
+}
+
+/* 底部操作条（吸底） */
+.bottom-bar {
 		position: fixed;
 		bottom: 0;
 		left: 0;
 		right: 0;
-		padding: 30rpx;
-		background: rgba(255, 255, 255, 0.95);
-		backdrop-filter: blur(10rpx);
-		border-top: 1rpx solid #E8F4FD;
-	}
-	
-	.submit-button {
+	background: #FFFFFF;
+	padding: 20rpx;
+	box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.1);
+	z-index: 99;
+}
+
+.progress-bar-container {
+	margin-bottom: 20rpx;
+}
+
+.progress-text {
+	font-size: 24rpx;
+	color: #7F8C8D;
+	margin-bottom: 10rpx;
+	display: block;
+}
+
+.progress-bar {
 		width: 100%;
+	height: 8rpx;
+	background: #F0F0F0;
+	border-radius: 4rpx;
+	overflow: hidden;
+}
+
+.progress-fill {
+	height: 100%;
+	background: linear-gradient(90deg, #87CEEB, #98FB98);
+	transition: width 0.3s;
+}
+
+.bottom-actions {
+	display: flex;
+	gap: 15rpx;
+}
+
+.bottom-actions .action-btn {
+	flex: 1;
 		height: 80rpx;
+	background: #F8F9FA;
+	border: 2rpx solid #E8F4FD;
 		border-radius: 40rpx;
-		border: none;
+	font-size: 28rpx;
+	color: #2C3E50;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		line-height: 80rpx;
-		padding: 0;
-		font-size: 28rpx;
-		font-weight: 600;
-		overflow: hidden;
-		transition: all 0.3s;
+}
+
+.bottom-actions .action-btn.primary {
 		background: linear-gradient(135deg, #87CEEB, #98FB98);
 		color: #FFFFFF;
-		box-shadow: 0 4rpx 15rpx rgba(135, 206, 235, 0.3);
-	}
-	
-	.submit-button:disabled {
-		background: #BDC3C7;
-		box-shadow: none;
-		opacity: 0.6;
-	}
-	
-	button.submit-button::after {
 		border: none;
-	}
-	
-	.button-text {
-		height: 100%;
-		line-height: 80rpx;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		margin: 0;
-		padding: 0;
-		font-size: 28rpx;
-		font-weight: bold;
 	}
 	
 	/* 加载遮罩 */
@@ -501,185 +881,34 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		z-index: 9999;
+	z-index: 999;
 	}
 	
 	.loading-content {
-		background: rgba(255, 255, 255, 0.95);
+	background: #FFFFFF;
+	padding: 40rpx;
 		border-radius: 20rpx;
-		padding: 60rpx 40rpx;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.2);
+	gap: 20rpx;
 	}
 	
 	.loading-spinner {
 		width: 60rpx;
 		height: 60rpx;
 		border: 4rpx solid #E8F4FD;
-		border-top: 4rpx solid #87CEEB;
+	border-top-color: #87CEEB;
 		border-radius: 50%;
 		animation: spin 1s linear infinite;
-		margin-bottom: 30rpx;
 	}
 	
 	@keyframes spin {
-		0% { transform: rotate(0deg); }
-		100% { transform: rotate(360deg); }
+	to { transform: rotate(360deg); }
 	}
 	
 	.loading-text {
 		font-size: 28rpx;
-		color: #2C3E50;
-		font-weight: 500;
-	}
-	
-	/* 子分类头部 */
-	.subcategory-header {
-		background: rgba(135, 206, 235, 0.1);
-		padding: 30rpx;
-		margin: 20rpx;
-		border-radius: 20rpx;
-		border-left: 6rpx solid #87CEEB;
-	}
-	
-	.subcategory-title {
-		font-size: 32rpx;
-		font-weight: bold;
-		color: #2C3E50;
-		display: block;
-		margin-bottom: 10rpx;
-	}
-	
-	.subcategory-count {
-		font-size: 24rpx;
-		color: #7F8C8D;
-	}
-	
-	/* 领域分组 */
-	.domain-section {
-		margin-bottom: 30rpx;
-	}
-	
-	.domain-header {
-		background: rgba(135, 206, 235, 0.1);
-		padding: 20rpx 30rpx;
-		border-radius: 15rpx;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 15rpx;
-		border-left: 6rpx solid #87CEEB;
-	}
-	
-	.domain-title {
-		font-size: 28rpx;
-		font-weight: bold;
-		color: #2C3E50;
-		flex: 1;
-	}
-	
-	.domain-count {
-		font-size: 24rpx;
-		color: #7F8C8D;
-		margin-right: 20rpx;
-	}
-	
-	.domain-toggle {
-		font-size: 24rpx;
-		color: #87CEEB;
-		font-weight: bold;
-	}
-	
-	.domain-questions {
-		padding: 0 20rpx;
-	}
-	
-	/* 题目列表容器 */
-	.questions-container {
-		padding: 0 20rpx;
-		margin-bottom: 120rpx;
-	}
-	
-	/* 无题目提示 */
-	.no-questions {
-		text-align: center;
-		padding: 100rpx 30rpx;
-	}
-	
-	.no-questions-text {
-		font-size: 32rpx;
-		color: #7F8C8D;
-		display: block;
-		margin-bottom: 20rpx;
-	}
-	
-	.no-questions-hint {
-		font-size: 24rpx;
-		color: #BDC3C7;
-	}
-	
-	/* 卡片样式 */
-	.card {
-		background: #fff;
-		border-radius: 12rpx;
-		padding: 20rpx;
-		margin-bottom: 20rpx;
-		box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
-		transition: background-color 0.25s ease, border-color 0.25s ease;
-		border: 1rpx solid #eef2f7;
-	}
-	
-	.card.selected {
-		background: #E8F5E9 !important;
-		border-color: #4CAF50;
-	}
-	
-	/* 卡片头部 */
-	.card-hd {
-		display: flex;
-		align-items: flex-start;
-		margin-bottom: 15rpx;
-	}
-	
-	.no {
-		color: #2196F3;
-		margin-right: 8rpx;
-		font-size: 24rpx;
-		font-weight: bold;
-		min-width: 40rpx;
-	}
-	
-	.title {
-		font-weight: 600;
-		font-size: 28rpx;
-		color: #2C3E50;
-		line-height: 1.5;
-		flex: 1;
-	}
-	
-	/* 描述区域 */
-	.desc {
-		margin-bottom: 15rpx;
-		padding: 15rpx;
-		border-radius: 8rpx;
-		font-size: 24rpx;
-		color: #7F8C8D;
-		line-height: 1.4;
-	}
-	
-	.neutral-bg {
-		background: transparent !important;
-	}
-	
-	/* checkbox 样式 */
-	.chk {
-		display: flex;
-		align-items: center;
-		gap: 12rpx;
-		margin-top: 12rpx;
-		font-size: 26rpx;
 		color: #2C3E50;
 	}
 </style>

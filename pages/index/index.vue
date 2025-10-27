@@ -1,54 +1,64 @@
 <template>
 	<view class="container">
-		<!-- 顶部装饰 -->
-		<view class="header-decoration">
-			<view class="decoration-circle circle-1"></view>
-			<view class="decoration-circle circle-2"></view>
-			<view class="decoration-circle circle-3"></view>
+		<!-- Logo 和品牌标语区域 -->
+		<view class="logo-section">
+			<view class="logo-wrapper">
+				<image class="logo" src="/static/logo.png" mode="aspectFit" />
+			</view>
+			<text class="brand-name">睿智全纳融合教育</text>
+			<text class="brand-sub-slogan">科学评估 · 专业指导 · 健康成长</text>
 		</view>
 		
 		<!-- 主标题区域 -->
 		<view class="title-section">
-			<view class="app-icon">
-				<text class="icon-text">👶</text>
-			</view>
 			<text class="main-title">知动儿童综合发育测评</text>
-			<text class="subtitle">科学评估 · 专业指导 · 健康成长</text>
+			<text class="subtitle">科学评估，专业指导</text>
 		</view>
 		
-		<!-- 功能介绍卡片 -->
-		<view class="feature-card">
-			<view class="feature-item">
-				<view class="feature-icon">📝</view>
-				<text class="feature-text">填写儿童基本信息</text>
+		<!-- 步骤卡片 -->
+		<view class="steps-section">
+			<!-- 步骤1 -->
+			<view class="step-card">
+				<view class="step-indicator"></view>
+				<view class="step-content">
+					<view class="step-number">01</view>
+					<text class="step-title">填写儿童信息</text>
+					<text class="step-desc">录入基本信息与临床数据</text>
+				</view>
 			</view>
-			<view class="feature-item">
-				<view class="feature-icon">📊</view>
-				<text class="feature-text">完成专业发育评估</text>
+			
+			<!-- 步骤2 -->
+			<view class="step-card">
+				<view class="step-indicator"></view>
+				<view class="step-content">
+					<view class="step-number">02</view>
+					<text class="step-title">完成发育评估</text>
+					<text class="step-desc">多维度专业测评工具</text>
+				</view>
 			</view>
-			<view class="feature-item">
-				<view class="feature-icon">📋</view>
-				<text class="feature-text">获得详细分析报告</text>
+			
+			<!-- 步骤3 -->
+			<view class="step-card">
+				<view class="step-indicator"></view>
+				<view class="step-content">
+					<view class="step-number">03</view>
+					<text class="step-title">获取分析报告</text>
+					<text class="step-desc">个性化成长建议与指导</text>
+				</view>
 			</view>
-		</view>
-		
-		<!-- 描述文字 -->
-		<view class="description">
-			<text class="desc-text">填写信息，完成发育评估，生成综合分析报告</text>
-			<text class="desc-subtext">帮助家长了解孩子的发育状况，提供科学的成长建议</text>
 		</view>
 		
 		<!-- 开始评估按钮 -->
 		<view class="button-section">
 			<button class="start-button" @click="startAssessment">
 				<text class="button-text">开始评估</text>
-				<text class="button-icon">→</text>
 			</button>
 		</view>
 		
-		<!-- 底部说明 -->
-		<view class="footer-info">
-			<text class="footer-text">本测评基于专业发育量表，仅供参考</text>
+		<!-- 版权信息 -->
+		<view class="footer">
+			<text class="footer-text">© 2024 睿智全纳融合教育</text>
+			<text class="footer-subtext">本测评基于专业发育量表，仅供参考</text>
 		</view>
 	</view>
 </template>
@@ -61,11 +71,9 @@ export default {
 		}
 	},
 	onLoad() {
-		// 页面加载时的初始化
 		console.log('[index] page loaded')
 	},
 	methods: {
-		// 开始评估按钮点击事件
 		startAssessment() {
 			uni.navigateTo({
 				url: '/pages/child-info/child-info'
@@ -75,216 +83,249 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
+.container {
+	min-height: 100vh;
+	background: linear-gradient(180deg, #fff 0%, #F5F9FC 100%);
+	padding: 60rpx 40rpx 40rpx;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+/* Logo 和品牌标语区域 */
+.logo-section {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin-bottom: 50rpx;
+}
+
+.logo-wrapper {
+	width: 320rpx;
+	height: 320rpx;
+	background: #fff;
+	border-radius: 32rpx;
+	box-shadow: 0 12rpx 40rpx rgba(233, 58, 138, 0.15);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 24rpx;
+	transition: all 0.3s ease;
+	overflow: hidden;
+}
+
+.logo-wrapper:hover {
+	transform: scale(1.05);
+	box-shadow: 0 16rpx 48rpx rgba(233, 58, 138, 0.25);
+}
+
+.logo {
+	width: 280rpx;
+	height: 280rpx;
+}
+
+.brand-name {
+	font-size: 38rpx;
+	font-weight: bold;
+	color: #E93A8A;
+	margin-bottom: 12rpx;
+	text-align: center;
+}
+
+.brand-sub-slogan {
+	font-size: 26rpx;
+	color: #999;
+	line-height: 1.6;
+	text-align: center;
+}
+
+/* 主标题区域 */
+.title-section {
+	text-align: center;
+	margin-bottom: 60rpx;
+}
+
+.main-title {
+	display: block;
+	font-size: 44rpx;
+	font-weight: bold;
+	color: #333;
+	margin-bottom: 16rpx;
+	line-height: 1.4;
+}
+
+.subtitle {
+	display: block;
+	font-size: 28rpx;
+	color: #999;
+	line-height: 1.5;
+}
+
+/* 步骤卡片区域 */
+.steps-section {
+	width: 100%;
+	margin-bottom: 60rpx;
+}
+
+.step-card {
+	background: #fff;
+	border-radius: 16rpx;
+	margin-bottom: 24rpx;
+	padding: 30rpx;
+	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+	position: relative;
+	overflow: hidden;
+}
+
+.step-indicator {
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 8rpx;
+	background: linear-gradient(180deg, #E93A8A, #FF6BA8);
+}
+
+.step-content {
+	display: flex;
+	flex-direction: column;
+}
+
+.step-number {
+	display: inline-block;
+	width: 56rpx;
+	height: 56rpx;
+	line-height: 56rpx;
+	text-align: center;
+	background: linear-gradient(135deg, #E93A8A, #009FC2);
+	border-radius: 12rpx;
+	font-size: 24rpx;
+	font-weight: bold;
+	color: #fff;
+	margin-bottom: 16rpx;
+	box-shadow: 0 4rpx 12rpx rgba(233, 58, 138, 0.3);
+}
+
+.step-title {
+	font-size: 32rpx;
+	font-weight: bold;
+	color: #333;
+	margin-bottom: 8rpx;
+	line-height: 1.4;
+}
+
+.step-desc {
+	font-size: 26rpx;
+	color: #999;
+	line-height: 1.5;
+}
+
+/* 按钮区域 */
+.button-section {
+	width: 100%;
+	margin-bottom: 40rpx;
+}
+
+.start-button {
+	width: 100%;
+	height: 96rpx;
+	background: linear-gradient(135deg, #E93A8A, #009FC2);
+	border-radius: 48rpx;
+	border: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 8rpx 30rpx rgba(233, 58, 138, 0.4);
+	position: relative;
+	overflow: hidden;
+}
+
+.start-button::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: -100%;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+	transition: left 0.5s;
+}
+
+.start-button:active::before {
+	left: 100%;
+}
+
+.button-text {
+	font-size: 36rpx;
+	font-weight: bold;
+	color: #fff;
+}
+
+/* 版权信息 */
+.footer {
+	text-align: center;
+	margin-top: auto;
+	padding-top: 40rpx;
+}
+
+.footer-text {
+	display: block;
+	font-size: 24rpx;
+	color: #999;
+	margin-bottom: 8rpx;
+	line-height: 1.5;
+}
+
+.footer-subtext {
+	display: block;
+	font-size: 22rpx;
+	color: #ccc;
+	line-height: 1.5;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 750px) {
 	.container {
-		min-height: 100vh;
-		background: linear-gradient(135deg, #E8F4FD 0%, #F0F8FF 100%);
-		padding: 40rpx 30rpx;
-		position: relative;
-		overflow: hidden;
+		padding: 40rpx 30rpx 30rpx;
 	}
 	
-	/* 顶部装饰圆圈 */
-	.header-decoration {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		height: 200rpx;
-		z-index: 1;
+	.logo-wrapper {
+		width: 260rpx;
+		height: 260rpx;
 	}
 	
-	.decoration-circle {
-		position: absolute;
-		border-radius: 50%;
-		opacity: 0.1;
+	.logo {
+		width: 230rpx;
+		height: 230rpx;
 	}
 	
-	.circle-1 {
-		width: 120rpx;
-		height: 120rpx;
-		background-color: #87CEEB;
-		top: 20rpx;
-		right: 60rpx;
-	}
-	
-	.circle-2 {
-		width: 80rpx;
-		height: 80rpx;
-		background-color: #98FB98;
-		top: 80rpx;
-		right: 20rpx;
-	}
-	
-	.circle-3 {
-		width: 60rpx;
-		height: 60rpx;
-		background-color: #FFB6C1;
-		top: 40rpx;
-		right: 120rpx;
-	}
-	
-	/* 标题区域 */
-	.title-section {
-		text-align: center;
-		margin-top: 80rpx;
-		margin-bottom: 60rpx;
-		position: relative;
-		z-index: 2;
-	}
-	
-	.app-icon {
-		width: 120rpx;
-		height: 120rpx;
-		background: linear-gradient(135deg, #87CEEB, #98FB98);
-		border-radius: 50%;
-		margin: 0 auto 30rpx;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		box-shadow: 0 8rpx 20rpx rgba(135, 206, 235, 0.3);
-	}
-	
-	.icon-text {
-		font-size: 60rpx;
+	.brand-name {
+		font-size: 34rpx;
 	}
 	
 	.main-title {
-		display: block;
-		font-size: 48rpx;
-		font-weight: bold;
-		color: #2C3E50;
-		margin-bottom: 20rpx;
-		line-height: 1.3;
+		font-size: 40rpx;
 	}
 	
-	.subtitle {
-		display: block;
-		font-size: 28rpx;
-		color: #7F8C8D;
-		font-weight: 300;
+	.step-card {
+		padding: 24rpx;
 	}
 	
-	/* 功能介绍卡片 */
-	.feature-card {
-		background: rgba(255, 255, 255, 0.9);
-		border-radius: 20rpx;
-		padding: 40rpx 30rpx;
-		margin-bottom: 50rpx;
-		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
-		backdrop-filter: blur(10rpx);
+	.step-title {
+		font-size: 30rpx;
 	}
 	
-	.feature-item {
-		display: flex;
-		align-items: center;
-		margin-bottom: 30rpx;
-	}
-	
-	.feature-item:last-child {
-		margin-bottom: 0;
-	}
-	
-	.feature-icon {
-		width: 60rpx;
-		height: 60rpx;
-		background: linear-gradient(135deg, #FFB6C1, #FFA07A);
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		margin-right: 20rpx;
-		font-size: 28rpx;
-	}
-	
-	.feature-text {
-		font-size: 32rpx;
-		color: #34495E;
-		font-weight: 500;
-	}
-	
-	/* 描述文字 */
-	.description {
-		text-align: center;
-		margin-bottom: 80rpx;
-	}
-	
-	.desc-text {
-		display: block;
-		font-size: 32rpx;
-		color: #2C3E50;
-		line-height: 1.6;
-		margin-bottom: 20rpx;
-		font-weight: 500;
-	}
-	
-	.desc-subtext {
-		display: block;
-		font-size: 26rpx;
-		color: #7F8C8D;
-		line-height: 1.5;
-	}
-	
-	/* 按钮区域 */
-	.button-section {
-		text-align: center;
-		margin-bottom: 60rpx;
+	.step-desc {
+		font-size: 24rpx;
 	}
 	
 	.start-button {
-		width: 400rpx;
-		height: 100rpx;
-		background: linear-gradient(135deg, #87CEEB, #98FB98);
-		border-radius: 50rpx;
-		border: none;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		box-shadow: 0 8rpx 25rpx rgba(135, 206, 235, 0.4);
-		position: relative;
-		overflow: hidden;
-	}
-	
-	.start-button::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: -100%;
-		width: 100%;
-		height: 100%;
-		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-		transition: left 0.5s;
-	}
-	
-	.start-button:active::before {
-		left: 100%;
+		height: 88rpx;
 	}
 	
 	.button-text {
-		font-size: 36rpx;
-		font-weight: bold;
-		color: #FFFFFF;
-		margin-right: 10rpx;
+		font-size: 34rpx;
 	}
-	
-	.button-icon {
-		font-size: 32rpx;
-		color: #FFFFFF;
-		font-weight: bold;
-	}
-	
-	/* 底部说明 */
-	.footer-info {
-		text-align: center;
-		position: absolute;
-		bottom: 40rpx;
-		left: 30rpx;
-		right: 30rpx;
-	}
-	
-	.footer-text {
-		font-size: 24rpx;
-		color: #BDC3C7;
-		line-height: 1.4;
-	}
+}
 </style>
