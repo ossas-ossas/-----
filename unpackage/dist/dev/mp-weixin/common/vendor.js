@@ -18824,6 +18824,11 @@ var ageBands = [{
   ageMinMonths: 36,
   ageMaxMonths: 48
 }, {
+  key: '48_60m',
+  label: '48-60个月',
+  ageMinMonths: 48,
+  ageMaxMonths: 60
+}, {
   key: '60_72m',
   label: '60-72个月',
   ageMinMonths: 60,
@@ -25761,6 +25766,753 @@ var questions = [
   domain: '语言',
   subdomain: 'MLEN',
   ageBandKey: '36_48m',
+  type: 'check',
+  checked: false
+},
+// 48-60个月题目
+// 躯肢体粗大动作(GM)功能发育
+{
+  id: '48_60m-GM-001',
+  text: '四点爬姿摆位下，可自主独立完成正确对侧交替抬脚、抬手并能倒数数(10~1下)的多样性活动与姿势发育',
+  domain: '粗大动作',
+  subdomain: 'GM',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-GM-002',
+  text: '双手协同携物及蹲姿摆位下，可自主独立完成向前蹲跳2下的活动发育',
+  domain: '粗大动作',
+  subdomain: 'GM',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-GM-003',
+  text: '双手协同携物及蹲姿摆位下，可自主独立完成向后蹲跳2下的活动发育',
+  domain: '粗大动作',
+  subdomain: 'GM',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+},
+// 一般儿精细动作(FM)功能发育
+{
+  id: '48_60m-FM-001',
+  text: '穿套头衫',
+  domain: '精细动作',
+  subdomain: 'FM',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-FM-002',
+  text: '解开小扣子',
+  domain: '精细动作',
+  subdomain: 'FM',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-FM-003',
+  text: '画正方形',
+  domain: '精细动作',
+  subdomain: 'FM',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-FM-004',
+  text: '剪正方形',
+  domain: '精细动作',
+  subdomain: 'FM',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-FM-005',
+  text: '将纸对折',
+  domain: '精细动作',
+  subdomain: 'FM',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-FM-006',
+  text: '扣上小扣子',
+  domain: '精细动作',
+  subdomain: 'FM',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-FM-007',
+  text: '在线条范围内着色',
+  domain: '精细动作',
+  subdomain: 'FM',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-FM-008',
+  text: '画三角形',
+  domain: '精细动作',
+  subdomain: 'FM',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-FM-009',
+  text: '仿写数字，拼音',
+  domain: '精细动作',
+  subdomain: 'FM',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-FM-010',
+  text: '用筷子夹食物',
+  domain: '精细动作',
+  subdomain: 'FM',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-FM-011',
+  text: '将黏土揉成小球',
+  domain: '精细动作',
+  subdomain: 'FM',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+},
+// 一般儿社会性(SI)互动功能发育 - 与人互动(SIP)
+{
+  id: '48_60m-SIP-001',
+  text: '能和同伴玩团体游戏',
+  domain: '社会互动',
+  subdomain: 'SIP',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIP-002',
+  text: '能和同伴交谈',
+  domain: '社会互动',
+  subdomain: 'SIP',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIP-003',
+  text: '能自发的轮流及分享玩具',
+  domain: '社会互动',
+  subdomain: 'SIP',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIP-004',
+  text: '会在游戏中称赞或批评别的小朋友行为',
+  domain: '社会互动',
+  subdomain: 'SIP',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIP-005',
+  text: '能主动和同伴合作',
+  domain: '社会互动',
+  subdomain: 'SIP',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIP-006',
+  text: '能独立和同伴交朋友',
+  domain: '社会互动',
+  subdomain: 'SIP',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIP-007',
+  text: '在小组活动或其他教学情境时能适当响应(如：对教学内容或指令有响应)',
+  domain: '社会互动',
+  subdomain: 'SIP',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIP-008',
+  text: '能在适当时机用请、谢谢或不客气等用语',
+  domain: '社会互动',
+  subdomain: 'SIP',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIP-009',
+  text: '在全新的游戏情境下，能与人分享物品及器材',
+  domain: '社会互动',
+  subdomain: 'SIP',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIP-010',
+  text: '会把周遭的人及孩子当成朋友',
+  domain: '社会互动',
+  subdomain: 'SIP',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIP-011',
+  text: '交谈时，会注意听别人说话',
+  domain: '社会互动',
+  subdomain: 'SIP',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIP-012',
+  text: '在使用别人正在使用的物品时，会征求同意',
+  domain: '社会互动',
+  subdomain: 'SIP',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIP-013',
+  text: '能和同伴计划将来要玩什么',
+  domain: '社会互动',
+  subdomain: 'SIP',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+},
+// 一般儿社会性(SI)互动功能发育 - 与其他互动(SIE)
+{
+  id: '48_60m-SIE-001',
+  text: '能避免一般危险(如：破碎物品或危险的动物)',
+  domain: '社会互动',
+  subdomain: 'SIE',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIE-002',
+  text: '能先试着独立完成工作几分钟，而不急着寻求协助',
+  domain: '社会互动',
+  subdomain: 'SIE',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIE-003',
+  text: '能完成一件工作(如：画图、拼图)',
+  domain: '社会互动',
+  subdomain: 'SIE',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIE-004',
+  text: '能在不同的学习区选择喜欢的活动',
+  domain: '社会互动',
+  subdomain: 'SIE',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIE-005',
+  text: '小心使用他人物品',
+  domain: '社会互动',
+  subdomain: 'SIE',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIE-006',
+  text: '能说出男人和女人的区别',
+  domain: '社会互动',
+  subdomain: 'SIE',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIE-007',
+  text: '能分辨适当或不适当的行为',
+  domain: '社会互动',
+  subdomain: 'SIE',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIE-008',
+  text: '能选择适当的行为，以替代不适当的行为',
+  domain: '社会互动',
+  subdomain: 'SIE',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIE-009',
+  text: '能扮演不同的角色',
+  domain: '社会互动',
+  subdomain: 'SIE',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+},
+// 一般儿社会性(SI)互动功能发育 - 情绪与自我(SIS)
+{
+  id: '48_60m-SIS-001',
+  text: '会对奇怪的问题或好笑的图片笑',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-002',
+  text: '开始判断各种情况产生的原因',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-003',
+  text: '表达情绪的行为更为准确、复杂',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-004',
+  text: '随着语言发展，移情反应更深思熟虑',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-005',
+  text: '能用较抽象的方式(如：唱歌)来表达自己的情绪',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-006',
+  text: '可以把一些行为和道德规范相互比较，产生相应的情绪',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-007',
+  text: '能具体描述自己的感觉(如：我累了)',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-008',
+  text: '能说出自己喜欢的事或活动',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-009',
+  text: '能说出眼耳鼻是做什么用的',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-010',
+  text: '希望有独处或一个人的时候',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-011',
+  text: '能回答关于如何保持清洁的方法',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-012',
+  text: '能在游戏或学习时说出最喜欢哪一部分',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-013',
+  text: '能说出婴儿是从哪里来',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-014',
+  text: '能说出对某些事物的感觉',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-015',
+  text: '能说出自己的愿望',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-016',
+  text: '能正面看待自己，谈自己兴趣',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-017',
+  text: '能说出自己在某时最喜欢做的事',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-SIS-018',
+  text: '能对自己喜欢某些事物提出理解',
+  domain: '社会互动',
+  subdomain: 'SIS',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+},
+// 一般儿认知(M)功能发育 - 注意(MAN)
+{
+  id: '48_60m-MAN-001',
+  text: '能注意事件中的细节',
+  domain: '认知',
+  subdomain: 'MAN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MAN-002',
+  text: '能注意故事或事件中抽象的状况',
+  domain: '认知',
+  subdomain: 'MAN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+},
+// 一般儿认知(M)功能发育 - 记忆(MRN)
+{
+  id: '48_60m-MRN-001',
+  text: '能用语言描述电视中的故事情节',
+  domain: '认知',
+  subdomain: 'MRN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MRN-002',
+  text: '能记得并重复听到的5-6个字的句子，且顺序正确(如：太阳出来了)',
+  domain: '认知',
+  subdomain: 'MRN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MRN-003',
+  text: '在一次性呈现后,能再现10个熟悉物品中,能够记住4-5个',
+  domain: '认知',
+  subdomain: 'MRN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MRN-004',
+  text: '再现10个不熟悉物品中,也能够大约记住2-3个',
+  domain: '认知',
+  subdomain: 'MRN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+},
+// 一般儿认知(M)功能发育 - 概念(MCN)
+{
+  id: '48_60m-MCN-001',
+  text: '能理解一样多的概念，并将2个、4个、6个及8个物品分成二堆，每堆(或每人)一样多',
+  domain: '认知',
+  subdomain: 'MCN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MCN-002',
+  text: '能根据声音的特性进行分类(如：机器和人的声音)',
+  domain: '认知',
+  subdomain: 'MCN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MCN-003',
+  text: '能理解过去、现在、将来。可能知道一星期各天的名称，但可能不清楚它们的顺序',
+  domain: '认知',
+  subdomain: 'MCN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+},
+// 一般儿认知(M)功能发育 - 推理(MIN)
+{
+  id: '48_60m-MIN-001',
+  text: '开始具备传递性推理能力，即对元素排列次序关系的一种推理（如，由A>B，B>C，推出A>C）',
+  domain: '认知',
+  subdomain: 'MIN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MIN-002',
+  text: '具备因果推理能力(且许多儿童已经基本上具有了思维的可逆性)',
+  domain: '认知',
+  subdomain: 'MIN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MIN-003',
+  text: '能够进行逆向的果→因推理',
+  domain: '认知',
+  subdomain: 'MIN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+},
+// 一般儿语言(ML)功能发育 - 口语理解(听)(MLUY)
+{
+  id: '48_60m-MLUY-001',
+  text: '了解"多远"',
+  domain: '语言',
+  subdomain: 'MLUY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLUY-002',
+  text: '会区分相同或不同形状',
+  domain: '语言',
+  subdomain: 'MLUY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLUY-003',
+  text: '懂得"多加一点"及"减少一点"',
+  domain: '语言',
+  subdomain: 'MLUY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLUY-004',
+  text: '会在要求下指出一系列东西中，第几个是哪一个',
+  domain: '语言',
+  subdomain: 'MLUY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLUY-005',
+  text: '懂得较复杂情节的故事',
+  domain: '语言',
+  subdomain: 'MLUY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+},
+// 一般儿语言(ML)功能发育 - 非语言理解(视)(MLUN)
+{
+  id: '48_60m-MLUN-001',
+  text: '能看图片说故事',
+  domain: '语言',
+  subdomain: 'MLUN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+},
+// 一般儿语言(ML)功能发育 - 口语表达(说)(MLEY)
+{
+  id: '48_60m-MLEY-001',
+  text: '已能和成人自由交谈',
+  domain: '语言',
+  subdomain: 'MLEY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLEY-002',
+  text: '声母l,s,zh.ch.sh.r',
+  domain: '语言',
+  subdomain: 'MLEY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLEY-003',
+  text: '会说钱币名称',
+  domain: '语言',
+  subdomain: 'MLEY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLEY-004',
+  text: '正确使用"为什么"',
+  domain: '语言',
+  subdomain: 'MLEY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLEY-005',
+  text: '为引起别人的注意，会用夸张的语调及简单语句',
+  domain: '语言',
+  subdomain: 'MLEY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLEY-006',
+  text: '至少能唱完一首完整的儿歌',
+  domain: '语言',
+  subdomain: 'MLEY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLEY-007',
+  text: '用"和"靠近"在…旁边"',
+  domain: '语言',
+  subdomain: 'MLEY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLEY-008',
+  text: '会用"一个"，会说出简单相反词',
+  domain: '语言',
+  subdomain: 'MLEY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLEY-009',
+  text: '会由1数到10或以上',
+  domain: '语言',
+  subdomain: 'MLEY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLEY-010',
+  text: '会解释字义',
+  domain: '语言',
+  subdomain: 'MLEY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLEY-011',
+  text: '能明确表示自己的思想',
+  domain: '语言',
+  subdomain: 'MLEY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLEY-012',
+  text: '能说出几种东西是什么做成的',
+  domain: '语言',
+  subdomain: 'MLEY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLEY-013',
+  text: '能描述下一步是什么',
+  domain: '语言',
+  subdomain: 'MLEY',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+},
+// 一般儿语言(ML)功能发育 - 非语言表达(指)(MLEN)
+{
+  id: '48_60m-MLEN-001',
+  text: '照着图仿画三角形',
+  domain: '语言',
+  subdomain: 'MLEN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLEN-002',
+  text: '照着写数字',
+  domain: '语言',
+  subdomain: 'MLEN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLEN-003',
+  text: '能绘画简单的图形',
+  domain: '语言',
+  subdomain: 'MLEN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLEN-004',
+  text: '照着图仿画菱形',
+  domain: '语言',
+  subdomain: 'MLEN',
+  ageBandKey: '48_60m',
+  type: 'check',
+  checked: false
+}, {
+  id: '48_60m-MLEN-005',
+  text: '听写数字',
+  domain: '语言',
+  subdomain: 'MLEN',
+  ageBandKey: '48_60m',
   type: 'check',
   checked: false
 },

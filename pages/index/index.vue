@@ -54,24 +54,25 @@
 </template>
 
 <script>
-	export default {
-		data() {
-			return {
-				title: '知动儿童综合发育测评'
-			}
-		},
-		onLoad() {
-			// 页面加载时的初始化
-		},
-		methods: {
-			// 开始评估按钮点击事件
-			startAssessment() {
-				uni.navigateTo({
-					url: '/pages/child-info/child-info'
-				})
-			}
+export default {
+	data() {
+		return {
+			title: '知动儿童综合发育测评'
+		}
+	},
+	onLoad() {
+		// 页面加载时的初始化
+		console.log('[index] page loaded')
+	},
+	methods: {
+		// 开始评估按钮点击事件
+		startAssessment() {
+			uni.navigateTo({
+				url: '/pages/child-info/child-info'
+			})
 		}
 	}
+}
 </script>
 
 <style>

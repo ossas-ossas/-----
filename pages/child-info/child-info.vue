@@ -57,7 +57,7 @@
 					>
 						<view class="picker-view">
 							<text class="picker-text" :class="{ placeholder: !formData.birthDate }">
-								{{ formData.birthDate || '请选择出生日期' }}
+								{{ formData.birthDate ? formData.birthDate : '请选择出生日期' }}
 							</text>
 							<text class="picker-icon">📅</text>
 						</view>
@@ -165,6 +165,310 @@
 					<text class="char-count">{{ formData.notes.length }}/200</text>
 				</view>
 			</view>
+			
+			<!-- 临床与行为信息 -->
+			<view class="form-section">
+				<view class="section-title">
+					<text class="title-text">临床与行为信息</text>
+				</view>
+				
+				<!-- 医疗诊断 -->
+				<view class="form-item">
+					<text class="label">医疗诊断</text>
+					<view class="checkbox-group">
+						<view 
+							class="checkbox-item" 
+							:class="{ active: clinical.medicalDiagnosis.includes('cerebralPalsy') }"
+							@click="toggleDiagnosis('cerebralPalsy')"
+						>
+							<text class="checkbox-text">脑瘫</text>
+						</view>
+						<view 
+							class="checkbox-item" 
+							:class="{ active: clinical.medicalDiagnosis.includes('devDelay') }"
+							@click="toggleDiagnosis('devDelay')"
+						>
+							<text class="checkbox-text">发育迟缓</text>
+						</view>
+						<view 
+							class="checkbox-item" 
+							:class="{ active: clinical.medicalDiagnosis.includes('autism') }"
+							@click="toggleDiagnosis('autism')"
+						>
+							<text class="checkbox-text">孤独症</text>
+						</view>
+						<view 
+							class="checkbox-item" 
+							:class="{ active: clinical.medicalDiagnosis.includes('rare') }"
+							@click="toggleDiagnosis('rare')"
+						>
+							<text class="checkbox-text">罕见疾病</text>
+						</view>
+					</view>
+				</view>
+				
+				<!-- 行走时间 -->
+				<view class="form-item">
+					<text class="label">行走时间</text>
+					<view class="radio-group">
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.walkingTime === 'before18m' }"
+							@click="pickWalkingTime('before18m')"
+						>
+							<text class="radio-text">1岁半以前</text>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.walkingTime === 'after18m' }"
+							@click="pickWalkingTime('after18m')"
+						>
+							<text class="radio-text">1岁半以后</text>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.walkingTime === 'notyet' }"
+							@click="pickWalkingTime('notyet')"
+						>
+							<text class="radio-text">目前还不会行走</text>
+						</view>
+					</view>
+				</view>
+				
+				<!-- 爬行情况 -->
+				<view class="form-item">
+					<text class="label">爬行情况</text>
+					<view class="radio-group column">
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.crawlStatus === 'months' }"
+							@click="pickCrawlStatus('months')"
+						>
+							<text class="radio-text">会爬行（{{ clinical.crawlMonths ? clinical.crawlMonths : '___' }}个月）</text>
+						</view>
+						<view class="input-row" v-if="clinical.crawlStatus === 'months'">
+							<input 
+								class="number-input" 
+								v-model="clinical.crawlMonths" 
+								placeholder="月份"
+								placeholder-style="color: #BDC3C7"
+								type="number"
+							/>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.crawlStatus === 'nocrawl' }"
+							@click="pickCrawlStatus('nocrawl')"
+						>
+							<text class="radio-text">不会爬行</text>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.crawlStatus === 'walkThenCrawl' }"
+							@click="pickCrawlStatus('walkThenCrawl')"
+						>
+							<text class="radio-text">先行走后再会爬行</text>
+						</view>
+					</view>
+				</view>
+				
+				<!-- 跪走情况 -->
+				<view class="form-item">
+					<text class="label">跪走情况</text>
+					<view class="radio-group">
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.kneelWalk === true }"
+							@click="clinical.kneelWalk = true"
+						>
+							<text class="radio-text">会跪走</text>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.kneelWalk === false }"
+							@click="clinical.kneelWalk = false"
+						>
+							<text class="radio-text">目前不会跪走</text>
+						</view>
+					</view>
+				</view>
+				
+				<!-- 惯用手 -->
+				<view class="form-item">
+					<text class="label">惯用手</text>
+					<view class="radio-group">
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.handedness === 'left' }"
+							@click="clinical.handedness = 'left'"
+						>
+							<text class="radio-text">左手</text>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.handedness === 'right' }"
+							@click="clinical.handedness = 'right'"
+						>
+							<text class="radio-text">右手</text>
+						</view>
+					</view>
+				</view>
+				
+				<!-- 视觉障碍 -->
+				<view class="form-item">
+					<text class="label">视觉障碍</text>
+					<view class="radio-group column">
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.vision.status === 'normal' }"
+							@click="pickVision('normal')"
+						>
+							<text class="radio-text">常态</text>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.vision.status === 'amblyopia' }"
+							@click="pickVision('amblyopia')"
+						>
+							<text class="radio-text">弱视</text>
+						</view>
+						<view class="checkbox-sub-group" v-if="clinical.vision.status === 'amblyopia'">
+							<view 
+								class="checkbox-sub-item" 
+								:class="{ active: clinical.vision.sub.includes('myopia') }"
+								@click="pickVisionSub('myopia')"
+							>
+								<text class="checkbox-text">近视</text>
+							</view>
+							<view 
+								class="checkbox-sub-item" 
+								:class="{ active: clinical.vision.sub.includes('astigmatism') }"
+								@click="pickVisionSub('astigmatism')"
+							>
+								<text class="checkbox-text">散光</text>
+							</view>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.vision.status === 'strabismus' }"
+							@click="pickVision('strabismus')"
+						>
+							<text class="radio-text">斜视</text>
+						</view>
+					</view>
+				</view>
+				
+				<!-- 听觉障碍 -->
+				<view class="form-item">
+					<text class="label">听觉障碍</text>
+					<view class="radio-group column">
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.hearing.status === 'normal' }"
+							@click="pickHearing('normal')"
+						>
+							<text class="radio-text">常态</text>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.hearing.status === 'impaired' }"
+							@click="pickHearing('impaired')"
+						>
+							<text class="radio-text">听障</text>
+						</view>
+						<view v-if="clinical.hearing.status === 'impaired'" class="inline">
+							<text class="label-inline">左耳</text>
+							<input 
+								class="number-input" 
+								v-model="clinical.hearing.dbLeft" 
+								placeholder="dB"
+								placeholder-style="color: #BDC3C7"
+								type="number"
+							/>
+							<text class="label-inline">右耳</text>
+							<input 
+								class="number-input" 
+								v-model="clinical.hearing.dbRight" 
+								placeholder="dB"
+								placeholder-style="color: #BDC3C7"
+								type="number"
+							/>
+						</view>
+					</view>
+				</view>
+				
+				<!-- 癫痫症 -->
+				<view class="form-item">
+					<text class="label">癫痫症</text>
+					<view class="radio-group column">
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.epilepsy === 'none' }"
+							@click="clinical.epilepsy = 'none'"
+						>
+							<text class="radio-text">无</text>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.epilepsy === 'medicated' }"
+							@click="clinical.epilepsy = 'medicated'"
+						>
+							<text class="radio-text">有（服药中）</text>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.epilepsy === 'unmedicated' }"
+							@click="clinical.epilepsy = 'unmedicated'"
+						>
+							<text class="radio-text">有（未服药）</text>
+						</view>
+					</view>
+				</view>
+				
+				<!-- 提供视频 -->
+				<view class="form-item">
+					<text class="label">提供视频</text>
+					<text class="sub-note">生活中，关于孩子衣食住行，吃喝玩乐，喜怒哀乐、行走活动及运动等各方面视频（最多6个）</text>
+					<view class="video-list">
+						<view 
+							v-for="(video, index) in clinical.videos" 
+							:key="index" 
+							class="video-item"
+							@click="removeVideo(index)"
+						>
+							<text>视频{{ index + 1 }}</text>
+						</view>
+						<view 
+							class="video-item" 
+							v-if="clinical.videos.length < 6"
+							@click="chooseVideo"
+						>
+							<text>+ 添加视频</text>
+						</view>
+					</view>
+				</view>
+				
+				<!-- 后续居家辅导 -->
+				<view class="form-item">
+					<text class="label">后续居家辅导</text>
+					<view class="radio-group">
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.homeGuide === true }"
+							@click="clinical.homeGuide = true"
+						>
+							<text class="radio-text">需要</text>
+						</view>
+						<view 
+							class="radio-item" 
+							:class="{ active: clinical.homeGuide === false }"
+							@click="clinical.homeGuide = false"
+						>
+							<text class="radio-text">不需要</text>
+						</view>
+					</view>
+				</view>
+			</view>
 		</view>
 		
 		<!-- 底部按钮 -->
@@ -188,6 +492,19 @@
 					phone: '',
 					hasDelayHistory: '',
 					notes: ''
+				},
+				clinical: {
+					medicalDiagnosis: [],
+					walkingTime: '',
+					crawlStatus: '',
+					crawlMonths: '',
+					kneelWalk: null,
+					handedness: '',
+					vision: { status: 'normal', sub: [] },
+					hearing: { status: 'normal', dbLeft: '', dbRight: '' },
+					epilepsy: 'none',
+					videos: [],
+					homeGuide: null
 				},
 				today: ''
 			}
@@ -230,6 +547,7 @@
 			}
 		},
 		onLoad() {
+			console.log('[child-info] page loaded')
 			// 设置今天的日期作为最大可选日期
 			const today = new Date()
 			this.today = today.toISOString().split('T')[0]
@@ -286,6 +604,86 @@
 				this.formData.birthDate = e.detail.value
 			},
 			
+			// 切换医疗诊断
+			toggleDiagnosis(value) {
+				const index = this.clinical.medicalDiagnosis.indexOf(value)
+				if (index === -1) {
+					this.clinical.medicalDiagnosis.push(value)
+				} else {
+					this.clinical.medicalDiagnosis.splice(index, 1)
+				}
+			},
+			
+			// 选择行走时间
+			pickWalkingTime(value) {
+				this.clinical.walkingTime = value
+			},
+			
+			// 选择爬行情况
+			pickCrawlStatus(value) {
+				this.clinical.crawlStatus = value
+				if (value !== 'months') {
+					this.clinical.crawlMonths = ''
+				}
+			},
+			
+			// 选择视觉状态
+			pickVision(value) {
+				this.clinical.vision.status = value
+				if (value !== 'amblyopia') {
+					this.clinical.vision.sub = []
+				}
+			},
+			
+			// 选择视觉子项
+			pickVisionSub(value) {
+				const index = this.clinical.vision.sub.indexOf(value)
+				if (index === -1) {
+					this.clinical.vision.sub.push(value)
+				} else {
+					this.clinical.vision.sub.splice(index, 1)
+				}
+			},
+			
+			// 选择听觉状态
+			pickHearing(value) {
+				this.clinical.hearing.status = value
+				if (value !== 'impaired') {
+					this.clinical.hearing.dbLeft = ''
+					this.clinical.hearing.dbRight = ''
+				}
+			},
+			
+			// 选择视频
+			chooseVideo() {
+				uni.chooseVideo({
+					sourceType: ['album', 'camera'],
+					maxDuration: 30,
+					success: (res) => {
+						if (this.clinical.videos.length >= 6) {
+							uni.showToast({
+								title: '最多只能上传6个视频',
+								icon: 'none'
+							})
+							return
+						}
+						this.clinical.videos.push({
+							tempFilePath: res.tempFilePath,
+							size: res.size,
+							duration: res.duration
+						})
+					},
+					fail: (err) => {
+						console.error('选择视频失败', err)
+					}
+				})
+			},
+			
+			// 删除视频
+			removeVideo(index) {
+				this.clinical.videos.splice(index, 1)
+			},
+			
 			// 跳转到评估页面
 			goToAssessment() {
 				if (!this.isFormValid) {
@@ -296,8 +694,30 @@
 					return
 				}
 				
+				// 验证临床信息
+				if (this.clinical.crawlStatus === 'months' && !this.clinical.crawlMonths) {
+					uni.showToast({
+						title: '请输入爬行月份',
+						icon: 'none'
+					})
+					return
+				}
+				
+				if (this.clinical.hearing.status === 'impaired' && (!this.clinical.hearing.dbLeft || !this.clinical.hearing.dbRight)) {
+					uni.showToast({
+						title: '请输入听力分贝',
+						icon: 'none'
+					})
+					return
+				}
+				
 				// 保存儿童信息到本地存储
-				uni.setStorageSync('childInfo', this.formData)
+				const childInfo = uni.getStorageSync('childInfo') || {}
+				uni.setStorageSync('childInfo', {
+					...childInfo,
+					...this.formData,
+					clinical: this.clinical
+				})
 				
 				// 跳转到评估页面
 				uni.navigateTo({
@@ -549,5 +969,171 @@
 		font-size: 32rpx;
 		font-weight: bold;
 		color: #FFFFFF;
+	}
+	
+	/* 复选框组 */
+	.checkbox-group {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 15rpx;
+	}
+	
+	.checkbox-item {
+		flex: 1;
+		min-width: 140rpx;
+		height: 70rpx;
+		background: #F8F9FA;
+		border-radius: 15rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 2rpx solid transparent;
+		transition: all 0.3s;
+		position: relative;
+	}
+	
+	.checkbox-item.active {
+		background: linear-gradient(135deg, #87CEEB, #98FB98);
+		border-color: #87CEEB;
+	}
+	
+	.checkbox-item.active::after {
+		content: '✓';
+		position: absolute;
+		right: 15rpx;
+		color: #FFFFFF;
+		font-weight: bold;
+		font-size: 28rpx;
+	}
+	
+	.checkbox-text {
+		font-size: 26rpx;
+		color: #2C3E50;
+		font-weight: 500;
+	}
+	
+	.checkbox-item.active .checkbox-text {
+		color: #FFFFFF;
+		font-weight: bold;
+	}
+	
+	/* 单选框组垂直排列 */
+	.radio-group.column {
+		flex-direction: column;
+	}
+	
+	.radio-group.column .radio-item {
+		width: 100%;
+		justify-content: flex-start;
+		text-align: left;
+		padding: 0 20rpx;
+	}
+	
+	/* 输入行 */
+	.input-row {
+		margin-top: 15rpx;
+		display: flex;
+		align-items: center;
+		gap: 10rpx;
+	}
+	
+	.number-input {
+		width: 160rpx;
+		height: 64rpx;
+		padding: 0 16rpx;
+		background: #F8F9FA;
+		border: 2rpx solid #E8F4FD;
+		border-radius: 10rpx;
+		font-size: 26rpx;
+		color: #2C3E50;
+	}
+	
+	.number-input:focus {
+		border-color: #87CEEB;
+		background: #FFFFFF;
+	}
+	
+	.inline {
+		display: flex;
+		align-items: center;
+		gap: 16rpx;
+		margin-top: 15rpx;
+	}
+	
+	.label-inline {
+		font-size: 26rpx;
+		color: #7F8C8D;
+	}
+	
+	/* 子复选框组 */
+	.checkbox-sub-group {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10rpx;
+		margin-top: 15rpx;
+		padding-left: 40rpx;
+	}
+	
+	.checkbox-sub-item {
+		min-width: 100rpx;
+		height: 60rpx;
+		background: #F8F9FA;
+		border-radius: 12rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 2rpx solid transparent;
+		transition: all 0.3s;
+		position: relative;
+		padding: 0 20rpx;
+	}
+	
+	.checkbox-sub-item.active {
+		background: linear-gradient(135deg, #87CEEB, #98FB98);
+		border-color: #87CEEB;
+	}
+	
+	.checkbox-sub-item.active::after {
+		content: '✓';
+		position: absolute;
+		right: 8rpx;
+		color: #FFFFFF;
+		font-weight: bold;
+		font-size: 24rpx;
+	}
+	
+	/* 辅助文字 */
+	.sub-note {
+		font-size: 22rpx;
+		color: #7F8C8D;
+		margin-top: 8rpx;
+		line-height: 1.5;
+	}
+	
+	/* 视频列表 */
+	.video-list {
+		margin-top: 12rpx;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 12rpx;
+	}
+	
+	.video-item {
+		width: 180rpx;
+		height: 120rpx;
+		border-radius: 10rpx;
+		background: #F5F8FF;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #7F8C8D;
+		font-size: 24rpx;
+		border: 2rpx solid #E8F4FD;
+		transition: all 0.3s;
+	}
+	
+	.video-item:active {
+		border-color: #87CEEB;
+		background: #E8F4FD;
 	}
 </style>

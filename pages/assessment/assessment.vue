@@ -1,25 +1,8 @@
 <template>
 	<view class="container">
-		<!-- 年龄段和模式信息 -->
-		<view class="age-info" v-if="currentAgeBand">
-			<text class="age-text">{{ currentAgeBand.label }} 发育评估</text>
-			<text class="mode-text" v-if="isCorrectedAge">（纠正后）</text>
-			<view class="mode-switch">
-				<button 
-					class="mode-btn" 
-					:class="{ active: assessmentMode === 'band' }"
-					@click="switchMode('band')"
-				>
-					精准模式
-				</button>
-				<button 
-					class="mode-btn" 
-					:class="{ active: assessmentMode === 'cumulative' }"
-					@click="switchMode('cumulative')"
-				>
-					累进模式
-				</button>
-			</view>
+		<!-- 评估标题 -->
+		<view class="age-info">
+			<text class="age-text">发育评估</text>
 		</view>
 		
 		<!-- 进度信息 -->
@@ -96,15 +79,12 @@
 </template>
 
 <script>
-	import { ageBands, questions, getAgeBandByMonths, pickQuestionsByAgeMonths } from '@/common/questionBank.js'
+	import { questions } from '@/common/questionBank.js'
 	
 	export default {
 		data() {
 			return {
 				childInfo: {},
-				currentAgeBand: null,
-				isCorrectedAge: false,
-				assessmentMode: 'band', // 'band' 或 'cumulative'
 				formState: {},
 				expandedDomains: {},
 				isSubmitting: false,
@@ -138,76 +118,48 @@
 					}, 1500)
 					return
 				}
-				
-				// 计算月龄
-				const ageMonths = this.calculateAgeInMonths(this.childInfo.birthDate)
-				console.log('出生日期:', this.childInfo.birthDate)
-				console.log('计算月龄:', ageMonths)
-				
-				// 计算纠正月龄（如果是早产儿）
-				if (this.childInfo.isPremature && this.childInfo.prematureWeeks) {
-					const correctedAgeMonths = Math.max(0, ageMonths - Math.floor(this.childInfo.prematureWeeks / 4))
-					console.log('早产周数:', this.childInfo.prematureWeeks)
-					console.log('纠正月龄:', correctedAgeMonths)
-					this.isCorrectedAge = true
-					this.currentAgeBand = getAgeBandByMonths(correctedAgeMonths)
-				} else {
-					this.currentAgeBand = getAgeBandByMonths(ageMonths)
-				}
-				
-				console.log('当前年龄段:', this.currentAgeBand)
 			},
 			
-			// 加载题目
+			// 加载题目 - 加载所有题目，不筛选
 			loadQuestions() {
-				if (!this.childInfo.birthDate) return
+				console.log('[assessment] 加载所有题目')
 				
-				const months = this.calculateAgeInMonths(this.childInfo.birthDate)
-				const band = getAgeBandByMonths(months)
-				const mode = this.assessmentMode
+				// 按领域分组所有题目
+				const grouped = {}
+				questions.forEach(q => {
+					const domain = q.domain || '认知'
+					if (!grouped[domain]) {
+						grouped[domain] = []
+					}
+					grouped[domain].push({
+						...q,
+						checked: false
+					})
+				})
 				
-				console.log('[assessment] months=', months, 'band=', band, 'mode=', mode)
-				
-				const grouped = pickQuestionsByAgeMonths(months, mode)
-				console.log('[assessment] picked:', { total: Object.values(grouped).reduce((n, arr) => n + arr.length, 0), domains: Object.keys(grouped) })
+				console.log('[assessment] 分组结果:', Object.keys(grouped), 'total:', Object.values(grouped).reduce((n, arr) => n + arr.length, 0))
 				
 				// 标准化题库结构
-				const normalize = (g) => {
-					console.log('[assessment] normalize input:', Object.keys(g))
-					const doms = ["粗大动作","精细动作","社会互动","认知","语言","感知觉","口腔动作"]
-					const out = {}
-					doms.forEach(d => out[d] = Array.isArray(g[d]) ? g[d] : [])
-					Object.keys(g || {}).forEach(k => { 
-						if(!out[k] && Array.isArray(g[k])) out["认知"] = out["认知"].concat(g[k])
-					})
-					console.log('[assessment] normalize output:', Object.keys(out), 'total:', Object.values(out).reduce((n,arr)=>n+arr.length,0))
-					return out
-				}
+				const doms = ["粗大动作","精细动作","社会互动","认知","语言","感知觉","口腔动作"]
+				const out = {}
+				doms.forEach(d => {
+					out[d] = grouped[d] || []
+				})
+				
 				// 使用Vue.set确保响应式更新
-				this.$set(this, 'formState', normalize(grouped))
+				this.$set(this, 'formState', out)
 				
 				// 计算统计
 				this.totalCount = Object.values(this.formState).reduce((n, arr) => n + arr.length, 0)
 				this.checkedCount = Object.values(this.formState).reduce((n, arr) => n + arr.filter(i => !!i.checked).length, 0)
 				
-				console.log('[assessment] final formState:', Object.keys(this.formState))
 				console.log('[assessment] totalCount:', this.totalCount, 'checkedCount:', this.checkedCount)
-				
-				// 如果没有题目，自动切换到累进模式
-				if (this.totalCount === 0 && this.assessmentMode === 'band') {
-					console.log('精准模式无题目，切换到累进模式')
-					this.assessmentMode = 'cumulative'
-					this.loadQuestions()
-					return
-				}
 				
 				// 初始化领域展开状态
 				this.initExpandedDomains()
 				
 				// 保存状态
 				uni.setStorageSync('assessmentForm', this.formState)
-				uni.setStorageSync('assessmentMode', this.assessmentMode)
-				uni.setStorageSync('assessmentBand', band)
 			},
 			
 			// 初始化领域展开状态
@@ -224,25 +176,13 @@
 				uni.setStorageSync('assessmentForm', this.formState)
 			},
 			
-			// 切换评估模式
-			switchMode(mode) {
-				if (this.assessmentMode === mode) return
-				
-				this.assessmentMode = mode
-				this.loadQuestions()
-				
-				uni.showToast({
-					title: `已切换到${mode === 'band' ? '精准' : '累进'}模式`,
-					icon: 'none'
-				})
-			},
 			
 			// 切换领域展开状态
 			toggleDomain(domain) {
 				this.$set(this.expandedDomains, domain, !this.expandedDomains[domain])
 			},
 			
-			// 计算年龄（月）
+			// 计算年龄（月）- 保留以防其他地方使用
 			calculateAgeInMonths(birthDate) {
 				if (!birthDate) return 0
 				const birth = new Date(birthDate)
@@ -272,9 +212,6 @@
 				// 生成评估结果
 				const assessmentResult = {
 					childInfo: this.childInfo,
-					ageBand: this.currentAgeBand,
-					assessmentMode: this.assessmentMode,
-					isCorrectedAge: this.isCorrectedAge,
 					formState: this.formState,
 					checkedCount: this.checkedCount,
 					totalCount: this.totalCount,
@@ -328,27 +265,6 @@
 		margin-left: 10rpx;
 	}
 	
-	.mode-switch {
-		display: flex;
-		gap: 20rpx;
-		justify-content: center;
-		margin-top: 15rpx;
-	}
-	
-	.mode-btn {
-		padding: 10rpx 20rpx;
-		border-radius: 20rpx;
-		border: 2rpx solid #87CEEB;
-		background: #FFFFFF;
-		color: #87CEEB;
-		font-size: 24rpx;
-		transition: all 0.3s ease;
-	}
-	
-	.mode-btn.active {
-		background: #87CEEB;
-		color: #FFFFFF;
-	}
 	
 	/* 进度信息 */
 	.progress-container {
