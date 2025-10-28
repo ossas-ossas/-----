@@ -91,6 +91,23 @@ export default {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	position: relative;
+	overflow: hidden;
+}
+
+.container::before {
+	content: '';
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 300%;
+	height: 300%;
+	background: url('/static/logo.png') center center / contain no-repeat;
+	filter: blur(40rpx);
+	opacity: 0.15;
+	z-index: 0;
+	pointer-events: none;
 }
 
 /* Logo 和品牌标语区域 */
@@ -99,6 +116,8 @@ export default {
 	flex-direction: column;
 	align-items: center;
 	margin-bottom: 50rpx;
+	position: relative;
+	z-index: 1;
 }
 
 .logo-wrapper {
@@ -144,6 +163,8 @@ export default {
 .title-section {
 	text-align: center;
 	margin-bottom: 60rpx;
+	position: relative;
+	z-index: 1;
 }
 
 .main-title {
@@ -166,6 +187,8 @@ export default {
 .steps-section {
 	width: 100%;
 	margin-bottom: 60rpx;
+	position: relative;
+	z-index: 1;
 }
 
 .step-card {
@@ -225,6 +248,8 @@ export default {
 .button-section {
 	width: 100%;
 	margin-bottom: 40rpx;
+	position: relative;
+	z-index: 1;
 }
 
 .start-button {
@@ -267,6 +292,8 @@ export default {
 	text-align: center;
 	margin-top: auto;
 	padding-top: 40rpx;
+	position: relative;
+	z-index: 1;
 }
 
 .footer-text {

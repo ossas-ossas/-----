@@ -16,8 +16,8 @@
 					@input="applyFilters"
 				/>
 				<text class="search-icon">🔍</text>
-			</view>
-			
+		</view>
+		
 			<!-- 筛选开关 -->
 			<view class="filter-switch">
 				<switch :checked="filters.onlyUnfinished" @change="onUnfinishedToggle" />
@@ -84,17 +84,17 @@
 											<label class="question-label">
 												<checkbox :value="q.id" :checked="answers[q.id] === 1" />
 												<text class="question-text">{{ q.text }}</text>
-											</label>
-										</checkbox-group>
-									</view>
-								</view>
-							</view>
+							</label>
+						</checkbox-group>
+					</view>
+				</view>
+			</view>
 						</view>
 					</template>
 				</view>
 			</view>
 		</template>
-	</view>
+		</view>
 		
 		<!-- 底部操作条（吸底） -->
 		<view class="bottom-bar">
@@ -585,18 +585,36 @@ const subdomainLabels = {
 <style>
 	.container {
 		min-height: 100vh;
-	background: #F8F9FA;
-	padding-bottom: 180rpx;
-}
+		background: linear-gradient(180deg, #fff 0%, #F5F9FC 100%);
+		padding-bottom: 180rpx;
+		position: relative;
+		overflow: hidden;
+	}
+	
+	.container::before {
+		content: '';
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 300%;
+		height: 300%;
+		background: url('/static/logo.png') center center / contain no-repeat;
+		filter: blur(40rpx);
+		opacity: 0.15;
+		z-index: 0;
+		pointer-events: none;
+	}
 
 /* 顶部工具条（吸顶） */
 .top-bar {
 	position: sticky;
 	top: 0;
 	z-index: 100;
-	background: #FFFFFF;
+	background: rgba(255, 255, 255, 0.98);
 	padding: 20rpx;
-	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+	box-shadow: 0 2rpx 10rpx rgba(233, 58, 138, 0.1);
+	backdrop-filter: blur(10rpx);
 }
 
 .top-header {
@@ -608,7 +626,7 @@ const subdomainLabels = {
 
 .page-title {
 	font-size: 36rpx;
-	font-weight: bold;
+		font-weight: bold;
 		color: #2C3E50;
 }
 
@@ -641,7 +659,7 @@ const subdomainLabels = {
 }
 
 .domain-chips {
-	display: flex;
+		display: flex;
 	flex-wrap: wrap;
 	gap: 15rpx;
 	margin-bottom: 20rpx;
@@ -652,13 +670,13 @@ const subdomainLabels = {
 	background: #F8F9FA;
 	border: 2rpx solid #E8F4FD;
 	border-radius: 30rpx;
-	font-size: 24rpx;
+		font-size: 24rpx;
 		color: #7F8C8D;
-}
-
+	}
+	
 .chip.active {
-	background: #87CEEB;
-	color: #FFFFFF;
+		background: #87CEEB;
+		color: #FFFFFF;
 	border-color: #87CEEB;
 }
 
@@ -669,13 +687,15 @@ const subdomainLabels = {
 }
 
 .switch-label {
-	font-size: 26rpx;
+		font-size: 26rpx;
 	color: #2C3E50;
 }
 
 /* 主列表 */
 .questions-container {
 	padding: 20rpx;
+	position: relative;
+	z-index: 1;
 }
 
 .domain-section {
@@ -705,7 +725,7 @@ const subdomainLabels = {
 }
 
 .domain-actions {
-	display: flex;
+		display: flex;
 	gap: 20rpx;
 }
 
@@ -837,7 +857,7 @@ const subdomainLabels = {
 	height: 8rpx;
 	background: #F0F0F0;
 	border-radius: 4rpx;
-	overflow: hidden;
+		overflow: hidden;
 }
 
 .progress-fill {

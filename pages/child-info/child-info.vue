@@ -705,14 +705,33 @@
 <style>
 	.container {
 		min-height: 100vh;
-		background: linear-gradient(135deg, #E8F4FD 0%, #F0F8FF 100%);
+		background: linear-gradient(180deg, #fff 0%, #F5F9FC 100%);
 		padding: 30rpx;
+		position: relative;
+		overflow: hidden;
+	}
+	
+	.container::before {
+		content: '';
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 300%;
+		height: 300%;
+		background: url('/static/logo.png') center center / contain no-repeat;
+		filter: blur(40rpx);
+		opacity: 0.15;
+		z-index: 0;
+		pointer-events: none;
 	}
 	
 	/* 页面标题 */
 	.page-header {
 		text-align: center;
 		margin-bottom: 40rpx;
+		position: relative;
+		z-index: 1;
 	}
 	
 	.page-title {
@@ -733,6 +752,8 @@
 	/* 表单容器 */
 	.form-container {
 		margin-bottom: 120rpx;
+		position: relative;
+		z-index: 1;
 	}
 	
 	/* 表单分组 */
@@ -787,7 +808,7 @@
 	}
 	
 	.input:focus {
-		border-color: #87CEEB;
+		border-color: #009FC2;
 		background: #FFFFFF;
 	}
 	
@@ -812,8 +833,8 @@
 	}
 	
 	.radio-item.active {
-		background: linear-gradient(135deg, #87CEEB, #98FB98);
-		border-color: #87CEEB;
+		background: linear-gradient(135deg, #E93A8A, #009FC2);
+		border-color: #E93A8A;
 	}
 	
 	.radio-text {
@@ -842,7 +863,7 @@
 	}
 	
 	.picker-view:active {
-		border-color: #87CEEB;
+		border-color: #009FC2;
 		background: #FFFFFF;
 	}
 	
@@ -867,9 +888,9 @@
 	
 	.age-text {
 		font-size: 26rpx;
-		color: #87CEEB;
+		color: #009FC2;
 		font-weight: bold;
-		background: rgba(135, 206, 235, 0.1);
+		background: rgba(0, 159, 194, 0.1);
 		padding: 10rpx 20rpx;
 		border-radius: 20rpx;
 		margin-bottom: 8rpx;
@@ -897,7 +918,7 @@
 	}
 	
 	.textarea:focus {
-		border-color: #87CEEB;
+		border-color: #009FC2;
 		background: #FFFFFF;
 	}
 	
@@ -918,19 +939,20 @@
 		padding: 30rpx;
 		background: rgba(255, 255, 255, 0.95);
 		backdrop-filter: blur(10rpx);
-		border-top: 1rpx solid #E8F4FD;
+		border-top: 1rpx solid rgba(233, 58, 138, 0.1);
+		z-index: 10;
 	}
 	
 	.next-button {
 		width: 100%;
 		height: 90rpx;
-		background: linear-gradient(135deg, #87CEEB, #98FB98);
+		background: linear-gradient(135deg, #E93A8A, #009FC2);
 		border-radius: 45rpx;
 		border: none;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		box-shadow: 0 8rpx 25rpx rgba(135, 206, 235, 0.4);
+		box-shadow: 0 8rpx 30rpx rgba(233, 58, 138, 0.4);
 		transition: all 0.3s;
 	}
 	
@@ -967,8 +989,8 @@
 	}
 	
 	.checkbox-item.active {
-		background: linear-gradient(135deg, #87CEEB, #98FB98);
-		border-color: #87CEEB;
+		background: linear-gradient(135deg, #E93A8A, #009FC2);
+		border-color: #E93A8A;
 	}
 	
 	.checkbox-item.active::after {
@@ -1023,7 +1045,7 @@
 	}
 	
 	.number-input:focus {
-		border-color: #87CEEB;
+		border-color: #009FC2;
 		background: #FFFFFF;
 	}
 	
@@ -1063,8 +1085,8 @@
 	}
 	
 	.checkbox-sub-item.active {
-		background: linear-gradient(135deg, #87CEEB, #98FB98);
-		border-color: #87CEEB;
+		background: linear-gradient(135deg, #E93A8A, #009FC2);
+		border-color: #E93A8A;
 	}
 	
 	.checkbox-sub-item.active::after {

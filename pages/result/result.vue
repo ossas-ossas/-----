@@ -332,9 +332,26 @@
 <style>
 	.container {
 		min-height: 100vh;
-		background: linear-gradient(135deg, #E8F4FD 0%, #F0F8FF 100%);
+		background: linear-gradient(180deg, #fff 0%, #F5F9FC 100%);
 		padding: 30rpx;
 		padding-bottom: 120rpx;
+		position: relative;
+		overflow: hidden;
+	}
+	
+	.container::before {
+		content: '';
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 300%;
+		height: 300%;
+		background: url('/static/logo.png') center center / contain no-repeat;
+		filter: blur(40rpx);
+		opacity: 0.15;
+		z-index: 0;
+		pointer-events: none;
 	}
 	
 	/* 报告头部 */
@@ -344,7 +361,9 @@
 		padding: 40rpx 30rpx;
 		margin-bottom: 30rpx;
 		text-align: center;
-		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+		box-shadow: 0 4rpx 20rpx rgba(233, 58, 138, 0.08);
+		position: relative;
+		z-index: 1;
 	}
 	
 	.header-icon {
@@ -391,8 +410,10 @@
 		padding: 40rpx 30rpx;
 		margin-bottom: 30rpx;
 		display: flex;
+		position: relative;
+		z-index: 1;
 		align-items: center;
-		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+		box-shadow: 0 4rpx 20rpx rgba(233, 58, 138, 0.08);
 	}
 	
 	.score-circle {
@@ -444,7 +465,9 @@
 		border-radius: 20rpx;
 		padding: 30rpx;
 		margin-bottom: 30rpx;
-		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+		box-shadow: 0 4rpx 20rpx rgba(233, 58, 138, 0.08);
+		position: relative;
+		z-index: 1;
 	}
 	
 	.section-title {
@@ -612,7 +635,7 @@
 		border-radius: 20rpx;
 		padding: 30rpx;
 		margin-bottom: 30rpx;
-		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+		box-shadow: 0 4rpx 20rpx rgba(233, 58, 138, 0.08);
 	}
 	
 	.recommendations-list {
