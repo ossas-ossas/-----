@@ -1,0 +1,98 @@
+{
+  "bsonType": "object",
+  "required": ["qid", "domain", "ageBand", "title"],
+  "permission": {
+    "read": true,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "qid": {
+      "bsonType": "string",
+      "label": "题目唯一ID",
+      "description": "格式: {ageBand}-{subdomain}-{序号}，如: 1_3m-OSV-001"
+    },
+    "domain": {
+      "bsonType": "string",
+      "label": "领域代码",
+      "description": "如: 感知觉、粗大动作、精细动作等"
+    },
+    "subdomain": {
+      "bsonType": "string",
+      "label": "子领域代码",
+      "description": "如: OSV(视知觉)、OSH(听知觉)等"
+    },
+    "ageBand": {
+      "bsonType": "string",
+      "label": "年龄段代码",
+      "description": "如: 1_3m、3_6m 等"
+    },
+    "title": {
+      "bsonType": "string",
+      "label": "题目标题",
+      "trim": "both"
+    },
+    "text": {
+      "bsonType": "string",
+      "label": "题目内容",
+      "trim": "both"
+    },
+    "weight": {
+      "bsonType": "int",
+      "label": "题目权重",
+      "minimum": 1,
+      "maximum": 10,
+      "defaultValue": 1,
+      "description": "用于计算加权重分数"
+    },
+    "enabled": {
+      "bsonType": "bool",
+      "label": "是否启用",
+      "defaultValue": true,
+      "description": "控制题目是否在评估中显示"
+    },
+    "order": {
+      "bsonType": "int",
+      "label": "题目排序",
+      "description": "用于控制题目显示顺序"
+    },
+    "createdAt": {
+      "bsonType": "long",
+      "label": "创建时间戳(ms)"
+    },
+    "updatedAt": {
+      "bsonType": "long",
+      "label": "更新时间戳(ms)"
+    }
+  },
+  "indexes": {
+    "idx_qid": {
+      "fields": ["qid"],
+      "unique": true,
+      "description": "题目ID唯一索引"
+    },
+    "idx_domain": {
+      "fields": ["domain"],
+      "unique": false,
+      "description": "领域索引"
+    },
+    "idx_ageBand": {
+      "fields": ["ageBand"],
+      "unique": false,
+      "description": "年龄段索引"
+    },
+    "idx_enabled": {
+      "fields": ["enabled"],
+      "unique": false,
+      "description": "启用状态索引"
+    },
+    "idx_domain_ageBand": {
+      "fields": ["domain", "ageBand"],
+      "unique": false,
+      "description": "领域+年龄段复合索引"
+    }
+  }
+}
+
+

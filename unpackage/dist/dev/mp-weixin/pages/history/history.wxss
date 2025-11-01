@@ -4,7 +4,11 @@
 	background: linear-gradient(135deg, #E8F4FD 0%, #F0F8FF 100%);
 	padding: 30rpx;
 	padding-bottom: 120rpx;
+	position: relative;
+	overflow: hidden;
 }
+
+/* 移除背景图装饰，微信小程序不支持 WXSS 中使用本地图片 */
 
 /* 页面标题 */
 .page-header {
@@ -185,7 +189,7 @@
 .start-button {
 	width: 300rpx;
 	height: 80rpx;
-	background: linear-gradient(135deg, #87CEEB, #98FB98);
+	background: linear-gradient(135deg, #E93A8A, #009FC2);
 	border-radius: 40rpx;
 	border: none;
 	display: flex;
@@ -263,7 +267,7 @@
 	left: 20rpx;
 	right: 20rpx;
 	height: 2rpx;
-	background: linear-gradient(90deg, #87CEEB, #98FB98);
+	background: linear-gradient(90deg, #E93A8A, #009FC2);
 	opacity: 0.6;
 }
 .chart-labels {
@@ -308,8 +312,8 @@
 	border: 2rpx solid #E8F4FD;
 }
 .action-button.primary {
-	background: linear-gradient(135deg, #87CEEB, #98FB98);
+	background: linear-gradient(135deg, #E93A8A, #009FC2);
 	color: #FFFFFF;
-	box-shadow: 0 4rpx 15rpx rgba(135, 206, 235, 0.3);
+	box-shadow: 0 4rpx 15rpx rgba(233, 58, 138, 0.3);
 }
 

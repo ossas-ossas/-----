@@ -103,32 +103,97 @@ var render = function () {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  var l0 =
-    _vm.totalCount > 0
-      ? _vm.__map(_vm.formState, function (list, domain) {
-          var $orig = _vm.__get_orig(list)
-          var g0 = list.length
-          return {
-            $orig: $orig,
-            g0: g0,
-          }
-        })
-      : null
+  var l2 = _vm.__map(_vm.allDomains, function (domain, __i0__) {
+    var $orig = _vm.__get_orig(domain)
+    var m0 = _vm.hasMatchingQuestionsInDomain(domain)
+    var m1 = m0 ? _vm.getDomainLabel(domain) : null
+    var m2 = m0 ? _vm.getDomainStats(domain) : null
+    var m3 = m0 && m2 ? _vm.getDomainStats(domain) : null
+    var m4 = m0 && m2 ? _vm.getDomainStats(domain) : null
+    var m5 = m0 && m2 ? _vm.getDomainStats(domain) : null
+    var l1 =
+      m0 && _vm.expandedDomains[domain]
+        ? _vm.__map(
+            _vm.getSubdomainsInDomain(domain),
+            function (subdomain, __i1__) {
+              var $orig = _vm.__get_orig(subdomain)
+              var m6 = _vm.hasMatchingQuestionsInSubdomain(domain, subdomain)
+              var m7 = m6 ? _vm.getSubdomainLabel(subdomain) : null
+              var m8 = m6 ? _vm.getSubdomainStats(domain, subdomain) : null
+              var m9 =
+                m6 && m8 ? _vm.getSubdomainStats(domain, subdomain) : null
+              var m10 =
+                m6 && m8 ? _vm.getSubdomainStats(domain, subdomain) : null
+              var m11 =
+                m6 && m8 ? _vm.getSubdomainStats(domain, subdomain) : null
+              var l0 =
+                m6 && _vm.expandedSubdomains[domain + "::" + subdomain]
+                  ? _vm.getVisibleQuestions(domain, subdomain)
+                  : null
+              return {
+                $orig: $orig,
+                m6: m6,
+                m7: m7,
+                m8: m8,
+                m9: m9,
+                m10: m10,
+                m11: m11,
+                l0: l0,
+              }
+            }
+          )
+        : null
+    return {
+      $orig: $orig,
+      m0: m0,
+      m1: m1,
+      m2: m2,
+      m3: m3,
+      m4: m4,
+      m5: m5,
+      l1: l1,
+    }
+  })
   if (!_vm._isMounted) {
-    _vm.e0 = function ($event, q) {
+    _vm.e0 = function ($event, domain, subdomain) {
       var _temp = arguments[arguments.length - 1].currentTarget.dataset,
         _temp2 = _temp.eventParams || _temp["event-params"],
-        q = _temp2.q
+        domain = _temp2.domain,
+        subdomain = _temp2.subdomain
       var _temp, _temp2
-      q.checked = !q.checked
-      _vm.onCheckChanged()
+      return _vm.toggleSubdomain(domain + "::" + subdomain)
+    }
+    _vm.e1 = function ($event, domain, subdomain) {
+      var _temp3 = arguments[arguments.length - 1].currentTarget.dataset,
+        _temp4 = _temp3.eventParams || _temp3["event-params"],
+        domain = _temp4.domain,
+        subdomain = _temp4.subdomain
+      var _temp3, _temp4
+      $event.stopPropagation()
+      return _vm.selectAllInSubdomain(domain, subdomain)
+    }
+    _vm.e2 = function ($event, domain, subdomain) {
+      var _temp5 = arguments[arguments.length - 1].currentTarget.dataset,
+        _temp6 = _temp5.eventParams || _temp5["event-params"],
+        domain = _temp6.domain,
+        subdomain = _temp6.subdomain
+      var _temp5, _temp6
+      $event.stopPropagation()
+      return _vm.clearSubdomain(domain, subdomain)
+    }
+    _vm.e3 = function ($event, q) {
+      var _temp7 = arguments[arguments.length - 1].currentTarget.dataset,
+        _temp8 = _temp7.eventParams || _temp7["event-params"],
+        q = _temp8.q
+      var _temp7, _temp8
+      return _vm.toggleAnswer(q.id)
     }
   }
   _vm.$mp.data = Object.assign(
     {},
     {
       $root: {
-        l0: l0,
+        l2: l2,
       },
     }
   )
@@ -167,304 +232,447 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 /* WEBPACK VAR INJECTION */(function(uni) {
 
+var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
+var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
+var _toConsumableArray2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/toConsumableArray */ 18));
 var _questionBank = __webpack_require__(/*! @/common/questionBank.js */ 68);
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+// 领域标签映射
+var domainLabels = {
+  '感知觉': '感知觉',
+  '粗大动作': '粗大动作',
+  '精细动作': '精细动作',
+  '认知': '认知',
+  '语言': '语言',
+  '社会情绪': '社会情绪',
+  '社会互动': '社会互动'
+};
+
+// 子领域标签映射
+var subdomainLabels = {
+  'OSV': '视知觉',
+  'OSH': '听知觉',
+  'OST': '触知觉',
+  'ISP': '本体运动知觉',
+  'ISV': '前庭平衡知觉',
+  'GM': '躯肢体粗大动作',
+  'UEM': '双上肢粗大动作',
+  'FM': '精细动作',
+  'SIP': '社会互动',
+  'SIE': '社会情绪',
+  'COG': '认知',
+  'LANG': '语言',
+  'OM': '口腔动作'
+};
 var _default = {
   data: function data() {
     return {
-      childInfo: {},
-      currentAgeBand: null,
-      isCorrectedAge: false,
-      assessmentMode: 'band',
-      // 'band' 或 'cumulative'
-      formState: {},
+      // 题目数据（按 domain -> subdomain 分组）
+      questionsByDomain: {},
+      // 展开状态
       expandedDomains: {},
+      expandedSubdomains: {},
+      // 答案（1=完成，0=未完成）
+      answers: {},
+      // 筛选器
+      filters: {
+        keyword: '',
+        domains: [],
+        onlyUnfinished: false
+      },
+      // 提交状态
       isSubmitting: false,
-      totalCount: 0,
-      checkedCount: 0
+      // 儿童信息
+      childInfo: {}
     };
   },
   computed: {
-    progressPercent: function progressPercent() {
-      return this.totalCount > 0 ? Math.round(this.checkedCount / this.totalCount * 100) : 0;
+    // 所有领域
+    allDomains: function allDomains() {
+      var domains = new Set();
+      _questionBank.questions.forEach(function (q) {
+        if (q.domain) domains.add(q.domain);
+      });
+      return Array.from(domains).sort();
+    },
+    // 统计信息
+    derivedStats: function derivedStats() {
+      var _this = this;
+      var stats = {
+        global: {
+          selected: 0,
+          total: 0,
+          ratio: 0
+        },
+        byDomain: {}
+      };
+
+      // 统计全局
+      var totalQs = Object.values(this.questionsByDomain).reduce(function (sum, subdomains) {
+        return sum + Object.values(subdomains).reduce(function (s, qs) {
+          return s + qs.length;
+        }, 0);
+      }, 0);
+      var selectedQs = Object.values(this.answers).filter(function (v) {
+        return v === 1;
+      }).length;
+      stats.global.total = totalQs;
+      stats.global.selected = selectedQs;
+      if (totalQs > 0) {
+        stats.global.ratio = Math.round(selectedQs / totalQs * 100);
+      }
+
+      // 统计每个 domain
+      this.allDomains.forEach(function (domain) {
+        var domainQs = _this.getQuestionsInDomain(domain);
+        var selected = domainQs.filter(function (q) {
+          return _this.answers[q.id] === 1;
+        }).length;
+        stats.byDomain[domain] = {
+          selected: selected,
+          total: domainQs.length,
+          ratio: domainQs.length > 0 ? Math.round(selected / domainQs.length * 100) : 0
+        };
+      });
+      return stats;
     }
   },
   onLoad: function onLoad() {
+    var _this2 = this;
+    console.log('[assessment] onLoad start');
     this.loadChildInfo();
-    this.loadQuestions();
+    var draft = uni.getStorageSync('assessmentDraft');
+    var hasDraft = draft && Object.keys(draft).length > 0;
+    this.initData();
+    if (!hasDraft) {
+      // 首次进入：只展开第一个 domain 的第一个 subdomain
+      this.allDomains.forEach(function (domain, idx) {
+        if (idx === 0 && _this2.hasQuestionsInDomain(domain)) {
+          _this2.$set(_this2.expandedDomains, domain, true);
+          var subdomains = _this2.getSubdomainsInDomain(domain);
+          if (subdomains.length > 0) {
+            _this2.$set(_this2.expandedSubdomains, "".concat(domain, "::").concat(subdomains[0]), true);
+          }
+        } else {
+          _this2.$set(_this2.expandedDomains, domain, false);
+        }
+      });
+    }
+    this.loadDraft();
+
+    // 对于没有草稿答案的题目，初始化为0
+    _questionBank.questions.forEach(function (q) {
+      if (_this2.answers[q.id] === undefined) {
+        _this2.answers[q.id] = 0;
+      }
+    });
+    console.log('[assessment] onLoad end');
+  },
+  beforeDestroy: function beforeDestroy() {
+    this.saveDraft();
   },
   methods: {
+    // 初始化数据
+    initData: function initData() {
+      var _this3 = this;
+      console.log('[assessment] initData start, questions count:', _questionBank.questions.length);
+
+      // 按 domain -> subdomain 分组题目
+      this.questionsByDomain = {};
+      _questionBank.questions.forEach(function (q) {
+        var domain = q.domain || '认知';
+        if (!_this3.questionsByDomain[domain]) {
+          _this3.questionsByDomain[domain] = {};
+        }
+        var subdomain = q.subdomain || 'other';
+        if (!_this3.questionsByDomain[domain][subdomain]) {
+          _this3.questionsByDomain[domain][subdomain] = [];
+        }
+        _this3.questionsByDomain[domain][subdomain].push(q);
+      });
+      console.log('[assessment] grouped by domain, keys:', Object.keys(this.questionsByDomain));
+      console.log('[assessment] initData end');
+    },
     // 加载儿童信息
     loadChildInfo: function loadChildInfo() {
       this.childInfo = uni.getStorageSync('childInfo') || {};
-      console.log('=== 儿童信息 ===');
-      console.log('儿童信息:', this.childInfo);
-      if (!this.childInfo.name) {
-        uni.showToast({
-          title: '请先填写儿童信息',
-          icon: 'none'
-        });
-        setTimeout(function () {
-          uni.navigateBack();
-        }, 1500);
-        return;
-      }
-
-      // 计算月龄
-      var ageMonths = this.calculateAgeInMonths(this.childInfo.birthDate);
-      console.log('出生日期:', this.childInfo.birthDate);
-      console.log('计算月龄:', ageMonths);
-
-      // 计算纠正月龄（如果是早产儿）
-      if (this.childInfo.isPremature && this.childInfo.prematureWeeks) {
-        var correctedAgeMonths = Math.max(0, ageMonths - Math.floor(this.childInfo.prematureWeeks / 4));
-        console.log('早产周数:', this.childInfo.prematureWeeks);
-        console.log('纠正月龄:', correctedAgeMonths);
-        this.isCorrectedAge = true;
-        this.currentAgeBand = (0, _questionBank.getAgeBandByMonths)(correctedAgeMonths);
-      } else {
-        this.currentAgeBand = (0, _questionBank.getAgeBandByMonths)(ageMonths);
-      }
-      console.log('当前年龄段:', this.currentAgeBand);
     },
-    // 加载题目
-    loadQuestions: function loadQuestions() {
-      if (!this.childInfo.birthDate) return;
-      var months = this.calculateAgeInMonths(this.childInfo.birthDate);
-      var band = (0, _questionBank.getAgeBandByMonths)(months);
-      var mode = this.assessmentMode;
-      console.log('[assessment] months=', months, 'band=', band, 'mode=', mode);
-      var grouped = (0, _questionBank.pickQuestionsByAgeMonths)(months, mode);
-      console.log('[assessment] picked:', {
-        total: Object.values(grouped).reduce(function (n, arr) {
-          return n + arr.length;
-        }, 0),
-        domains: Object.keys(grouped)
-      });
-
-      // 标准化题库结构
-      var normalize = function normalize(g) {
-        console.log('[assessment] normalize input:', Object.keys(g));
-        var doms = ["粗大动作", "精细动作", "社会互动", "认知", "语言", "感知觉", "口腔动作"];
-        var out = {};
-        doms.forEach(function (d) {
-          return out[d] = Array.isArray(g[d]) ? g[d] : [];
-        });
-        Object.keys(g || {}).forEach(function (k) {
-          if (!out[k] && Array.isArray(g[k])) out["认知"] = out["认知"].concat(g[k]);
-        });
-        console.log('[assessment] normalize output:', Object.keys(out), 'total:', Object.values(out).reduce(function (n, arr) {
-          return n + arr.length;
-        }, 0));
-        return out;
-      };
-      // 使用Vue.set确保响应式更新
-      this.$set(this, 'formState', normalize(grouped));
-
-      // 计算统计
-      this.totalCount = Object.values(this.formState).reduce(function (n, arr) {
-        return n + arr.length;
-      }, 0);
-      this.checkedCount = Object.values(this.formState).reduce(function (n, arr) {
-        return n + arr.filter(function (i) {
-          return !!i.checked;
-        }).length;
-      }, 0);
-      console.log('[assessment] final formState:', Object.keys(this.formState));
-      console.log('[assessment] totalCount:', this.totalCount, 'checkedCount:', this.checkedCount);
-
-      // 如果没有题目，自动切换到累进模式
-      if (this.totalCount === 0 && this.assessmentMode === 'band') {
-        console.log('精准模式无题目，切换到累进模式');
-        this.assessmentMode = 'cumulative';
-        this.loadQuestions();
-        return;
+    // 加载草稿
+    loadDraft: function loadDraft() {
+      var draft = uni.getStorageSync('assessmentDraft');
+      if (draft) {
+        if (draft.answers) this.answers = draft.answers;
+        if (draft.expandedDomains) this.expandedDomains = draft.expandedDomains;
+        if (draft.expandedSubdomains) this.expandedSubdomains = draft.expandedSubdomains;
+        if (draft.filters) this.filters = draft.filters;
       }
-
-      // 初始化领域展开状态
-      this.initExpandedDomains();
-
-      // 保存状态
-      uni.setStorageSync('assessmentForm', this.formState);
-      uni.setStorageSync('assessmentMode', this.assessmentMode);
-      uni.setStorageSync('assessmentBand', band);
     },
-    // 初始化领域展开状态
-    initExpandedDomains: function initExpandedDomains() {
-      var _this = this;
-      var domains = Object.keys(this.formState);
-      domains.forEach(function (domain) {
-        _this.$set(_this.expandedDomains, domain, true); // 默认展开
+    // 保存草稿
+    saveDraft: function saveDraft() {
+      uni.setStorageSync('assessmentDraft', {
+        answers: this.answers,
+        expandedDomains: this.expandedDomains,
+        expandedSubdomains: this.expandedSubdomains,
+        filters: this.filters
       });
     },
-    // 勾选变化处理
-    onCheckChanged: function onCheckChanged() {
-      this.checkedCount = Object.values(this.formState).reduce(function (n, arr) {
-        return n + arr.filter(function (i) {
-          return !!i.checked;
-        }).length;
-      }, 0);
-      uni.setStorageSync('assessmentForm', this.formState);
-    },
-    // 切换评估模式
-    switchMode: function switchMode(mode) {
-      if (this.assessmentMode === mode) return;
-      this.assessmentMode = mode;
-      this.loadQuestions();
-      uni.showToast({
-        title: "\u5DF2\u5207\u6362\u5230".concat(mode === 'band' ? '精准' : '累进', "\u6A21\u5F0F"),
-        icon: 'none'
-      });
-    },
-    // 切换领域展开状态
+    // 切换 domain
     toggleDomain: function toggleDomain(domain) {
       this.$set(this.expandedDomains, domain, !this.expandedDomains[domain]);
+      this.saveDraft();
     },
-    // 计算年龄（月）
-    calculateAgeInMonths: function calculateAgeInMonths(birthDate) {
-      if (!birthDate) return 0;
-      var birth = new Date(birthDate);
-      var today = new Date();
-      var ageInMonths = (today.getFullYear() - birth.getFullYear()) * 12;
-      ageInMonths += today.getMonth() - birth.getMonth();
+    // 切换 subdomain
+    toggleSubdomain: function toggleSubdomain(key) {
+      this.$set(this.expandedSubdomains, key, !this.expandedSubdomains[key]);
+      this.saveDraft();
+    },
+    // 获取 domain 中的题目
+    getQuestionsInDomain: function getQuestionsInDomain(domain) {
+      var questions = [];
+      Object.values(this.questionsByDomain[domain] || {}).forEach(function (list) {
+        questions.push.apply(questions, (0, _toConsumableArray2.default)(list));
+      });
+      return questions;
+    },
+    // 获取 domain 中的 subdomains
+    getSubdomainsInDomain: function getSubdomainsInDomain(domain) {
+      return Object.keys(this.questionsByDomain[domain] || {}).sort();
+    },
+    // 检查 domain 是否有题目
+    hasQuestionsInDomain: function hasQuestionsInDomain(domain) {
+      return this.questionsByDomain[domain] && Object.keys(this.questionsByDomain[domain]).length > 0;
+    },
+    // 获取领域统计
+    getDomainStats: function getDomainStats(domain) {
+      var _this4 = this;
+      var questions = this.getQuestionsInDomain(domain);
+      var selected = questions.filter(function (q) {
+        return _this4.answers[q.id] === 1;
+      }).length;
+      return {
+        selected: selected,
+        total: questions.length,
+        ratio: questions.length > 0 ? Math.round(selected / questions.length * 100) : 0
+      };
+    },
+    // 获取子领域统计
+    getSubdomainStats: function getSubdomainStats(domain, subdomain) {
+      var _this$questionsByDoma,
+        _this5 = this;
+      var questions = ((_this$questionsByDoma = this.questionsByDomain[domain]) === null || _this$questionsByDoma === void 0 ? void 0 : _this$questionsByDoma[subdomain]) || [];
+      var selected = questions.filter(function (q) {
+        return _this5.answers[q.id] === 1;
+      }).length;
+      return {
+        selected: selected,
+        total: questions.length,
+        ratio: questions.length > 0 ? Math.round(selected / questions.length * 100) : 0
+      };
+    },
+    // 获取领域标签
+    getDomainLabel: function getDomainLabel(domain) {
+      return domainLabels[domain] || domain;
+    },
+    // 获取子领域标签
+    getSubdomainLabel: function getSubdomainLabel(subdomain) {
+      return subdomainLabels[subdomain] || subdomain;
+    },
+    // 检查 domain 是否有匹配的题目
+    hasMatchingQuestionsInDomain: function hasMatchingQuestionsInDomain(domain) {
+      if (!this.hasQuestionsInDomain(domain)) return false;
 
-      // 如果日期还没到，减1个月
-      if (today.getDate() < birth.getDate()) {
-        ageInMonths--;
+      // 如果没有搜索条件，返回 true
+      if (!this.filters.keyword && this.filters.domains.length === 0 && !this.filters.onlyUnfinished) {
+        return true;
       }
-      return Math.max(0, ageInMonths);
+
+      // 检查是否有匹配的题目
+      var questions = this.getQuestionsInDomain(domain);
+      return this.applyFiltersToQuestions(questions).length > 0;
+    },
+    // 检查 subdomain 是否有匹配的题目
+    hasMatchingQuestionsInSubdomain: function hasMatchingQuestionsInSubdomain(domain, subdomain) {
+      var _this$questionsByDoma2;
+      var questions = ((_this$questionsByDoma2 = this.questionsByDomain[domain]) === null || _this$questionsByDoma2 === void 0 ? void 0 : _this$questionsByDoma2[subdomain]) || [];
+      if (questions.length === 0) return false;
+
+      // 如果没有搜索条件，返回 true
+      if (!this.filters.keyword && this.filters.domains.length === 0 && !this.filters.onlyUnfinished) {
+        return true;
+      }
+
+      // 检查是否有匹配的题目
+      return this.applyFiltersToQuestions(questions).length > 0;
+    },
+    // 获取可见的题目（应用筛选）
+    getVisibleQuestions: function getVisibleQuestions(domain, subdomain) {
+      var _this$questionsByDoma3;
+      var questions = ((_this$questionsByDoma3 = this.questionsByDomain[domain]) === null || _this$questionsByDoma3 === void 0 ? void 0 : _this$questionsByDoma3[subdomain]) || [];
+
+      // 应用筛选
+      return this.applyFiltersToQuestions(questions);
+    },
+    // 对题目应用筛选
+    applyFiltersToQuestions: function applyFiltersToQuestions(questions) {
+      var _this6 = this;
+      return questions.filter(function (q) {
+        // 关键词筛选
+        if (_this6.filters.keyword) {
+          var keyword = _this6.filters.keyword.toLowerCase();
+          if (!q.text.toLowerCase().includes(keyword)) {
+            return false;
+          }
+        }
+
+        // 领域筛选
+        if (_this6.filters.domains.length > 0 && !_this6.filters.domains.includes(q.domain)) {
+          return false;
+        }
+
+        // 仅看未完成
+        if (_this6.filters.onlyUnfinished && _this6.answers[q.id] === 1) {
+          return false;
+        }
+        return true;
+      });
+    },
+    // 切换答案
+    toggleAnswer: function toggleAnswer(qid) {
+      this.$set(this.answers, qid, this.answers[qid] === 1 ? 0 : 1);
+      this.saveDraft();
+    },
+    // 领域筛选切换
+    toggleDomainFilter: function toggleDomainFilter(domain) {
+      var idx = this.filters.domains.indexOf(domain);
+      if (idx >= 0) {
+        this.filters.domains.splice(idx, 1);
+      } else {
+        this.filters.domains.push(domain);
+      }
+      this.saveDraft();
+    },
+    // 仅看未完成开关
+    onUnfinishedToggle: function onUnfinishedToggle(e) {
+      this.filters.onlyUnfinished = e.detail.value;
+      this.saveDraft();
+    },
+    // 应用筛选（搜索时）
+    applyFilters: function applyFilters() {
+      var _this7 = this;
+      // 如果有搜索关键词，自动展开包含匹配题目的 domain 和 subdomain
+      if (this.filters.keyword) {
+        this.allDomains.forEach(function (domain) {
+          if (_this7.hasMatchingQuestionsInDomain(domain)) {
+            // 展开 domain
+            _this7.$set(_this7.expandedDomains, domain, true);
+
+            // 展开有匹配题目的 subdomain
+            var subdomains = _this7.getSubdomainsInDomain(domain);
+            subdomains.forEach(function (subdomain) {
+              if (_this7.hasMatchingQuestionsInSubdomain(domain, subdomain)) {
+                _this7.$set(_this7.expandedSubdomains, "".concat(domain, "::").concat(subdomain), true);
+              }
+            });
+          }
+        });
+        this.saveDraft();
+      }
+      this.$forceUpdate();
+    },
+    // 全选本领域
+    selectAllInDomain: function selectAllInDomain(domain) {
+      var _this8 = this;
+      var questions = this.getQuestionsInDomain(domain);
+      questions.forEach(function (q) {
+        _this8.$set(_this8.answers, q.id, 1);
+      });
+      this.saveDraft();
+    },
+    // 清空本领域
+    clearDomain: function clearDomain(domain) {
+      var _this9 = this;
+      var questions = this.getQuestionsInDomain(domain);
+      questions.forEach(function (q) {
+        _this9.$set(_this9.answers, q.id, 0);
+      });
+      this.saveDraft();
+    },
+    // 全选本子领域
+    selectAllInSubdomain: function selectAllInSubdomain(domain, subdomain) {
+      var _this$questionsByDoma4,
+        _this10 = this;
+      var questions = ((_this$questionsByDoma4 = this.questionsByDomain[domain]) === null || _this$questionsByDoma4 === void 0 ? void 0 : _this$questionsByDoma4[subdomain]) || [];
+      questions.forEach(function (q) {
+        _this10.$set(_this10.answers, q.id, 1);
+      });
+      this.saveDraft();
+    },
+    // 清空本子领域
+    clearSubdomain: function clearSubdomain(domain, subdomain) {
+      var _this$questionsByDoma5,
+        _this11 = this;
+      var questions = ((_this$questionsByDoma5 = this.questionsByDomain[domain]) === null || _this$questionsByDoma5 === void 0 ? void 0 : _this$questionsByDoma5[subdomain]) || [];
+      questions.forEach(function (q) {
+        _this11.$set(_this11.answers, q.id, 0);
+      });
+      this.saveDraft();
     },
     // 提交评估
     submitAssessment: function submitAssessment() {
-      if (this.isSubmitting || this.totalCount === 0) return;
+      if (this.isSubmitting) return;
       this.isSubmitting = true;
-      console.log('=== 提交评估 ===');
-      console.log('已完成题目:', this.checkedCount);
-      console.log('总题目数:', this.totalCount);
-      console.log('完成率:', this.progressPercent + '%');
 
       // 生成评估结果
       var assessmentResult = {
         childInfo: this.childInfo,
-        ageBand: this.currentAgeBand,
-        assessmentMode: this.assessmentMode,
-        isCorrectedAge: this.isCorrectedAge,
-        formState: this.formState,
-        checkedCount: this.checkedCount,
-        totalCount: this.totalCount,
-        progressPercent: this.progressPercent,
+        answers: this.answers,
+        formState: this.formatFormState(),
+        checkedCount: this.derivedStats.global.selected,
+        totalCount: this.derivedStats.global.total,
+        progressPercent: this.derivedStats.global.ratio,
         assessmentDate: new Date().toISOString()
       };
 
       // 保存评估结果
       uni.setStorageSync('assessmentResult', assessmentResult);
 
+      // 清除草稿
+      uni.removeStorageSync('assessmentDraft');
+
       // 延迟跳转
       setTimeout(function () {
         uni.redirectTo({
           url: '/pages/result/result'
         });
-      }, 2000);
+      }, 1000);
+    },
+    // 格式化 formState（兼容旧格式）
+    formatFormState: function formatFormState() {
+      var _this12 = this;
+      var formState = {};
+      Object.keys(this.questionsByDomain).forEach(function (domain) {
+        formState[domain] = [];
+        Object.values(_this12.questionsByDomain[domain]).forEach(function (list) {
+          list.forEach(function (q) {
+            formState[domain].push(_objectSpread(_objectSpread({}, q), {}, {
+              checked: _this12.answers[q.id] === 1
+            }));
+          });
+        });
+      });
+      return formState;
+    },
+    // 回到顶部
+    scrollToTop: function scrollToTop() {
+      uni.pageScrollTo({
+        scrollTop: 0,
+        duration: 300
+      });
     }
   }
 };

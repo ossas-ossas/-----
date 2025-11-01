@@ -585,36 +585,22 @@ const subdomainLabels = {
 <style>
 	.container {
 		min-height: 100vh;
-		background: linear-gradient(180deg, #fff 0%, #F5F9FC 100%);
+		background: #F8F9FA;
 		padding-bottom: 180rpx;
 		position: relative;
 		overflow: hidden;
 	}
 	
-	.container::before {
-		content: '';
-		position: fixed;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		width: 300%;
-		height: 300%;
-		background: url('/static/logo.png') center center / contain no-repeat;
-		filter: blur(40rpx);
-		opacity: 0.15;
-		z-index: 0;
-		pointer-events: none;
-	}
+	/* 移除背景图装饰，微信小程序不支持 WXSS 中使用本地图片 */
 
 /* 顶部工具条（吸顶） */
 .top-bar {
 	position: sticky;
 	top: 0;
 	z-index: 100;
-	background: rgba(255, 255, 255, 0.98);
+	background: #FFFFFF;
 	padding: 20rpx;
-	box-shadow: 0 2rpx 10rpx rgba(233, 58, 138, 0.1);
-	backdrop-filter: blur(10rpx);
+	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
 }
 
 .top-header {
@@ -626,13 +612,13 @@ const subdomainLabels = {
 
 .page-title {
 	font-size: 36rpx;
-		font-weight: bold;
+	font-weight: bold;
 		color: #2C3E50;
 }
 
 .global-stats {
 	font-size: 28rpx;
-	color: #87CEEB;
+		color: #87CEEB;
 	font-weight: 600;
 }
 
@@ -659,7 +645,7 @@ const subdomainLabels = {
 }
 
 .domain-chips {
-		display: flex;
+	display: flex;
 	flex-wrap: wrap;
 	gap: 15rpx;
 	margin-bottom: 20rpx;
@@ -670,14 +656,14 @@ const subdomainLabels = {
 	background: #F8F9FA;
 	border: 2rpx solid #E8F4FD;
 	border-radius: 30rpx;
-		font-size: 24rpx;
+	font-size: 24rpx;
 		color: #7F8C8D;
-	}
-	
+}
+
 .chip.active {
-		background: #87CEEB;
-		color: #FFFFFF;
-	border-color: #87CEEB;
+	background: #E93A8A;
+	color: #FFFFFF;
+	border-color: #E93A8A;
 }
 
 .filter-switch {
@@ -687,15 +673,13 @@ const subdomainLabels = {
 }
 
 .switch-label {
-		font-size: 26rpx;
-	color: #2C3E50;
+	font-size: 26rpx;
+		color: #2C3E50;
 }
 
 /* 主列表 */
 .questions-container {
 	padding: 20rpx;
-	position: relative;
-	z-index: 1;
 }
 
 .domain-section {
@@ -703,9 +687,9 @@ const subdomainLabels = {
 	}
 	
 .domain-header {
-	background: linear-gradient(135deg, #87CEEB, #98FB98);
+	background: linear-gradient(135deg, #E93A8A, #009FC2);
 	padding: 25rpx 30rpx;
-	border-radius: 15rpx;
+		border-radius: 15rpx;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -719,13 +703,13 @@ const subdomainLabels = {
 }
 
 .domain-stats {
-	font-size: 26rpx;
+		font-size: 26rpx;
 	color: #FFFFFF;
 	margin: 0 15rpx;
 }
 
 .domain-actions {
-		display: flex;
+	display: flex;
 	gap: 20rpx;
 }
 
@@ -762,14 +746,14 @@ const subdomainLabels = {
 }
 
 .subdomain-title {
-	font-size: 28rpx;
+		font-size: 28rpx;
 	font-weight: 600;
-	color: #2C3E50;
-}
-
+		color: #2C3E50;
+	}
+	
 .subdomain-stats {
 	font-size: 24rpx;
-	color: #87CEEB;
+		color: #87CEEB;
 	margin-left: 15rpx;
 }
 
@@ -862,7 +846,7 @@ const subdomainLabels = {
 
 .progress-fill {
 	height: 100%;
-	background: linear-gradient(90deg, #87CEEB, #98FB98);
+	background: linear-gradient(90deg, #E93A8A, #009FC2);
 	transition: width 0.3s;
 }
 
@@ -885,7 +869,7 @@ const subdomainLabels = {
 }
 
 .bottom-actions .action-btn.primary {
-		background: linear-gradient(135deg, #87CEEB, #98FB98);
+		background: linear-gradient(135deg, #E93A8A, #009FC2);
 		color: #FFFFFF;
 		border: none;
 	}

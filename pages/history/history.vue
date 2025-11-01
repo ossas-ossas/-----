@@ -35,7 +35,7 @@
 						<text class="child-name">{{ record.childInfo.name }}</text>
 						<text class="record-date">{{ formatDate(record.assessmentDate) }}</text>
 					</view>
-					<view class="score-badge" :class="getScoreClass(record.scorePercent)">
+					<view class="score-badge" :class="record.scorePercent >= 80 ? 'score-good' : (record.scorePercent >= 60 ? 'score-normal' : 'score-attention')">
 						<text class="score-text">{{ record.scorePercent }}分</text>
 					</view>
 				</view>
@@ -45,12 +45,12 @@
 						<text class="detail-label">年龄：</text>
 						<text class="detail-value">{{ calculateAge(record.childInfo.birthDate, record.assessmentDate) }}</text>
 					</view>
-					<view class="detail-row">
-						<text class="detail-label">评估等级：</text>
-						<text class="detail-value" :class="getScoreClass(record.scorePercent)">
-							{{ getScoreLevel(record.scorePercent) }}
-						</text>
-					</view>
+				<view class="detail-row">
+					<text class="detail-label">评估等级：</text>
+					<text class="detail-value" :class="record.scorePercent >= 80 ? 'score-good' : (record.scorePercent >= 60 ? 'score-normal' : 'score-attention')">
+						{{ getScoreLevel(record.scorePercent) }}
+					</text>
+				</view>
 				</view>
 				
 				<view class="record-footer">
@@ -88,7 +88,7 @@
 							bottom: (record.scorePercent / 100) * 200 + 'rpx'
 						}"
 					>
-						<view class="point-circle" :class="getScoreClass(record.scorePercent)"></view>
+						<view class="point-circle" :class="record.scorePercent >= 80 ? 'score-good' : (record.scorePercent >= 60 ? 'score-normal' : 'score-attention')"></view>
 						<text class="point-score">{{ record.scorePercent }}</text>
 					</view>
 					
@@ -245,7 +245,11 @@
 		background: linear-gradient(135deg, #E8F4FD 0%, #F0F8FF 100%);
 		padding: 30rpx;
 		padding-bottom: 120rpx;
+		position: relative;
+		overflow: hidden;
 	}
+	
+	/* 移除背景图装饰，微信小程序不支持 WXSS 中使用本地图片 */
 	
 	/* 页面标题 */
 	.page-header {
@@ -456,7 +460,7 @@
 	.start-button {
 		width: 300rpx;
 		height: 80rpx;
-		background: linear-gradient(135deg, #87CEEB, #98FB98);
+		background: linear-gradient(135deg, #E93A8A, #009FC2);
 		border-radius: 40rpx;
 		border: none;
 		display: flex;
@@ -545,7 +549,7 @@
 		left: 20rpx;
 		right: 20rpx;
 		height: 2rpx;
-		background: linear-gradient(90deg, #87CEEB, #98FB98);
+		background: linear-gradient(90deg, #E93A8A, #009FC2);
 		opacity: 0.6;
 	}
 	
@@ -594,8 +598,8 @@
 	}
 	
 	.action-button.primary {
-		background: linear-gradient(135deg, #87CEEB, #98FB98);
+		background: linear-gradient(135deg, #E93A8A, #009FC2);
 		color: #FFFFFF;
-		box-shadow: 0 4rpx 15rpx rgba(135, 206, 235, 0.3);
+		box-shadow: 0 4rpx 15rpx rgba(233, 58, 138, 0.3);
 	}
 </style>

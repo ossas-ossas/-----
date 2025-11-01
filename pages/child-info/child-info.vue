@@ -659,7 +659,7 @@
 			},
 			
 			// 跳转到评估页面
-			goToAssessment() {
+			async goToAssessment() {
 				if (!this.isFormValid) {
 					uni.showToast({
 						title: '请完善必填信息',
@@ -685,18 +685,117 @@
 					return
 				}
 				
-				// 保存儿童信息到本地存储
-				const childInfo = uni.getStorageSync('childInfo') || {}
-				uni.setStorageSync('childInfo', {
-					...childInfo,
-					...this.formData,
-					clinical: this.clinical
+				// 显示加载提示
+				uni.showLoading({
+					title: '保存中...',
+					mask: true
 				})
 				
-				// 跳转到评估页面
-				uni.navigateTo({
-					url: '/pages/assessment/assessment'
-				})
+				try {
+					// 准备数据
+					const clinical = this.clinical
+					
+					// 转换诊断数据格式
+					const diagnosis = clinical.medicalDiagnosis || []
+					
+					// 准备 habits 对象
+					const habits = {
+						walkTime: clinical.walkingTime || '',
+						crawl: clinical.crawlStatus || '',
+						crawlMonths: clinical.crawlMonths || '',
+						kneel: clinical.kneelWalk,
+						hand: clinical.handedness || ''
+					}
+					
+					// 调用云函数保存到数据库
+					const saveResult = await uniCloud.callFunction({
+						name: 'saveChildProfile',
+						data: {
+							name: this.formData.name,
+							gender: this.formData.gender,
+							birthDate: this.formData.birthDate,
+							diagnosis: diagnosis,
+							habits: habits,
+							vision: clinical.vision || { status: 'normal', sub: [] },
+							hearing: clinical.hearing || { status: 'normal', dbLeft: '', dbRight: '' },
+							epilepsy: clinical.epilepsy || 'none',
+							caregiver: this.formData.caregiver || '',
+							phone: this.formData.phone || '',
+							videos: clinical.videos || [],
+							homeGuide: clinical.homeGuide,
+							notes: this.formData.notes || ''
+						}
+					})
+					
+					uni.hideLoading()
+					
+					if (saveResult.result.code === 0) {
+						const childId = saveResult.result.data.id
+						
+						// 保存儿童信息到本地存储（包含 childId）
+						const childInfo = {
+							...this.formData,
+							clinical: this.clinical,
+							childId: childId // 保存数据库返回的ID
+						}
+						uni.setStorageSync('childInfo', childInfo)
+						
+						uni.showToast({
+							title: '保存成功',
+							icon: 'success'
+						})
+						
+						// 跳转到评估页面
+						setTimeout(() => {
+							uni.navigateTo({
+								url: '/pages/assessment/assessment'
+							})
+						}, 500)
+					} else {
+						// 保存失败，但仍然保存到本地存储以便后续使用
+						const childInfo = {
+							...this.formData,
+							clinical: this.clinical
+						}
+						uni.setStorageSync('childInfo', childInfo)
+						
+						uni.showToast({
+							title: saveResult.result.msg || '保存失败，已保存到本地',
+							icon: 'none',
+							duration: 2000
+						})
+						
+						// 即使失败也允许继续，因为已保存到本地
+						setTimeout(() => {
+							uni.navigateTo({
+								url: '/pages/assessment/assessment'
+							})
+						}, 1500)
+					}
+				} catch (error) {
+					uni.hideLoading()
+					console.error('保存儿童信息失败:', error)
+					
+					// 出错时仍保存到本地存储
+					const childInfo = {
+						...this.formData,
+						clinical: this.clinical
+					}
+					uni.setStorageSync('childInfo', childInfo)
+					
+					uni.showToast({
+						title: '网络错误，已保存到本地',
+						icon: 'none',
+						duration: 2000
+					})
+					
+					// 允许继续使用本地数据
+					setTimeout(() => {
+						uni.navigateTo({
+							url: '/pages/assessment/assessment'
+						})
+					}, 1500)
+				}
 			}
 		}
 	}
@@ -705,33 +804,18 @@
 <style>
 	.container {
 		min-height: 100vh;
-		background: linear-gradient(180deg, #fff 0%, #F5F9FC 100%);
+		background: linear-gradient(135deg, #E8F4FD 0%, #F0F8FF 100%);
 		padding: 30rpx;
 		position: relative;
 		overflow: hidden;
 	}
 	
-	.container::before {
-		content: '';
-		position: fixed;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		width: 300%;
-		height: 300%;
-		background: url('/static/logo.png') center center / contain no-repeat;
-		filter: blur(40rpx);
-		opacity: 0.15;
-		z-index: 0;
-		pointer-events: none;
-	}
+	/* 移除背景图装饰，微信小程序不支持 WXSS 中使用本地图片 */
 	
 	/* 页面标题 */
 	.page-header {
 		text-align: center;
 		margin-bottom: 40rpx;
-		position: relative;
-		z-index: 1;
 	}
 	
 	.page-title {
@@ -752,8 +836,6 @@
 	/* 表单容器 */
 	.form-container {
 		margin-bottom: 120rpx;
-		position: relative;
-		z-index: 1;
 	}
 	
 	/* 表单分组 */
@@ -808,7 +890,7 @@
 	}
 	
 	.input:focus {
-		border-color: #009FC2;
+		border-color: #E93A8A;
 		background: #FFFFFF;
 	}
 	
@@ -863,7 +945,7 @@
 	}
 	
 	.picker-view:active {
-		border-color: #009FC2;
+		border-color: #E93A8A;
 		background: #FFFFFF;
 	}
 	
@@ -888,9 +970,9 @@
 	
 	.age-text {
 		font-size: 26rpx;
-		color: #009FC2;
+		color: #E93A8A;
 		font-weight: bold;
-		background: rgba(0, 159, 194, 0.1);
+		background: rgba(233, 58, 138, 0.1);
 		padding: 10rpx 20rpx;
 		border-radius: 20rpx;
 		margin-bottom: 8rpx;
@@ -918,7 +1000,7 @@
 	}
 	
 	.textarea:focus {
-		border-color: #009FC2;
+		border-color: #E93A8A;
 		background: #FFFFFF;
 	}
 	
@@ -939,8 +1021,7 @@
 		padding: 30rpx;
 		background: rgba(255, 255, 255, 0.95);
 		backdrop-filter: blur(10rpx);
-		border-top: 1rpx solid rgba(233, 58, 138, 0.1);
-		z-index: 10;
+		border-top: 1rpx solid #E8F4FD;
 	}
 	
 	.next-button {
@@ -1045,7 +1126,7 @@
 	}
 	
 	.number-input:focus {
-		border-color: #009FC2;
+		border-color: #E93A8A;
 		background: #FFFFFF;
 	}
 	
@@ -1129,7 +1210,7 @@
 	}
 	
 	.video-item:active {
-		border-color: #87CEEB;
-		background: #E8F4FD;
+		border-color: #E93A8A;
+		background: #FFF0F5;
 	}
 </style>

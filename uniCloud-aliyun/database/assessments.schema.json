@@ -1,0 +1,145 @@
+{
+  "bsonType": "object",
+  "required": ["childId", "ownerUid", "answers", "stats", "createdAt"],
+  "permission": {
+    "read": "doc.ownerUid == auth.uid",
+    "create": true,
+    "update": "doc.ownerUid == auth.uid",
+    "delete": false
+  },
+  "properties": {
+    "childId": {
+      "bsonType": "string",
+      "label": "儿童档案ID",
+      "description": "关联 child_profiles 集合的 _id"
+    },
+    "ownerUid": {
+      "bsonType": "string",
+      "label": "所有者UID",
+      "description": "家长用户ID，用于权限控制"
+    },
+    "answers": {
+      "bsonType": "object",
+      "label": "作答数据",
+      "description": "格式: { [qid]: 0|1 }，0=未完成，1=已完成"
+    },
+    "stats": {
+      "bsonType": "object",
+      "label": "聚合统计",
+      "description": "用于图表展示和数据分析",
+      "properties": {
+        "domains": {
+          "bsonType": "object",
+          "label": "各领域统计",
+          "description": "格式: { [domain]: { passed: number, total: number, ratio: number } }"
+        },
+        "ageBands": {
+          "bsonType": "object",
+          "label": "各年龄段统计",
+          "description": "格式: { [ageBand]: { passed: number, total: number, ratio: number } }"
+        },
+        "overall": {
+          "bsonType": "object",
+          "label": "总体统计",
+          "properties": {
+            "passed": {
+              "bsonType": "int",
+              "label": "通过数量"
+            },
+            "total": {
+              "bsonType": "int",
+              "label": "总数量"
+            },
+            "ratio": {
+              "bsonType": "double",
+              "label": "完成率",
+              "description": "范围 0-1"
+            }
+          }
+        }
+      }
+    },
+    "notAchieved": {
+      "bsonType": "array",
+      "label": "未达标明细",
+      "description": "仅教师可见",
+      "items": {
+        "bsonType": "object",
+        "properties": {
+          "qid": {
+            "bsonType": "string",
+            "label": "题目ID"
+          },
+          "domain": {
+            "bsonType": "string",
+            "label": "领域"
+          },
+          "ageBand": {
+            "bsonType": "string",
+            "label": "年龄段"
+          },
+          "title": {
+            "bsonType": "string",
+            "label": "题目标题"
+          }
+        }
+      }
+    },
+    "scorePercent": {
+      "bsonType": "int",
+      "label": "得分百分比",
+      "description": "范围 0-100",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "level": {
+      "bsonType": "string",
+      "label": "发育等级",
+      "enum": ["优秀", "良好", "正常", "需关注", "需干预"],
+      "description": "根据得分百分比自动判定"
+    },
+    "source": {
+      "bsonType": "string",
+      "label": "数据来源",
+      "enum": ["draft", "submit"],
+      "defaultValue": "draft",
+      "description": "draft=草稿，submit=已提交"
+    },
+    "createdAt": {
+      "bsonType": "long",
+      "label": "创建时间戳(ms)"
+    },
+    "updatedAt": {
+      "bsonType": "long",
+      "label": "更新时间戳(ms)"
+    }
+  },
+  "indexes": {
+    "idx_childId": {
+      "fields": ["childId"],
+      "unique": false,
+      "description": "儿童档案索引"
+    },
+    "idx_ownerUid": {
+      "fields": ["ownerUid"],
+      "unique": false,
+      "description": "所有者索引"
+    },
+    "idx_createdAt": {
+      "fields": ["createdAt"],
+      "unique": false,
+      "description": "创建时间索引，用于排序",
+      "sort": "desc"
+    },
+    "idx_childId_createdAt": {
+      "fields": ["childId", "createdAt"],
+      "unique": false,
+      "description": "儿童+时间复合索引，用于查询某儿童的所有评估"
+    },
+    "idx_source": {
+      "fields": ["source"],
+      "unique": false,
+      "description": "数据来源索引，用于区分草稿和已提交"
+    }
+  }
+}

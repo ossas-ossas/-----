@@ -3,7 +3,11 @@
 	min-height: 100vh;
 	background: linear-gradient(135deg, #E8F4FD 0%, #F0F8FF 100%);
 	padding: 30rpx;
+	position: relative;
+	overflow: hidden;
 }
+
+/* 移除背景图装饰，微信小程序不支持 WXSS 中使用本地图片 */
 
 /* 页面标题 */
 .page-header {
@@ -76,7 +80,7 @@
 	transition: all 0.3s;
 }
 .input:focus {
-	border-color: #87CEEB;
+	border-color: #E93A8A;
 	background: #FFFFFF;
 }
 
@@ -99,8 +103,8 @@
 	transition: all 0.3s;
 }
 .radio-item.active {
-	background: linear-gradient(135deg, #87CEEB, #98FB98);
-	border-color: #87CEEB;
+	background: linear-gradient(135deg, #E93A8A, #009FC2);
+	border-color: #E93A8A;
 }
 .radio-text {
 	font-size: 26rpx;
@@ -126,7 +130,7 @@
 	transition: all 0.3s;
 }
 .picker-view:active {
-	border-color: #87CEEB;
+	border-color: #E93A8A;
 	background: #FFFFFF;
 }
 .picker-text {
@@ -147,9 +151,9 @@
 }
 .age-text {
 	font-size: 26rpx;
-	color: #87CEEB;
+	color: #E93A8A;
 	font-weight: bold;
-	background: rgba(135, 206, 235, 0.1);
+	background: rgba(233, 58, 138, 0.1);
 	padding: 10rpx 20rpx;
 	border-radius: 20rpx;
 	margin-bottom: 8rpx;
@@ -175,7 +179,7 @@
 	transition: all 0.3s;
 }
 .textarea:focus {
-	border-color: #87CEEB;
+	border-color: #E93A8A;
 	background: #FFFFFF;
 }
 .char-count {
@@ -201,13 +205,13 @@
 .next-button {
 	width: 100%;
 	height: 90rpx;
-	background: linear-gradient(135deg, #87CEEB, #98FB98);
+	background: linear-gradient(135deg, #E93A8A, #009FC2);
 	border-radius: 45rpx;
 	border: none;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	box-shadow: 0 8rpx 25rpx rgba(135, 206, 235, 0.4);
+	box-shadow: 0 8rpx 30rpx rgba(233, 58, 138, 0.4);
 	transition: all 0.3s;
 }
 .next-button:disabled {
@@ -218,5 +222,156 @@
 	font-size: 32rpx;
 	font-weight: bold;
 	color: #FFFFFF;
+}
+
+/* 复选框组 */
+.checkbox-group {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 15rpx;
+}
+.checkbox-item {
+	flex: 1;
+	min-width: 140rpx;
+	height: 70rpx;
+	background: #F8F9FA;
+	border-radius: 15rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 2rpx solid transparent;
+	transition: all 0.3s;
+	position: relative;
+}
+.checkbox-item.active {
+	background: linear-gradient(135deg, #E93A8A, #009FC2);
+	border-color: #E93A8A;
+}
+.checkbox-item.active::after {
+	content: '✓';
+	position: absolute;
+	right: 15rpx;
+	color: #FFFFFF;
+	font-weight: bold;
+	font-size: 28rpx;
+}
+.checkbox-text {
+	font-size: 26rpx;
+	color: #2C3E50;
+	font-weight: 500;
+}
+.checkbox-item.active .checkbox-text {
+	color: #FFFFFF;
+	font-weight: bold;
+}
+
+/* 单选框组垂直排列 */
+.radio-group.column {
+	flex-direction: column;
+}
+.radio-group.column .radio-item {
+	width: 100%;
+	justify-content: flex-start;
+	text-align: left;
+	padding: 0 20rpx;
+}
+
+/* 输入行 */
+.input-row {
+	margin-top: 15rpx;
+	display: flex;
+	align-items: center;
+	gap: 10rpx;
+}
+.number-input {
+	width: 160rpx;
+	height: 64rpx;
+	padding: 0 16rpx;
+	background: #F8F9FA;
+	border: 2rpx solid #E8F4FD;
+	border-radius: 10rpx;
+	font-size: 26rpx;
+	color: #2C3E50;
+}
+.number-input:focus {
+	border-color: #E93A8A;
+	background: #FFFFFF;
+}
+.inline {
+	display: flex;
+	align-items: center;
+	gap: 16rpx;
+	margin-top: 15rpx;
+}
+.label-inline {
+	font-size: 26rpx;
+	color: #7F8C8D;
+}
+
+/* 子复选框组 */
+.checkbox-sub-group {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10rpx;
+	margin-top: 15rpx;
+	padding-left: 40rpx;
+}
+.checkbox-sub-item {
+	min-width: 100rpx;
+	height: 60rpx;
+	background: #F8F9FA;
+	border-radius: 12rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 2rpx solid transparent;
+	transition: all 0.3s;
+	position: relative;
+	padding: 0 20rpx;
+}
+.checkbox-sub-item.active {
+	background: linear-gradient(135deg, #E93A8A, #009FC2);
+	border-color: #E93A8A;
+}
+.checkbox-sub-item.active::after {
+	content: '✓';
+	position: absolute;
+	right: 8rpx;
+	color: #FFFFFF;
+	font-weight: bold;
+	font-size: 24rpx;
+}
+
+/* 辅助文字 */
+.sub-note {
+	font-size: 22rpx;
+	color: #7F8C8D;
+	margin-top: 8rpx;
+	line-height: 1.5;
+}
+
+/* 视频列表 */
+.video-list {
+	margin-top: 12rpx;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12rpx;
+}
+.video-item {
+	width: 180rpx;
+	height: 120rpx;
+	border-radius: 10rpx;
+	background: #F5F8FF;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #7F8C8D;
+	font-size: 24rpx;
+	border: 2rpx solid #E8F4FD;
+	transition: all 0.3s;
+}
+.video-item:active {
+	border-color: #E93A8A;
+	background: #FFF0F5;
 }
 

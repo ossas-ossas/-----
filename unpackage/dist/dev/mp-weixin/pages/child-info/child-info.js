@@ -103,12 +103,61 @@ var render = function () {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  var g0 = _vm.formData.notes.length
+  var g0 = _vm.clinical.medicalDiagnosis.includes("cerebralPalsy")
+  var g1 = _vm.clinical.medicalDiagnosis.includes("devDelay")
+  var g2 = _vm.clinical.medicalDiagnosis.includes("autism")
+  var g3 = _vm.clinical.medicalDiagnosis.includes("rare")
+  var g4 =
+    _vm.clinical.vision.status === "amblyopia"
+      ? _vm.clinical.vision.sub.includes("myopia")
+      : null
+  var g5 =
+    _vm.clinical.vision.status === "amblyopia"
+      ? _vm.clinical.vision.sub.includes("astigmatism")
+      : null
+  var g6 = _vm.clinical.videos.length
+  var g7 = _vm.formData.notes.length
+  if (!_vm._isMounted) {
+    _vm.e0 = function ($event) {
+      _vm.clinical.kneelWalk = true
+    }
+    _vm.e1 = function ($event) {
+      _vm.clinical.kneelWalk = false
+    }
+    _vm.e2 = function ($event) {
+      _vm.clinical.handedness = "left"
+    }
+    _vm.e3 = function ($event) {
+      _vm.clinical.handedness = "right"
+    }
+    _vm.e4 = function ($event) {
+      _vm.clinical.epilepsy = "none"
+    }
+    _vm.e5 = function ($event) {
+      _vm.clinical.epilepsy = "medicated"
+    }
+    _vm.e6 = function ($event) {
+      _vm.clinical.epilepsy = "unmedicated"
+    }
+    _vm.e7 = function ($event) {
+      _vm.clinical.homeGuide = true
+    }
+    _vm.e8 = function ($event) {
+      _vm.clinical.homeGuide = false
+    }
+  }
   _vm.$mp.data = Object.assign(
     {},
     {
       $root: {
         g0: g0,
+        g1: g1,
+        g2: g2,
+        g3: g3,
+        g4: g4,
+        g5: g5,
+        g6: g6,
+        g7: g7,
       },
     }
   )
@@ -145,12 +194,301 @@ __webpack_require__.r(__webpack_exports__);
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-/* WEBPACK VAR INJECTION */(function(uni) {
+/* WEBPACK VAR INJECTION */(function(uni, uniCloud) {
 
+var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
+var _regenerator = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/regenerator */ 28));
+var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
+var _asyncToGenerator2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ 31));
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 //
 //
 //
@@ -341,6 +679,26 @@ var _default = {
         hasDelayHistory: '',
         notes: ''
       },
+      clinical: {
+        medicalDiagnosis: [],
+        walkingTime: '',
+        crawlStatus: '',
+        crawlMonths: '',
+        kneelWalk: null,
+        handedness: '',
+        vision: {
+          status: 'normal',
+          sub: []
+        },
+        hearing: {
+          status: 'normal',
+          dbLeft: '',
+          dbRight: ''
+        },
+        epilepsy: 'none',
+        videos: [],
+        homeGuide: null
+      },
       today: ''
     };
   },
@@ -373,6 +731,7 @@ var _default = {
     }
   },
   onLoad: function onLoad() {
+    console.log('[child-info] page loaded');
     // 设置今天的日期作为最大可选日期
     var today = new Date();
     this.today = today.toISOString().split('T')[0];
@@ -414,36 +773,242 @@ var _default = {
     selectCaregiver: function selectCaregiver(caregiver) {
       this.formData.caregiver = caregiver;
     },
-    // 选择是否有发育迟缓史
-    selectDelayHistory: function selectDelayHistory(hasDelay) {
-      this.formData.hasDelayHistory = hasDelay;
-    },
     // 出生日期改变
     onBirthDateChange: function onBirthDateChange(e) {
       this.formData.birthDate = e.detail.value;
     },
+    // 切换医疗诊断
+    toggleDiagnosis: function toggleDiagnosis(value) {
+      var index = this.clinical.medicalDiagnosis.indexOf(value);
+      if (index === -1) {
+        this.clinical.medicalDiagnosis.push(value);
+      } else {
+        this.clinical.medicalDiagnosis.splice(index, 1);
+      }
+    },
+    // 选择行走时间
+    pickWalkingTime: function pickWalkingTime(value) {
+      this.clinical.walkingTime = value;
+    },
+    // 选择爬行情况
+    pickCrawlStatus: function pickCrawlStatus(value) {
+      this.clinical.crawlStatus = value;
+      if (value !== 'months') {
+        this.clinical.crawlMonths = '';
+      }
+    },
+    // 选择视觉状态
+    pickVision: function pickVision(value) {
+      this.clinical.vision.status = value;
+      if (value !== 'amblyopia') {
+        this.clinical.vision.sub = [];
+      }
+    },
+    // 选择视觉子项
+    pickVisionSub: function pickVisionSub(value) {
+      var index = this.clinical.vision.sub.indexOf(value);
+      if (index === -1) {
+        this.clinical.vision.sub.push(value);
+      } else {
+        this.clinical.vision.sub.splice(index, 1);
+      }
+    },
+    // 选择听觉状态
+    pickHearing: function pickHearing(value) {
+      this.clinical.hearing.status = value;
+      if (value !== 'impaired') {
+        this.clinical.hearing.dbLeft = '';
+        this.clinical.hearing.dbRight = '';
+      }
+    },
+    // 选择视频
+    chooseVideo: function chooseVideo() {
+      var _this = this;
+      uni.chooseVideo({
+        sourceType: ['album', 'camera'],
+        maxDuration: 30,
+        success: function success(res) {
+          if (_this.clinical.videos.length >= 6) {
+            uni.showToast({
+              title: '最多只能上传6个视频',
+              icon: 'none'
+            });
+            return;
+          }
+          _this.clinical.videos.push({
+            tempFilePath: res.tempFilePath,
+            size: res.size,
+            duration: res.duration
+          });
+        },
+        fail: function fail(err) {
+          console.error('选择视频失败', err);
+        }
+      });
+    },
+    // 删除视频
+    removeVideo: function removeVideo(index) {
+      this.clinical.videos.splice(index, 1);
+    },
     // 跳转到评估页面
     goToAssessment: function goToAssessment() {
-      if (!this.isFormValid) {
-        uni.showToast({
-          title: '请完善必填信息',
-          icon: 'none'
-        });
-        return;
-      }
+      var _this2 = this;
+      return (0, _asyncToGenerator2.default)( /*#__PURE__*/_regenerator.default.mark(function _callee() {
+        var clinical, diagnosis, habits, saveResult, childId, childInfo, _childInfo, _childInfo2;
+        return _regenerator.default.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                if (_this2.isFormValid) {
+                  _context.next = 3;
+                  break;
+                }
+                uni.showToast({
+                  title: '请完善必填信息',
+                  icon: 'none'
+                });
+                return _context.abrupt("return");
+              case 3:
+                if (!(_this2.clinical.crawlStatus === 'months' && !_this2.clinical.crawlMonths)) {
+                  _context.next = 6;
+                  break;
+                }
+                uni.showToast({
+                  title: '请输入爬行月份',
+                  icon: 'none'
+                });
+                return _context.abrupt("return");
+              case 6:
+                if (!(_this2.clinical.hearing.status === 'impaired' && (!_this2.clinical.hearing.dbLeft || !_this2.clinical.hearing.dbRight))) {
+                  _context.next = 9;
+                  break;
+                }
+                uni.showToast({
+                  title: '请输入听力分贝',
+                  icon: 'none'
+                });
+                return _context.abrupt("return");
+              case 9:
+                // 显示加载提示
+                uni.showLoading({
+                  title: '保存中...',
+                  mask: true
+                });
+                _context.prev = 10;
+                // 准备数据
+                clinical = _this2.clinical; // 转换诊断数据格式
+                diagnosis = clinical.medicalDiagnosis || []; // 准备 habits 对象
+                habits = {
+                  walkTime: clinical.walkingTime || '',
+                  crawl: clinical.crawlStatus || '',
+                  crawlMonths: clinical.crawlMonths || '',
+                  kneel: clinical.kneelWalk,
+                  hand: clinical.handedness || ''
+                }; // 调用云函数保存到数据库
+                _context.next = 16;
+                return uniCloud.callFunction({
+                  name: 'saveChildProfile',
+                  data: {
+                    name: _this2.formData.name,
+                    gender: _this2.formData.gender,
+                    birthDate: _this2.formData.birthDate,
+                    diagnosis: diagnosis,
+                    habits: habits,
+                    vision: clinical.vision || {
+                      status: 'normal',
+                      sub: []
+                    },
+                    hearing: clinical.hearing || {
+                      status: 'normal',
+                      dbLeft: '',
+                      dbRight: ''
+                    },
+                    epilepsy: clinical.epilepsy || 'none',
+                    caregiver: _this2.formData.caregiver || '',
+                    phone: _this2.formData.phone || '',
+                    videos: clinical.videos || [],
+                    homeGuide: clinical.homeGuide,
+                    notes: _this2.formData.notes || ''
+                  }
+                });
+              case 16:
+                saveResult = _context.sent;
+                uni.hideLoading();
+                if (saveResult.result.code === 0) {
+                  childId = saveResult.result.data.id; // 保存儿童信息到本地存储（包含 childId）
+                  childInfo = _objectSpread(_objectSpread({}, _this2.formData), {}, {
+                    clinical: _this2.clinical,
+                    childId: childId // 保存数据库返回的ID
+                  });
 
-      // 保存儿童信息到本地存储
-      uni.setStorageSync('childInfo', this.formData);
+                  uni.setStorageSync('childInfo', childInfo);
+                  uni.showToast({
+                    title: '保存成功',
+                    icon: 'success'
+                  });
 
-      // 跳转到评估页面
-      uni.navigateTo({
-        url: '/pages/assessment/assessment'
-      });
+                  // 跳转到评估页面
+                  setTimeout(function () {
+                    uni.navigateTo({
+                      url: '/pages/assessment/assessment'
+                    });
+                  }, 500);
+                } else {
+                  // 保存失败，但仍然保存到本地存储以便后续使用
+                  _childInfo = _objectSpread(_objectSpread({}, _this2.formData), {}, {
+                    clinical: _this2.clinical
+                  });
+                  uni.setStorageSync('childInfo', _childInfo);
+                  uni.showToast({
+                    title: saveResult.result.msg || '保存失败，已保存到本地',
+                    icon: 'none',
+                    duration: 2000
+                  });
+
+                  // 即使失败也允许继续，因为已保存到本地
+                  setTimeout(function () {
+                    uni.navigateTo({
+                      url: '/pages/assessment/assessment'
+                    });
+                  }, 1500);
+                }
+                _context.next = 29;
+                break;
+              case 21:
+                _context.prev = 21;
+                _context.t0 = _context["catch"](10);
+                uni.hideLoading();
+                console.error('保存儿童信息失败:', _context.t0);
+
+                // 出错时仍保存到本地存储
+                _childInfo2 = _objectSpread(_objectSpread({}, _this2.formData), {}, {
+                  clinical: _this2.clinical
+                });
+                uni.setStorageSync('childInfo', _childInfo2);
+                uni.showToast({
+                  title: '网络错误，已保存到本地',
+                  icon: 'none',
+                  duration: 2000
+                });
+
+                // 允许继续使用本地数据
+                setTimeout(function () {
+                  uni.navigateTo({
+                    url: '/pages/assessment/assessment'
+                  });
+                }, 1500);
+              case 29:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee, null, [[10, 21]]);
+      }))();
     }
   }
 };
 exports.default = _default;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"], __webpack_require__(/*! ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/uni-cloud/dist/index.js */ 27)["uniCloud"]))
 
 /***/ }),
 

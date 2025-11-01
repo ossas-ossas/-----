@@ -1,141 +1,132 @@
 <template>
-	<view class="container">
-		<!-- 报告头部 -->
-		<view class="report-header">
-			<view class="header-icon">
-				<text class="icon-text">📊</text>
+	<view class="result-container">
+		<!-- 1️⃣ 报告头部 -->
+		<view class="header">
+			<image src="/static/logo.png" class="logo" mode="aspectFit" />
+			<view class="child-info">
+				<text class="name">{{ childInfo.name || '未填写' }}</text>
+				<text class="meta">{{ childInfo.ageBand || '' }} · {{ childInfo.gender || '' }}</text>
 			</view>
-			<text class="report-title">发育评估报告</text>
-			<text class="report-subtitle">{{ childInfo.name }} 的综合发育评估结果</text>
-			<text class="report-age-range" v-if="ageBand">{{ ageBand.label }} 年龄段评估</text>
-			<text class="report-mode" v-if="assessmentMode">（{{ assessmentMode === 'band' ? '精准' : '累进' }}模式）</text>
+		<view class="score-box">
+			<text class="score">{{ summary.overallScore }}%</text>
+			<text class="level">{{ summary.level }}</text>
 		</view>
-		
-		<!-- 总体评分 -->
-		<view class="score-card">
-			<view class="score-circle">
-				<text class="score-number">{{ overallCompletionRate }}</text>
-				<text class="score-unit">%</text>
-			</view>
-			<view class="score-info">
-				<text class="score-title">{{ getCompletionLevel(overallCompletionRate) }}</text>
-				<text class="score-desc">{{ getCompletionDescription(overallCompletionRate) }}</text>
-			</view>
 		</view>
-		
-		<!-- 详细分析 -->
-		<view class="analysis-section">
-			<view class="section-title">
-				<text class="title-text">详细分析</text>
-			</view>
+
+		<!-- 2️⃣ 柱状图 -->
+		<view class="chart-section">
+			<text class="section-title">各领域发育完成率</text>
 			
-			<!-- 各领域得分表格 -->
-			<view class="score-table">
-				<view class="table-header">
-					<text class="header-cell">领域</text>
-					<text class="header-cell">分子</text>
-					<text class="header-cell">分母</text>
-					<text class="header-cell">比例</text>
-					<text class="header-cell">等级</text>
-				</view>
-				<view 
-					class="table-row" 
-					v-for="(stats, domain) in domainStats" 
-					:key="domain"
-				>
-					<text class="table-cell domain-name">{{ domain }}</text>
-					<text class="table-cell">{{ stats.passed }}</text>
-					<text class="table-cell">{{ stats.total }}</text>
-					<text class="table-cell">{{ Math.round(stats.ratio * 100) }}%</text>
-					<view class="table-cell">
-						<view 
-							class="level-badge" 
-							:class="getLevelClass(stats.level)"
-						>
-							{{ getLevelText(stats.level) }}
-						</view>
-					</view>
-				</view>
-			</view>
-			
-			<!-- 雷达图占位 -->
-			<view class="chart-container" v-if="hasData">
-				<text class="chart-title">各领域发育水平</text>
-				<view class="chart-placeholder">
-					<text class="chart-text">雷达图显示各领域比例</text>
+			<!-- 各领域汇总柱状图 -->
+			<view class="domain-overview" v-for="(domainData, domain) in summary.domains" :key="domain">
+				<text class="domain-title">{{ domain }}</text>
+				<text class="domain-score">{{ Math.round(domainData.ratio * 100) }}%</text>
+				
+				<!-- 子领域详细柱状图 -->
+				<view class="chart" v-if="domainData.subdomains">
 					<view class="chart-bars">
 						<view 
 							class="chart-bar" 
-							v-for="(stats, domain) in domainStats" 
-							:key="domain"
+							v-for="(subData, subdomain) in domainData.subdomains" 
+							:key="subdomain"
 						>
+						<view class="bar-container">
 							<view 
 								class="bar-fill" 
-								:style="{ height: stats.ratio * 100 + '%' }"
-								:class="getLevelClass(stats.level)"
+								:style="{ height: (subData.ratio * 280) + 'rpx' }"
+								:class="subData.ratio >= 0.8 ? 'bar-excellent' : (subData.ratio >= 0.6 ? 'bar-good' : (subData.ratio >= 0.4 ? 'bar-fair' : 'bar-poor'))"
 							></view>
-							<text class="bar-label">{{ domain }}</text>
+						</view>
+							<text class="bar-label">{{ getSubdomainLabel(subdomain) }}</text>
+							<text class="bar-value">{{ Math.round(subData.ratio * 100) }}%</text>
+							<text class="bar-count">{{ subData.passed }}/{{ subData.total }}</text>
 						</view>
 					</view>
 				</view>
 			</view>
-			
-			<!-- 无数据提示 -->
-			<view class="no-data" v-else>
-				<text class="no-data-text">暂无评估数据</text>
-				<text class="no-data-hint">请先完成评估</text>
-			</view>
 		</view>
-		
-		<!-- 专业建议 -->
-		<view class="recommendations-section" v-if="recommendations.length > 0">
-			<view class="section-title">
-				<text class="title-text">专业建议</text>
-			</view>
-			<view class="recommendations-list">
+
+		<!-- 3️⃣ 未达标明细（仅教师可见） -->
+		<view v-if="role === 'teacher'" class="table-section">
+			<text class="section-title">未达标项目</text>
+			<view v-if="notAchieved.length > 0">
+				<view class="table-header">
+					<text class="col-domain">领域</text>
+					<text class="col-title">项目</text>
+					<text class="col-age">年龄段</text>
+				</view>
 				<view 
-					class="recommendation-item" 
-					v-for="(rec, index) in recommendations" 
-					:key="index"
+					v-for="(item, index) in notAchieved" 
+					:key="index" 
+					class="table-row"
 				>
-					<text class="rec-number">{{ index + 1 }}</text>
-					<text class="rec-text">{{ rec }}</text>
+					<text class="col-domain">{{ item.domain }}</text>
+					<text class="col-title">{{ item.title }}</text>
+					<text class="col-age">{{ item.ageBand }}</text>
 				</view>
 			</view>
+			<view v-else class="empty-state">
+				<text class="empty-text">所有项目均已达标</text>
+			</view>
 		</view>
-		
-		<!-- 底部操作 -->
-		<view class="action-buttons">
-			<button class="action-btn secondary" @click="viewHistory">
-				<text class="btn-text">查看历史</text>
-			</button>
-			<button class="action-btn primary" @click="newAssessment">
-				<text class="btn-text">重新评估</text>
-			</button>
+
+		<!-- 4️⃣ 操作按钮 -->
+		<view class="footer-buttons">
+			<button class="btn secondary" @click="goHome">返回首页</button>
+			<button class="btn primary" @click="startNew">重新评估</button>
 		</view>
 	</view>
 </template>
 
 <script>
+// 子领域标签映射
+const subdomainLabels = {
+	'OSV': '视知觉',
+	'OSH': '听知觉',
+	'OST': '触知觉',
+	'ISP': '本体运动知觉',
+	'ISV': '前庭平衡知觉',
+	'GM': '躯肢体粗大动作',
+	'UEM': '双上肢粗大动作',
+	'FM': '精细动作',
+	'SIP': '社会互动',
+	'SIE': '社会情绪',
+	'COG': '认知',
+	'LANG': '语言',
+	'OM': '口腔动作'
+}
+
 	export default {
 		data() {
 			return {
-				childInfo: {},
-				ageBand: null,
-				assessmentMode: '',
-				isCorrectedAge: false,
-				domainStats: {},
-				overallCompletionRate: 0,
-				recommendations: [],
-				hasData: false
+				role: 'parent', // 'parent' 或 'teacher' - 用于控制界面显示
+				childInfo: {
+					name: '',
+					ageBand: '',
+					gender: ''
+				},
+				summary: {
+					overallScore: 0,
+					level: '',
+					domains: {} // { '认知': { ratio: 0.8 }, '语言': { ratio: 0.65 }, ... }
+				},
+				notAchieved: [] // [{domain, title, ageBand}] - 仅教师端可见
 			}
 		},
-		onLoad() {
-			this.loadAssessmentResult()
+		onLoad(options) {
+			// TODO: 后续对接云函数
+			// if (options.id) {
+			//   this.loadFromCloud(options.id)
+			// } else {
+			//   this.loadFromLocal()
+			// }
+			
+			// 临时：从本地存储加载
+			this.loadFromLocal()
 		},
 		methods: {
-			// 加载评估结果
-			loadAssessmentResult() {
+			// 从本地存储加载数据
+			loadFromLocal() {
 				const result = uni.getStorageSync('assessmentResult')
 				console.log('=== 加载评估结果 ===')
 				console.log('评估结果:', result)
@@ -151,169 +142,119 @@
 					return
 				}
 				
-				this.childInfo = result.childInfo || {}
-				this.ageBand = result.ageBand
-				this.assessmentMode = result.assessmentMode || 'band'
-				this.isCorrectedAge = result.isCorrectedAge || false
+				// 设置基本信息
+				this.childInfo = {
+					name: result.childInfo?.name || result.childInfo?.childName || '',
+					ageBand: result.childInfo?.ageBand || '',
+					gender: result.childInfo?.gender || ''
+				}
 				
-				// 计算领域统计
-				this.calculateDomainStats(result)
+				// 计算汇总数据
+				this.calculateSummary(result)
 				
-				// 生成建议
-				this.generateRecommendations()
-				
-				console.log('=== 统计结果 ===')
-				console.log('领域统计:', this.domainStats)
-				console.log('总体完成率:', this.overallCompletionRate)
+				// TODO: 教师端还需要计算 notAchieved
+				// this.notAchieved = this.calculateNotAchieved(result)
 			},
 			
-			// 计算领域统计
-			calculateDomainStats(result) {
-				const stats = {}
-				let totalPassed = 0
-				let totalQuestions = 0
+		// 计算汇总数据
+		calculateSummary(result) {
+			// 从结果中获取数据
+			const answers = result.answers || {}
+			const formState = result.formState || {}
+			
+			console.log('=== 计算统计 ===')
+			console.log('answers:', answers)
+			console.log('formState keys:', Object.keys(formState))
+			
+			const domains = {}
+			let totalPassed = 0
+			let totalQuestions = 0
+			
+			// 按领域统计（从 formState 或 answers 获取）
+			Object.keys(formState).forEach(domain => {
+				const domainQuestions = formState[domain] || []
+				const domainPassed = domainQuestions.filter(q => q.checked === true || answers[q.id] === 1).length
+				const domainTotal = domainQuestions.length
+				const domainRatio = domainTotal > 0 ? domainPassed / domainTotal : 0
 				
-				// 按领域统计
-				Object.keys(result.groupedQuestions).forEach(domain => {
-					const questions = result.groupedQuestions[domain]
-					const passed = questions.filter(q => result.questionAnswers[q.id] === true).length
-					const total = questions.length
-					const ratio = total > 0 ? passed / total : 0
-					
-					stats[domain] = {
-						passed: passed,
-						total: total,
-						ratio: ratio,
-						level: this.getLevelFromRatio(ratio)
+				// 按 subdomain 分组统计
+				const subdomains = {}
+				domainQuestions.forEach(question => {
+					const subdomain = question.subdomain || '未分类'
+					if (!subdomains[subdomain]) {
+						subdomains[subdomain] = { total: 0, passed: 0 }
 					}
-					
-					totalPassed += passed
-					totalQuestions += total
+					subdomains[subdomain].total++
+					// 检查是否通过
+					if (question.checked === true || answers[question.id] === 1) {
+						subdomains[subdomain].passed++
+					}
 				})
 				
-				this.domainStats = stats
-				this.overallCompletionRate = totalQuestions > 0 ? Math.round((totalPassed / totalQuestions) * 100) : 0
-				this.hasData = totalQuestions > 0
+				// 计算各子领域的比例
+				Object.keys(subdomains).forEach(subdomain => {
+					const subStats = subdomains[subdomain]
+					subStats.ratio = subStats.total > 0 ? subStats.passed / subStats.total : 0
+				})
 				
-				console.log('计算完成 - 总题目:', totalQuestions, '已完成:', totalPassed, '完成率:', this.overallCompletionRate + '%')
-			},
-			
-			// 根据比例获取等级
-			getLevelFromRatio(ratio) {
-				if (ratio >= 1) return 'normal'    // 常态 (蓝)
-				if (ratio >= 2/3) return 'good'    // 良好 (绿)
-				if (ratio >= 1/2) return 'fair'     // 普通 (黄)
-				return 'poor'                      // 差 (红)
-			},
-			
-			// 获取等级样式类
-			getLevelClass(level) {
-				return {
-					'level-normal': level === 'normal',
-					'level-good': level === 'good',
-					'level-fair': level === 'fair',
-					'level-poor': level === 'poor'
+				domains[domain] = {
+					ratio: domainRatio,
+					subdomains
 				}
-			},
+				
+				totalPassed += domainPassed
+				totalQuestions += domainTotal
+			})
+			
+			const overallScore = totalQuestions > 0 ? Math.round((totalPassed / totalQuestions) * 100) : 0
+			
+			this.summary = {
+				overallScore,
+				level: this.getLevelText(overallScore),
+				domains
+			}
+			
+			console.log('计算完成 - 完成率:', overallScore + '%')
+			console.log('领域统计:', domains)
+		},
+			
+		// 获取子领域中文标签
+		getSubdomainLabel(subdomain) {
+			return subdomainLabels[subdomain] || subdomain
+		},
+		
+		// 获取柱状图颜色类
+		getBarColorClass(ratio) {
+			if (ratio >= 0.8) return 'bar-excellent'     // 优秀（蓝）
+			if (ratio >= 0.6) return 'bar-good'          // 良好（绿）
+			if (ratio >= 0.4) return 'bar-fair'          // 普通（黄）
+			return 'bar-poor'                             // 需关注（橙）
+		},
 			
 			// 获取等级文本
-			getLevelText(level) {
-				const levelMap = {
-					'normal': '常态',
-					'good': '良好',
-					'fair': '普通',
-					'poor': '差'
-				}
-				return levelMap[level] || '未知'
-			},
-			
-			// 获取完成等级
-			getCompletionLevel(rate) {
-				if (rate >= 100) return '优秀'
-				if (rate >= 80) return '良好'
-				if (rate >= 60) return '一般'
-				if (rate >= 40) return '需关注'
+			getLevelText(score) {
+				if (score >= 90) return '优秀'
+				if (score >= 75) return '良好'
+				if (score >= 60) return '正常'
+				if (score >= 40) return '需关注'
 				return '需干预'
 			},
 			
-			// 获取完成描述
-			getCompletionDescription(rate) {
-				if (rate >= 100) return '各项指标完全达标'
-				if (rate >= 80) return '大部分指标达标，发育良好'
-				if (rate >= 60) return '基本达标，部分方面需加强'
-				if (rate >= 40) return '部分达标，建议重点关注'
-				return '达标率较低，建议及时干预'
-			},
-			
-			// 生成专业建议
-			generateRecommendations() {
-				const recommendations = []
-				
-				// 分析各领域表现
-				const poorDomains = []
-				const fairDomains = []
-				const goodDomains = []
-				const normalDomains = []
-				
-				Object.keys(this.domainStats).forEach(domain => {
-					const stats = this.domainStats[domain]
-					if (stats.level === 'poor') poorDomains.push(domain)
-					else if (stats.level === 'fair') fairDomains.push(domain)
-					else if (stats.level === 'good') goodDomains.push(domain)
-					else if (stats.level === 'normal') normalDomains.push(domain)
-				})
-				
-				// 根据总体表现给出建议
-				if (this.overallCompletionRate >= 80) {
-					recommendations.push('孩子发育状况良好，各项指标达到相应年龄段正常水平')
-					recommendations.push('建议继续保持良好的养育环境和互动方式')
-					recommendations.push('可以适当增加一些挑战性活动，促进进一步发展')
-				} else if (this.overallCompletionRate >= 60) {
-					recommendations.push('孩子发育基本正常，部分方面还有提升空间')
-					recommendations.push('建议重点关注得分较低的发育维度')
-					recommendations.push('可以寻求专业康复师的指导和建议')
-				} else {
-					recommendations.push('建议及时咨询专业医生或康复师')
-					recommendations.push('进行更详细的发育评估和诊断')
-					recommendations.push('制定个性化的早期干预计划')
-				}
-				
-				// 针对具体领域给出建议
-				if (poorDomains.length > 0) {
-					recommendations.push(`${poorDomains.join('、')}方面需要重点关注和训练`)
-				}
-				if (fairDomains.length > 0) {
-					recommendations.push(`${fairDomains.join('、')}方面有提升空间，建议加强练习`)
-				}
-				if (goodDomains.length > 0) {
-					recommendations.push(`${goodDomains.join('、')}方面表现良好，可以继续保持`)
-				}
-				if (normalDomains.length > 0) {
-					recommendations.push(`${normalDomains.join('、')}方面完全达标，是孩子的优势领域`)
-				}
-				
-				// 添加通用建议
-				recommendations.push('定期进行发育评估，追踪进步情况')
-				recommendations.push('保持耐心和积极的态度，每个孩子都有自己的发育节奏')
-				
-				this.recommendations = recommendations
-			},
-			
-			// 查看历史记录
-			viewHistory() {
-				uni.navigateTo({
-					url: '/pages/history/history'
+			// 返回首页
+			goHome() {
+				uni.switchTab({
+					url: '/pages/index/index'
 				})
 			},
 			
 			// 重新评估
-			newAssessment() {
+			startNew() {
 				uni.showModal({
 					title: '重新评估',
-					content: '确定要开始新的评估吗？当前评估结果将被覆盖。',
+					content: '确定要开始新的评估吗？',
 					success: (res) => {
 						if (res.confirm) {
-							// 清除当前评估数据
+							// 清除评估数据
 							uni.removeStorageSync('assessmentForm')
 							uni.removeStorageSync('assessmentResult')
 							
@@ -324,270 +265,158 @@
 						}
 					}
 				})
+			},
+			
+			// TODO: 对接云函数 - 家长端
+			loadFromCloudForParent(assessmentId) {
+				// 示例代码
+				uniCloud.callFunction({
+					name: 'getAssessmentForParent',
+					data: { assessmentId }
+				}).then(res => {
+					this.summary = res.result.data.stats
+					this.childInfo = res.result.data.childInfo
+				})
+			},
+			
+			// TODO: 对接云函数 - 教师端
+			loadFromCloudForTeacher(assessmentId) {
+				// 示例代码
+				uniCloud.callFunction({
+					name: 'getAssessmentForTeacher',
+					data: { assessmentId }
+				}).then(res => {
+					Object.assign(this, res.result.data)
+				})
 			}
 		}
 	}
 </script>
 
-<style>
-	.container {
+<style scoped>
+	.result-container {
+		background: #f9fbfe;
 		min-height: 100vh;
-		background: linear-gradient(180deg, #fff 0%, #F5F9FC 100%);
-		padding: 30rpx;
-		padding-bottom: 120rpx;
-		position: relative;
-		overflow: hidden;
+		padding: 20rpx;
+		padding-bottom: 150rpx;
 	}
-	
-	.container::before {
-		content: '';
-		position: fixed;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		width: 300%;
-		height: 300%;
-		background: url('/static/logo.png') center center / contain no-repeat;
-		filter: blur(40rpx);
-		opacity: 0.15;
-		z-index: 0;
-		pointer-events: none;
-	}
-	
-	/* 报告头部 */
-	.report-header {
-		background: rgba(255, 255, 255, 0.9);
+
+	/* ========== 1. Header 头部 ========== */
+	.header {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		background: #fff;
 		border-radius: 20rpx;
-		padding: 40rpx 30rpx;
+		padding: 30rpx;
 		margin-bottom: 30rpx;
-		text-align: center;
-		box-shadow: 0 4rpx 20rpx rgba(233, 58, 138, 0.08);
-		position: relative;
-		z-index: 1;
+		box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
 	}
-	
-	.header-icon {
+
+	.logo {
+		width: 160rpx;
+		height: 160rpx;
 		margin-bottom: 20rpx;
 	}
-	
-	.icon-text {
-		font-size: 60rpx;
+
+	.child-info {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		margin-bottom: 20rpx;
 	}
-	
-	.report-title {
-		display: block;
+
+	.name {
 		font-size: 36rpx;
 		font-weight: bold;
-		color: #2C3E50;
+		color: #333;
 		margin-bottom: 10rpx;
 	}
-	
-	.report-subtitle {
+
+	.meta {
+		font-size: 26rpx;
+		color: #888;
+	}
+
+	.score-box {
+		background: #e9f5ff;
+		border-radius: 16rpx;
+		padding: 16rpx 40rpx;
+		text-align: center;
+		min-width: 200rpx;
+	}
+
+	.score {
+		display: block;
+		font-size: 60rpx;
+		color: #007aff;
+		font-weight: 600;
+		line-height: 1.2;
+	}
+
+	.level {
 		display: block;
 		font-size: 28rpx;
-		color: #7F8C8D;
-		margin-bottom: 10rpx;
-	}
-	
-	.report-age-range {
-		display: block;
-		font-size: 24rpx;
-		color: #87CEEB;
-		font-weight: 500;
-	}
-	
-	.report-mode {
-		display: block;
-		font-size: 22rpx;
-		color: #BDC3C7;
+		color: #666;
 		margin-top: 5rpx;
 	}
-	
-	/* 总体评分 */
-	.score-card {
-		background: rgba(255, 255, 255, 0.9);
-		border-radius: 20rpx;
-		padding: 40rpx 30rpx;
-		margin-bottom: 30rpx;
-		display: flex;
-		position: relative;
-		z-index: 1;
-		align-items: center;
-		box-shadow: 0 4rpx 20rpx rgba(233, 58, 138, 0.08);
-	}
-	
-	.score-circle {
-		width: 120rpx;
-		height: 120rpx;
-		border-radius: 50%;
-		background: linear-gradient(135deg, #87CEEB, #98FB98);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		margin-right: 30rpx;
-		position: relative;
-	}
-	
-	.score-number {
-		font-size: 36rpx;
-		font-weight: bold;
-		color: #FFFFFF;
-	}
-	
-	.score-unit {
-		font-size: 24rpx;
-		color: #FFFFFF;
-		margin-left: 5rpx;
-	}
-	
-	.score-info {
-		flex: 1;
-	}
-	
-	.score-title {
-		display: block;
-		font-size: 32rpx;
-		font-weight: bold;
-		color: #2C3E50;
-		margin-bottom: 10rpx;
-	}
-	
-	.score-desc {
-		display: block;
-		font-size: 26rpx;
-		color: #7F8C8D;
-		line-height: 1.4;
-	}
-	
-	/* 分析区域 */
-	.analysis-section {
-		background: rgba(255, 255, 255, 0.9);
+
+	/* ========== 2. Chart 柱状图 ========== */
+	.chart-section {
+		margin-top: 20rpx;
+		background: #fff;
 		border-radius: 20rpx;
 		padding: 30rpx;
-		margin-bottom: 30rpx;
-		box-shadow: 0 4rpx 20rpx rgba(233, 58, 138, 0.08);
-		position: relative;
-		z-index: 1;
+		box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
 	}
-	
+
 	.section-title {
-		margin-bottom: 30rpx;
-		padding-bottom: 15rpx;
-		border-bottom: 2rpx solid #E8F4FD;
-	}
-	
-	.title-text {
+		display: block;
 		font-size: 32rpx;
-		font-weight: bold;
-		color: #2C3E50;
-	}
-	
-	/* 得分表格 */
-	.score-table {
+		font-weight: 600;
+		color: #333;
 		margin-bottom: 30rpx;
 	}
-	
-	.table-header {
-		display: flex;
-		background: #F8F9FA;
-		border-radius: 10rpx 10rpx 0 0;
-		padding: 20rpx 0;
-	}
-	
-	.table-row {
-		display: flex;
-		padding: 20rpx 0;
-		border-bottom: 1rpx solid #E8F4FD;
-	}
-	
-	.table-row:last-child {
-		border-bottom: none;
-		border-radius: 0 0 10rpx 10rpx;
-	}
-	
-	.header-cell, .table-cell {
-		flex: 1;
-		text-align: center;
-		font-size: 24rpx;
-	}
-	
-	.header-cell {
-		font-weight: bold;
-		color: #2C3E50;
-	}
-	
-	.domain-name {
-		text-align: left !important;
-		color: #2C3E50;
-		font-weight: 500;
-	}
-	
-	.table-cell {
-		color: #7F8C8D;
-	}
-	
-	/* 等级徽章 */
-	.level-badge {
-		display: inline-block;
-		padding: 8rpx 16rpx;
-		border-radius: 20rpx;
-		font-size: 22rpx;
-		font-weight: bold;
-		color: #FFFFFF;
-	}
-	
-	.level-normal {
-		background: #2196F3;
-	}
-	
-	.level-good {
-		background: #4CAF50;
-	}
-	
-	.level-fair {
-		background: #FF9800;
-	}
-	
-	.level-poor {
-		background: #F44336;
-	}
-	
-	/* 图表区域 */
-	.chart-container {
-		margin-top: 30rpx;
-	}
-	
-	.chart-title {
-		display: block;
-		font-size: 28rpx;
-		font-weight: bold;
-		color: #2C3E50;
-		margin-bottom: 20rpx;
-		text-align: center;
-	}
-	
-	.chart-placeholder {
-		background: #F8F9FA;
+
+	.domain-overview {
+		margin-bottom: 40rpx;
+		background: #f8f9fa;
 		border-radius: 15rpx;
-		padding: 30rpx;
-		text-align: center;
+		padding: 20rpx;
 	}
-	
-	.chart-text {
+
+	.domain-overview:last-child {
+		margin-bottom: 0;
+	}
+
+	.domain-title {
+		font-size: 28rpx;
+		font-weight: 600;
+		color: #333;
+		margin-bottom: 8rpx;
 		display: block;
-		font-size: 24rpx;
-		color: #7F8C8D;
-		margin-bottom: 20rpx;
 	}
-	
+
+	.domain-score {
+		font-size: 24rpx;
+		color: #007aff;
+		font-weight: 500;
+		margin-bottom: 20rpx;
+		display: block;
+	}
+
+	.chart {
+		width: 100%;
+	}
+
 	.chart-bars {
 		display: flex;
 		justify-content: space-around;
 		align-items: flex-end;
-		height: 200rpx;
-		margin-top: 20rpx;
+		height: 400rpx;
+		padding: 0 10rpx;
 	}
-	
+
 	.chart-bar {
 		display: flex;
 		flex-direction: column;
@@ -595,126 +424,161 @@
 		flex: 1;
 		margin: 0 5rpx;
 	}
-	
-	.bar-fill {
+
+	.bar-container {
 		width: 100%;
+		height: 280rpx;
+		background: #f0f0f0;
+		border-radius: 10rpx;
+		position: relative;
+		margin-bottom: 15rpx;
+		overflow: hidden;
+	}
+
+	.bar-fill {
+		position: absolute;
+		bottom: 0;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 90%;
 		min-height: 20rpx;
 		border-radius: 10rpx 10rpx 0 0;
-		margin-bottom: 10rpx;
-		transition: height 0.3s ease;
+		transition: height 0.5s ease;
 	}
-	
+
+	.bar-excellent {
+		background: linear-gradient(180deg, #007aff 0%, #4da3ff 100%);
+	}
+
+	.bar-good {
+		background: linear-gradient(180deg, #28a745 0%, #5dd875 100%);
+	}
+
+	.bar-fair {
+		background: linear-gradient(180deg, #ffc107 0%, #ffeb3b 100%);
+	}
+
+	.bar-poor {
+		background: linear-gradient(180deg, #ff9800 0%, #ffb74d 100%);
+	}
+
 	.bar-label {
-		font-size: 20rpx;
-		color: #7F8C8D;
+		font-size: 22rpx;
+		color: #666;
+		margin-top: 10rpx;
+		word-break: keep-all;
 		text-align: center;
-		word-break: break-all;
 	}
-	
-	/* 无数据提示 */
-	.no-data {
-		text-align: center;
-		padding: 60rpx 30rpx;
+
+	.bar-value {
+		font-size: 22rpx;
+		color: #007aff;
+		font-weight: 500;
+		margin-top: 5rpx;
 	}
-	
-	.no-data-text {
-		display: block;
-		font-size: 28rpx;
-		color: #7F8C8D;
+
+	.bar-count {
+		font-size: 18rpx;
+		color: #999;
+		margin-top: 3rpx;
+	}
+
+	/* ========== 3. Table 未达标明细 ========== */
+	.table-section {
+		margin-top: 20rpx;
+		background: #fff;
+		border-radius: 20rpx;
+		padding: 20rpx 30rpx;
+		box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
+	}
+
+	.table-header {
+		display: flex;
+		padding: 15rpx 0;
+		border-bottom: 2rpx solid #e5e5e5;
 		margin-bottom: 15rpx;
 	}
-	
-	.no-data-hint {
-		font-size: 24rpx;
-		color: #BDC3C7;
-	}
-	
-	/* 建议区域 */
-	.recommendations-section {
-		background: rgba(255, 255, 255, 0.9);
-		border-radius: 20rpx;
-		padding: 30rpx;
-		margin-bottom: 30rpx;
-		box-shadow: 0 4rpx 20rpx rgba(233, 58, 138, 0.08);
-	}
-	
-	.recommendations-list {
-		margin-top: 20rpx;
-	}
-	
-	.recommendation-item {
-		display: flex;
-		align-items: flex-start;
-		margin-bottom: 20rpx;
-		padding: 20rpx;
-		background: rgba(135, 206, 235, 0.05);
-		border-radius: 15rpx;
-		border-left: 4rpx solid #87CEEB;
-	}
-	
-	.rec-number {
-		width: 40rpx;
-		height: 40rpx;
-		border-radius: 50%;
-		background: #87CEEB;
-		color: #FFFFFF;
-		font-size: 24rpx;
-		font-weight: bold;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		margin-right: 20rpx;
-		flex-shrink: 0;
-	}
-	
-	.rec-text {
-		flex: 1;
+
+	.table-header .col-domain,
+	.table-header .col-title,
+	.table-header .col-age {
+		font-weight: 600;
 		font-size: 26rpx;
-		color: #2C3E50;
-		line-height: 1.5;
+		color: #333;
 	}
-	
-	/* 底部操作按钮 */
-	.action-buttons {
+
+	.table-row {
+		display: flex;
+		padding: 15rpx 0;
+		border-bottom: 1rpx solid #eee;
+	}
+
+	.table-row:last-child {
+		border-bottom: none;
+	}
+
+	.col-domain {
+		width: 120rpx;
+		font-size: 24rpx;
+		color: #007aff;
+		font-weight: 500;
+	}
+
+	.col-title {
+		flex: 1;
+		margin: 0 20rpx;
+		font-size: 24rpx;
+		color: #333;
+		line-height: 1.4;
+	}
+
+	.col-age {
+		width: 120rpx;
+		font-size: 24rpx;
+		color: #999;
+		text-align: right;
+	}
+
+	.empty-state {
+		text-align: center;
+		padding: 60rpx 0;
+	}
+
+	.empty-text {
+		font-size: 26rpx;
+		color: #999;
+	}
+
+	/* ========== 4. Footer Buttons 按钮 ========== */
+	.footer-buttons {
 		position: fixed;
 		bottom: 0;
 		left: 0;
 		right: 0;
 		padding: 30rpx;
-		background: rgba(255, 255, 255, 0.95);
-		backdrop-filter: blur(10rpx);
-		border-top: 1rpx solid #E8F4FD;
+		background: #fff;
+		border-top: 1rpx solid #eee;
 		display: flex;
 		gap: 20rpx;
+		box-shadow: 0 -4rpx 10rpx rgba(0, 0, 0, 0.05);
 	}
-	
-	.action-btn {
+
+	.btn {
 		flex: 1;
 		height: 80rpx;
 		border-radius: 40rpx;
 		border: none;
-		display: flex;
-		align-items: center;
-		justify-content: center;
 		font-size: 28rpx;
-		font-weight: bold;
-		transition: all 0.3s;
+		font-weight: 600;
 	}
-	
-	.action-btn.secondary {
-		background: #F8F9FA;
-		color: #7F8C8D;
-		border: 2rpx solid #E8F4FD;
+
+	.btn.secondary {
+		background: #e5e5e5;
+		color: #333;
 	}
-	
-	.action-btn.primary {
-		background: linear-gradient(135deg, #87CEEB, #98FB98);
-		color: #FFFFFF;
-		box-shadow: 0 4rpx 15rpx rgba(135, 206, 235, 0.3);
-	}
-	
-	.btn-text {
-		font-size: 28rpx;
-		font-weight: bold;
+
+	.btn.primary {
+		background: #007aff;
+		color: #fff;
 	}
 </style>

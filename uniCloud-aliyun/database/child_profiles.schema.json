@@ -1,0 +1,176 @@
+{
+  "bsonType": "object",
+  "required": ["name", "gender", "birthDate", "ownerUid", "createdAt"],
+  "permission": {
+    "read": "doc.ownerUid == auth.uid",
+    "create": true,
+    "update": "doc.ownerUid == auth.uid",
+    "delete": "doc.ownerUid == auth.uid"
+  },
+  "properties": {
+    "name": {
+      "bsonType": "string",
+      "label": "儿童姓名",
+      "trim": "both"
+    },
+    "gender": {
+      "bsonType": "string",
+      "label": "性别",
+      "enum": ["male", "female"]
+    },
+    "birthDate": {
+      "bsonType": "string",
+      "label": "出生日期",
+      "description": "格式: YYYY-MM-DD (ISO date)"
+    },
+    "diagnosis": {
+      "bsonType": "array",
+      "label": "医疗诊断",
+      "description": "诊断列表：脑瘫/发育迟缓/孤独症/罕见疾病",
+      "items": {
+        "bsonType": "string",
+        "enum": ["cerebralPalsy", "devDelay", "autism", "rare"]
+      }
+    },
+    "habits": {
+      "bsonType": "object",
+      "label": "行为习惯信息",
+      "properties": {
+        "walkTime": {
+          "bsonType": "string",
+          "label": "行走时间",
+          "enum": ["before18m", "after18m", "notyet"]
+        },
+        "crawl": {
+          "bsonType": "string",
+          "label": "爬行情况",
+          "enum": ["months", "nocrawl", "walkThenCrawl"]
+        },
+        "crawlMonths": {
+          "bsonType": "string",
+          "label": "爬行月份（当crawl为months时）"
+        },
+        "kneel": {
+          "bsonType": "bool",
+          "label": "跪走情况",
+          "description": "true=会跪走, false=不会跪走"
+        },
+        "hand": {
+          "bsonType": "string",
+          "label": "惯用手",
+          "enum": ["left", "right"]
+        }
+      }
+    },
+    "vision": {
+      "bsonType": "object",
+      "label": "视觉障碍信息",
+      "properties": {
+        "status": {
+          "bsonType": "string",
+          "label": "视觉状态",
+          "enum": ["normal", "amblyopia", "strabismus"]
+        },
+        "sub": {
+          "bsonType": "array",
+          "label": "视觉子项（弱视时）",
+          "items": {
+            "bsonType": "string",
+            "enum": ["myopia", "astigmatism"]
+          }
+        }
+      }
+    },
+    "hearing": {
+      "bsonType": "object",
+      "label": "听觉障碍信息",
+      "properties": {
+        "status": {
+          "bsonType": "string",
+          "label": "听觉状态",
+          "enum": ["normal", "impaired"]
+        },
+        "dbLeft": {
+          "bsonType": "string",
+          "label": "左耳分贝（听障时）"
+        },
+        "dbRight": {
+          "bsonType": "string",
+          "label": "右耳分贝（听障时）"
+        }
+      }
+    },
+    "epilepsy": {
+      "bsonType": "string",
+      "label": "癫痫症",
+      "enum": ["none", "medicated", "unmedicated"]
+    },
+    "videos": {
+      "bsonType": "array",
+      "label": "视频列表",
+      "description": "存储视频文件路径或URL",
+      "items": {
+        "bsonType": "object",
+        "properties": {
+          "tempFilePath": {
+            "bsonType": "string",
+            "label": "临时文件路径"
+          },
+          "cloudPath": {
+            "bsonType": "string",
+            "label": "云存储路径"
+          },
+          "size": {
+            "bsonType": "long",
+            "label": "文件大小（字节）"
+          },
+          "duration": {
+            "bsonType": "long",
+            "label": "视频时长（秒）"
+          }
+        }
+      }
+    },
+    "homeGuide": {
+      "bsonType": "bool",
+      "label": "后续居家辅导需求"
+    },
+    "caregiver": {
+      "bsonType": "string",
+      "label": "主要照顾者",
+      "enum": ["mother", "father", "grandparent", "other"]
+    },
+    "phone": {
+      "bsonType": "string",
+      "label": "联系电话"
+    },
+    "notes": {
+      "bsonType": "string",
+      "label": "备注信息",
+      "description": "其他需要说明的情况"
+    },
+    "ownerUid": {
+      "bsonType": "string",
+      "label": "家长用户ID",
+      "description": "关联家长用户的 uid"
+    },
+    "createdAt": {
+      "bsonType": "long",
+      "label": "创建时间戳(ms)"
+    },
+    "updatedAt": {
+      "bsonType": "long",
+      "label": "更新时间戳(ms)"
+    }
+  },
+  "indexes": {
+    "idx_ownerUid": {
+      "fields": ["ownerUid"],
+      "unique": false
+    },
+    "idx_createdAt": {
+      "fields": ["createdAt"],
+      "unique": false
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "saveAssessment",
+  "version": "1.0.0",
+  "description": "保存评估结果到数据库",
+  "main": "index.js",
+  "dependencies": {},
+  "cloudfunction-config": {
+    "concurrency": 20,
+    "timeout": 10,
+    "trigger": ""
+  }
+}
+
+
