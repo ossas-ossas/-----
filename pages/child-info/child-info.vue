@@ -525,13 +525,107 @@
 					   this.formData.phone
 			}
 		},
-		onLoad() {
-			console.log('[child-info] page loaded')
-			// 设置今天的日期作为最大可选日期
-			const today = new Date()
-			this.today = today.toISOString().split('T')[0]
-		},
 		methods: {
+			// 检查登录状态
+			checkLoginStatus() {
+				const token = uni.getStorageSync('uni_id_token')
+				const tokenExpired = uni.getStorageSync('uni_id_token_expired')
+				const now = Date.now()
+				
+				// 检查 token 是否存在
+				if (!token) {
+					console.warn('[child-info] 未检测到登录 token，跳转到登录页')
+					// 保存当前页面路径，登录后返回
+					uni.setStorageSync('redirectUrl', '/pages/child-info/child-info')
+					uni.redirectTo({
+						url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+					})
+					return false
+				}
+				
+				// 检查 token 是否过期（如果存储了过期时间）
+				if (tokenExpired && tokenExpired > 0 && now >= tokenExpired) {
+					console.warn('[child-info] Token 已过期，跳转到登录页')
+					// 清除过期的 token
+					uni.removeStorageSync('uni_id_token')
+					uni.removeStorageSync('uni_id_token_expired')
+					// 保存当前页面路径
+					uni.setStorageSync('redirectUrl', '/pages/child-info/child-info')
+					uni.redirectTo({
+						url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+					})
+					return false
+				}
+				
+				return true
+			},
+			
+			// 恢复本地保存的数据（登录成功后使用）
+			restoreLocalData() {
+				const savedChildInfo = uni.getStorageSync('childInfo')
+				if (savedChildInfo && Object.keys(savedChildInfo).length > 0) {
+					console.log('[child-info] 恢复本地保存的数据')
+					// 恢复基本信息
+					if (savedChildInfo.name) this.formData.name = savedChildInfo.name
+					if (savedChildInfo.gender) this.formData.gender = savedChildInfo.gender
+					if (savedChildInfo.birthDate) this.formData.birthDate = savedChildInfo.birthDate
+					if (savedChildInfo.caregiver) this.formData.caregiver = savedChildInfo.caregiver
+					if (savedChildInfo.phone) this.formData.phone = savedChildInfo.phone
+					if (savedChildInfo.notes) this.formData.notes = savedChildInfo.notes
+					
+					// 恢复临床信息
+					if (savedChildInfo.clinical) {
+						this.clinical = { ...this.clinical, ...savedChildInfo.clinical }
+					}
+					
+					uni.showToast({
+						title: '已恢复之前填写的数据',
+						icon: 'success',
+						duration: 1500
+					})
+				}
+			},
+			
+			// 选择性别
+			selectGender(gender) {
+				this.formData.gender = gender
+			},
+			
+			// 选择主要照顾者
+			selectCaregiver(caregiver) {
+				this.formData.caregiver = caregiver
+			},
+			
+			// 验证登录状态（用于调用云函数前）
+			async validateLoginBeforeSave() {
+				const token = uni.getStorageSync('uni_id_token')
+				if (!token) {
+					uni.showModal({
+						title: '需要登录',
+						content: '保存儿童信息需要先登录，是否前往登录？',
+						confirmText: '去登录',
+						cancelText: '取消',
+						success: (res) => {
+							if (res.confirm) {
+								// 保存当前表单数据到本地（避免数据丢失）
+								const childInfo = {
+									...this.formData,
+									clinical: this.clinical
+								}
+								uni.setStorageSync('childInfo', childInfo)
+								// 保存当前页面路径
+								uni.setStorageSync('redirectUrl', '/pages/child-info/child-info')
+								uni.navigateTo({
+									url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+								})
+							}
+						}
+					})
+					return false
+				}
+				return true
+			},
+			
 			// 计算年龄（月）
 			calculateAgeInMonths(birthDate) {
 				if (!birthDate) return 0
@@ -561,16 +655,6 @@
 				if (ageInMonths < 48) return '3-4岁'
 				if (ageInMonths < 60) return '4-5岁'
 				return '5-6岁'
-			},
-			
-			// 选择性别
-			selectGender(gender) {
-				this.formData.gender = gender
-			},
-			
-			// 选择主要照顾者
-			selectCaregiver(caregiver) {
-				this.formData.caregiver = caregiver
 			},
 			
 			// 出生日期改变
@@ -660,6 +744,12 @@
 			
 			// 跳转到评估页面
 			async goToAssessment() {
+				// 首先验证登录状态
+				const isLoggedIn = await this.validateLoginBeforeSave()
+				if (!isLoggedIn) {
+					return // 用户选择取消登录，不继续执行
+				}
+				
 				if (!this.isFormValid) {
 					uni.showToast({
 						title: '请完善必填信息',
@@ -681,6 +771,24 @@
 					uni.showToast({
 						title: '请输入听力分贝',
 						icon: 'none'
+					})
+					return
+				}
+				
+				// 再次检查登录状态（双重验证）
+				const token = uni.getStorageSync('uni_id_token')
+				if (!token) {
+					uni.showModal({
+						title: '登录已失效',
+						content: '登录状态已失效，需要重新登录才能保存',
+						confirmText: '去登录',
+						showCancel: false,
+						success: () => {
+							uni.setStorageSync('redirectUrl', '/pages/child-info/child-info')
+							uni.redirectTo({
+								url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+							})
+						}
 					})
 					return
 				}
@@ -729,10 +837,16 @@
 					
 					uni.hideLoading()
 					
-					if (saveResult.result.code === 0) {
+					// 调试：打印完整响应
+					console.log('[child-info] 保存结果:', saveResult)
+					console.log('[child-info] result.code:', saveResult.result?.code)
+					console.log('[child-info] result.msg:', saveResult.result?.msg)
+					console.log('[child-info] result.message:', saveResult.result?.message)
+					
+					if (saveResult.result && saveResult.result.code === 0) {
 						const childId = saveResult.result.data.id
 						
-						// 保存儿童信息到本地存储（包含 childId）
+						// 保存儿童信息到本地存储（包含 childId，用于评估页面）
 						const childInfo = {
 							...this.formData,
 							clinical: this.clinical,
@@ -740,10 +854,16 @@
 						}
 						uni.setStorageSync('childInfo', childInfo)
 						
+						// 清除本地备份数据（已成功保存到云端，不再需要备份）
+						// 注意：不要清除 childInfo，因为评估页面需要使用 childId
+						
 						uni.showToast({
 							title: '保存成功',
 							icon: 'success'
 						})
+						
+						// 清除旧草稿（新评估开始）
+						uni.removeStorageSync('assessmentDraft')
 						
 						// 跳转到评估页面
 						setTimeout(() => {
@@ -752,7 +872,56 @@
 							})
 						}, 500)
 					} else {
-						// 保存失败，但仍然保存到本地存储以便后续使用
+						// 保存失败，检查是否是登录问题
+						const errorCode = saveResult.result?.code
+						const errorMsg = saveResult.result?.msg || saveResult.result?.message || '保存失败'
+						
+						console.error('[child-info] 保存失败:', {
+							code: errorCode,
+							msg: saveResult.result?.msg,
+							message: saveResult.result?.message,
+							fullResult: saveResult.result
+						})
+						
+						// 如果是登录问题，引导用户登录
+						if (errorCode === 401 || errorCode === 'NOT_LOGIN' || errorMsg.includes('未登录') || errorMsg.includes('登录')) {
+							uni.showModal({
+								title: '需要登录',
+								content: '保存信息需要登录，是否前往登录？',
+								confirmText: '去登录',
+								cancelText: '稍后',
+								success: (res) => {
+									if (res.confirm) {
+										// 保存当前表单数据到本地（避免数据丢失）
+										const childInfo = {
+											...this.formData,
+											clinical: this.clinical
+										}
+										uni.setStorageSync('childInfo', childInfo)
+										// 保存当前页面路径
+										uni.setStorageSync('redirectUrl', '/pages/child-info/child-info')
+										uni.redirectTo({
+											url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+										})
+									} else {
+										// 用户选择稍后，保存到本地
+										const childInfo = {
+											...this.formData,
+											clinical: this.clinical
+										}
+										uni.setStorageSync('childInfo', childInfo)
+										uni.showToast({
+											title: '已保存到本地，登录后可同步',
+											icon: 'none',
+											duration: 2000
+										})
+									}
+								}
+							})
+							return
+						}
+						
+						// 其他错误，保存到本地并提示
 						const childInfo = {
 							...this.formData,
 							clinical: this.clinical
@@ -760,17 +929,20 @@
 						uni.setStorageSync('childInfo', childInfo)
 						
 						uni.showToast({
-							title: saveResult.result.msg || '保存失败，已保存到本地',
+							title: errorMsg + '，已保存到本地',
 							icon: 'none',
-							duration: 2000
+							duration: 3000
 						})
+						
+						// 清除旧草稿（新评估开始）
+						uni.removeStorageSync('assessmentDraft')
 						
 						// 即使失败也允许继续，因为已保存到本地
 						setTimeout(() => {
 							uni.navigateTo({
 								url: '/pages/assessment/assessment'
 							})
-						}, 1500)
+						}, 2000)
 					}
 				} catch (error) {
 					uni.hideLoading()
@@ -789,6 +961,9 @@
 						duration: 2000
 					})
 					
+					// 清除旧草稿（新评估开始）
+					uni.removeStorageSync('assessmentDraft')
+					
 					// 允许继续使用本地数据
 					setTimeout(() => {
 						uni.navigateTo({
@@ -797,6 +972,26 @@
 					}, 1500)
 				}
 			}
+		},
+		onLoad() {
+			console.log('[child-info] page loaded')
+			
+			// 设置今天的日期作为最大可选日期
+			const today = new Date()
+			this.today = today.toISOString().split('T')[0]
+			
+			// 登录守卫：页面加载时立即检查（优先级最高）
+			const isLoggedIn = this.checkLoginStatus()
+			if (!isLoggedIn) {
+				return // 未登录，已跳转到登录页
+			}
+			
+			// 登录成功后，尝试恢复之前保存的本地数据
+			this.restoreLocalData()
+		},
+		onShow() {
+			// 每次页面显示时也检查登录状态（防止在后台时 token 过期）
+			this.checkLoginStatus()
 		}
 	}
 </script>

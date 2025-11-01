@@ -53,6 +53,11 @@
 			<button class="start-button" @click="startAssessment">
 				<text class="button-text">开始评估</text>
 			</button>
+			
+			<!-- 登录/个人中心入口（调试用） -->
+			<button class="login-button" @click="goLogin">
+				<text class="login-button-text">登录 / 个人中心</text>
+			</button>
 		</view>
 		
 		<!-- 版权信息 -->
@@ -77,6 +82,11 @@ export default {
 		startAssessment() {
 			uni.navigateTo({
 				url: '/pages/child-info/child-info'
+			})
+		},
+		goLogin() {
+			uni.navigateTo({
+				url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
 			})
 		}
 	}
@@ -264,6 +274,30 @@ export default {
 	font-size: 36rpx;
 	font-weight: bold;
 	color: #fff;
+}
+
+/* 登录按钮 */
+.login-button {
+	width: 100%;
+	height: 80rpx;
+	background: #fff;
+	border-radius: 40rpx;
+	border: 2rpx solid #E93A8A;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-top: 20rpx;
+	box-shadow: 0 4rpx 12rpx rgba(233, 58, 138, 0.2);
+}
+
+.login-button:active {
+	background: #F5F9FC;
+}
+
+.login-button-text {
+	font-size: 28rpx;
+	font-weight: 500;
+	color: #E93A8A;
 }
 
 /* 版权信息 */

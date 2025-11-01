@@ -46,7 +46,12 @@
         "setting" : {
             "urlCheck" : false
         },
-        "usingComponents" : true
+        "usingComponents" : true,
+        "cloudfunctionRoot" : "uniCloud-aliyun/cloudfunctions/"
+    },
+    "uniCloud" : {
+        "provider" : "aliyun",
+        "spaceId" : "mp-5303b4dc-df3a-4fca-82e6-5b7b825a8efb"
     },
     "mp-alipay" : {
         "usingComponents" : true

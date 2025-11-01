@@ -95,14 +95,53 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 
 
+var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
+var _regenerator = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/regenerator */ 28));
+var _asyncToGenerator2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ 31));
+// 如果出现编译错误，可以暂时注释掉这行导入
+// import initUniIdPage from '@/uni_modules/uni-id-pages/init.js'
 var _default = {
-  onLaunch: function onLaunch() {
-    console.log('App Launch');
-  },
+  onLaunch: function () {
+    var _onLaunch = (0, _asyncToGenerator2.default)( /*#__PURE__*/_regenerator.default.mark(function _callee() {
+      return _regenerator.default.wrap(function _callee$(_context) {
+        while (1) {
+          switch (_context.prev = _context.next) {
+            case 0:
+              console.log('App Launch');
+              // 初始化 uni-id-pages（已禁用，避免模块加载错误）
+              // init.js 在模块顶层调用了 uniCloud.importObject，会导致 webpack 模块加载错误
+              // 注释掉初始化代码，uni-id-pages 的登录功能仍可正常使用
+              // 如需启用调试模式检查，请确保 uniCloud 已初始化后再调用
+              /*
+              setTimeout(async () => {
+              	try {
+              		// 动态导入，避免启动时阻塞
+              		const initModule = require('@/uni_modules/uni-id-pages/init.js')
+              		const initUniIdPage = initModule.default || initModule
+              		if (typeof initUniIdPage === 'function') {
+              			await initUniIdPage()
+              		}
+              	} catch (error) {
+              		console.warn('[App] uni-id-pages 初始化失败:', error)
+              	}
+              }, 100)
+              */
+            case 1:
+            case "end":
+              return _context.stop();
+          }
+        }
+      }, _callee);
+    }));
+    function onLaunch() {
+      return _onLaunch.apply(this, arguments);
+    }
+    return onLaunch;
+  }(),
   onShow: function onShow() {
     console.log('App Show');
   },

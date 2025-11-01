@@ -1,145 +1,209 @@
 'use strict';
 
 const db = uniCloud.database();
-const { aggregate, calculateLevel } = require('../common/calc.js');
+const { loadQuestionsByQids, aggregate } = require('./calc.js');
 
 /**
- * 保存评估结果
+ * 保存评估草稿（Upsert）
  * 
  * 输入参数：
  * - childId: 儿童档案ID（必填）
  * - answers: 作答数据 { qid: 0|1 }（必填）
- * - createdByUid: 创建者UID（可选）
+ * 
+ * 注意：需要用户已登录，uid 从 context.auth.uid 获取
+ * 
+ * 行为：
+ * - 计算最小统计信息（passed/total per domain/ageBand）
+ * - 对每个 childId，upsert 一条 source='draft' 的记录
+ * - 更新 updatedAt = now
  * 
  * 返回：
- * - code: 0 成功
- * - id: 评估记录 _id
+ * - ok: true
+ * - childId: 儿童档案ID
+ * - stats.overall.ratio: 总体完成率
  */
 exports.main = async (event, context) => {
+  // 强制登录验证
+  const uid = context.auth && context.auth.uid;
+  if (!uid) {
+    return { 
+      code: 'NOT_LOGIN', 
+      message: '未登录，请先登录' 
+    };
+  }
+
   try {
     // 1. 参数校验
-    const { childId, answers, createdByUid } = event || {};
+    const { childId, answers } = event || {};
 
     if (!childId) {
-      return { code: 400, msg: '缺少参数: childId' };
+      return {
+        ok: false,
+        code: 400,
+        msg: '缺少参数: childId'
+      };
     }
 
     if (!answers || typeof answers !== 'object') {
-      return { code: 400, msg: '缺少参数: answers' };
+      return {
+        ok: false,
+        code: 400,
+        msg: '缺少参数: answers'
+      };
     }
 
-    // 2. 获取所有答题的 qid
-    const qids = Object.keys(answers);
-    if (qids.length === 0) {
-      return { code: 400, msg: 'answers 不能为空' };
+    // 4. 负载大小校验（answers keys <= 1500）
+    const answerKeys = Object.keys(answers);
+    if (answerKeys.length > 1500) {
+      return {
+        ok: false,
+        code: 400,
+        msg: '答案数量超过限制（最多1500题）'
+      };
     }
 
-    // 3. 从 questions_master 查询题目信息
-    const questionsResult = await db.collection('questions_master')
-      .where({
-        qid: db.command.in(qids)
-      })
-      .get();
-
-    const questions = questionsResult.data || [];
-    
+    // 5. 加载题目数据
+    console.log('[saveAssessment] 加载题目，答案数量:', answerKeys.length, '答案键示例:', answerKeys.slice(0, 5));
+    const questions = await loadQuestionsByQids(answerKeys);
+    console.log('[saveAssessment] 找到题目数量:', questions.length);
     if (questions.length === 0) {
-      return { code: 404, msg: '未找到对应的题目数据' };
+      console.error('[saveAssessment] 未找到题目数据，可能原因：1.数据库中无对应qid 2.qid格式不匹配');
+      console.error('[saveAssessment] 答案键示例（前10个）:', answerKeys.slice(0, 10));
+      return {
+        ok: false,
+        code: 404,
+        msg: `未找到对应的题目数据，答案数量：${answerKeys.length}，请检查题目ID是否正确`
+      };
     }
 
-    // 创建 qid -> question 的映射
-    const questionMap = {};
-    questions.forEach(q => {
-      questionMap[q.qid] = q;
-    });
-
-    // 4. 过滤有效答案（只处理实际存在的题目）
+    // 6. 过滤有效答案（只处理实际存在的题目）
     const validAnswers = {};
-    qids.forEach(qid => {
-      if (questionMap[qid]) {
+    const missingQuestions = [];
+    answerKeys.forEach(qid => {
+      const question = questions.find(q => q.qid === qid);
+      if (question) {
         const value = answers[qid];
         // 确保答案为 0 或 1
         if (value === 0 || value === 1) {
           validAnswers[qid] = value;
+        } else {
+          console.warn(`[saveAssessment] 答案值无效: qid=${qid}, value=${value}`);
         }
+      } else {
+        missingQuestions.push(qid);
       }
-      // 忽略未知 qid
     });
 
-    if (Object.keys(validAnswers).length === 0) {
-      return { code: 400, msg: '没有有效的答案数据' };
+    if (missingQuestions.length > 0) {
+      console.warn(`[saveAssessment] 未找到题目数量: ${missingQuestions.length}，示例:`, missingQuestions.slice(0, 5));
     }
 
-    // 5. 使用 calc.aggregate 计算统计信息
-    const result = aggregate(questions, validAnswers);
+    if (Object.keys(validAnswers).length === 0) {
+      console.error('[saveAssessment] 没有有效答案数据', {
+        totalAnswers: answerKeys.length,
+        foundQuestions: questions.length,
+        missingQuestions: missingQuestions.length
+      });
+      return {
+        ok: false,
+        code: 400,
+        msg: `没有有效的答案数据（有效：${Object.keys(validAnswers).length}/${answerKeys.length}）`
+      };
+    }
 
-    // 6. 生成 notAchieved（未达标项目）
-    const notAchieved = [];
-    Object.keys(validAnswers).forEach(qid => {
-      if (validAnswers[qid] === 0) {
-        const question = questionMap[qid];
-        if (question) {
-          notAchieved.push({
-            qid: question.qid || qid,
-            domain: question.domain || '未知',
-            subdomain: question.subdomain || '未分类',
-            ageBand: question.ageBand || '未知',
-            title: question.title || question.text || ''
-          });
-        }
-      }
-    });
+    // 7. 计算最小统计信息
+    const stats = aggregate(validAnswers, questions);
 
-    // 7. 计算发育等级
-    const level = calculateLevel(result.scorePercent);
-
-    // 8. 获取当前用户 UID（从 context 或参数）
-    const uid = context.APPID ? 
-      (createdByUid || (context.CLIENTIP ? 'anonymous' : '')) : 
-      createdByUid || '';
-
-    // 9. 准备写入数据
-    const assessmentData = {
+    // 8. 准备草稿数据
+    const now = Date.now();
+    const draftData = {
       childId: String(childId),
+      ownerUid: uid,
       answers: validAnswers,
-      stats: result.stats,
-      notAchieved: notAchieved,
-      scorePercent: result.scorePercent,
-      level: level,
-      createdAt: Date.now(),
-      createdByUid: uid
+      stats: {
+        domains: stats.domains,
+        ageBands: stats.ageBands,
+        overall: stats.overall
+      },
+      source: 'draft',
+      updatedAt: now
     };
 
-    // 10. 写入 assessments 集合
-    const insertResult = await db.collection('assessments').add(assessmentData);
+    // 9. 查找现有草稿（需要同时匹配 ownerUid 和 childId，避免跨用户冲突）
+    const existingDraft = await db.collection('assessments')
+      .where({
+        childId: String(childId),
+        ownerUid: uid,
+        source: 'draft'
+      })
+      .get();
 
-    console.log('[saveAssessment] 成功保存评估结果', {
+    let result;
+    try {
+      if (existingDraft.data && existingDraft.data.length > 0) {
+        // 更新现有草稿
+        const draftId = existingDraft.data[0]._id;
+        console.log('[saveAssessment] 更新现有草稿，ID:', draftId);
+        await db.collection('assessments')
+          .doc(draftId)
+          .update(draftData);
+
+        result = {
+          id: draftId,
+          isNew: false
+        };
+      } else {
+        // 创建新草稿（确保包含 createdAt，这是 required 字段）
+        draftData.createdAt = now;
+        console.log('[saveAssessment] 创建新草稿，数据字段:', Object.keys(draftData));
+        const insertResult = await db.collection('assessments').add(draftData);
+        if (!insertResult || !insertResult.id) {
+          throw new Error('数据库插入失败：未返回记录ID');
+        }
+        result = {
+          id: insertResult.id,
+          isNew: true
+        };
+      }
+    } catch (dbError) {
+      console.error('[saveAssessment] 数据库写入失败:', dbError);
+      console.error('[saveAssessment] 尝试写入的数据摘要:', {
+        childId: draftData.childId,
+        ownerUid: draftData.ownerUid,
+        answersCount: Object.keys(draftData.answers).length,
+        hasCreatedAt: !!draftData.createdAt
+      });
+      return {
+        ok: false,
+        code: 500,
+        msg: '数据库写入失败：' + (dbError.message || String(dbError))
+      };
+    }
+
+    console.log('[saveAssessment] 成功保存草稿', {
       childId,
-      scorePercent: result.scorePercent,
-      level,
-      assessmentId: insertResult.id
+      assessmentId: result.id,
+      isNew: result.isNew,
+      ratio: stats.overall.ratio
     });
 
     return {
-      code: 0,
-      msg: 'success',
-      data: {
-        id: insertResult.id,
-        childId: childId,
-        scorePercent: result.scorePercent,
-        level: level,
-        totalQuestions: result.stats.overall.total,
-        passedQuestions: result.stats.overall.passed
+      ok: true,
+      childId: String(childId),
+      stats: {
+        overall: {
+          ratio: stats.overall.ratio
+        }
       }
     };
 
   } catch (err) {
     console.error('[saveAssessment] 错误:', err);
     return {
+      ok: false,
       code: 500,
       msg: '服务器内部错误',
       error: err.message
     };
   }
 };
-

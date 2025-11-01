@@ -202,8 +202,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 var _regenerator = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/regenerator */ 28));
-var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
 var _asyncToGenerator2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ 31));
+var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
 //
@@ -730,13 +730,116 @@ var _default = {
       return this.formData.name && this.formData.gender && this.formData.birthDate && this.formData.caregiver && this.formData.phone;
     }
   },
-  onLoad: function onLoad() {
-    console.log('[child-info] page loaded');
-    // 设置今天的日期作为最大可选日期
-    var today = new Date();
-    this.today = today.toISOString().split('T')[0];
-  },
   methods: {
+    // 检查登录状态
+    checkLoginStatus: function checkLoginStatus() {
+      var token = uni.getStorageSync('uni_id_token');
+      var tokenExpired = uni.getStorageSync('uni_id_token_expired');
+      var now = Date.now();
+
+      // 检查 token 是否存在
+      if (!token) {
+        console.warn('[child-info] 未检测到登录 token，跳转到登录页');
+        // 保存当前页面路径，登录后返回
+        uni.setStorageSync('redirectUrl', '/pages/child-info/child-info');
+        uni.redirectTo({
+          url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+        });
+        return false;
+      }
+
+      // 检查 token 是否过期（如果存储了过期时间）
+      if (tokenExpired && tokenExpired > 0 && now >= tokenExpired) {
+        console.warn('[child-info] Token 已过期，跳转到登录页');
+        // 清除过期的 token
+        uni.removeStorageSync('uni_id_token');
+        uni.removeStorageSync('uni_id_token_expired');
+        // 保存当前页面路径
+        uni.setStorageSync('redirectUrl', '/pages/child-info/child-info');
+        uni.redirectTo({
+          url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+        });
+        return false;
+      }
+      return true;
+    },
+    // 恢复本地保存的数据（登录成功后使用）
+    restoreLocalData: function restoreLocalData() {
+      var savedChildInfo = uni.getStorageSync('childInfo');
+      if (savedChildInfo && Object.keys(savedChildInfo).length > 0) {
+        console.log('[child-info] 恢复本地保存的数据');
+        // 恢复基本信息
+        if (savedChildInfo.name) this.formData.name = savedChildInfo.name;
+        if (savedChildInfo.gender) this.formData.gender = savedChildInfo.gender;
+        if (savedChildInfo.birthDate) this.formData.birthDate = savedChildInfo.birthDate;
+        if (savedChildInfo.caregiver) this.formData.caregiver = savedChildInfo.caregiver;
+        if (savedChildInfo.phone) this.formData.phone = savedChildInfo.phone;
+        if (savedChildInfo.notes) this.formData.notes = savedChildInfo.notes;
+
+        // 恢复临床信息
+        if (savedChildInfo.clinical) {
+          this.clinical = _objectSpread(_objectSpread({}, this.clinical), savedChildInfo.clinical);
+        }
+        uni.showToast({
+          title: '已恢复之前填写的数据',
+          icon: 'success',
+          duration: 1500
+        });
+      }
+    },
+    // 选择性别
+    selectGender: function selectGender(gender) {
+      this.formData.gender = gender;
+    },
+    // 选择主要照顾者
+    selectCaregiver: function selectCaregiver(caregiver) {
+      this.formData.caregiver = caregiver;
+    },
+    // 验证登录状态（用于调用云函数前）
+    validateLoginBeforeSave: function validateLoginBeforeSave() {
+      var _this = this;
+      return (0, _asyncToGenerator2.default)( /*#__PURE__*/_regenerator.default.mark(function _callee() {
+        var token;
+        return _regenerator.default.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                token = uni.getStorageSync('uni_id_token');
+                if (token) {
+                  _context.next = 4;
+                  break;
+                }
+                uni.showModal({
+                  title: '需要登录',
+                  content: '保存儿童信息需要先登录，是否前往登录？',
+                  confirmText: '去登录',
+                  cancelText: '取消',
+                  success: function success(res) {
+                    if (res.confirm) {
+                      // 保存当前表单数据到本地（避免数据丢失）
+                      var childInfo = _objectSpread(_objectSpread({}, _this.formData), {}, {
+                        clinical: _this.clinical
+                      });
+                      uni.setStorageSync('childInfo', childInfo);
+                      // 保存当前页面路径
+                      uni.setStorageSync('redirectUrl', '/pages/child-info/child-info');
+                      uni.navigateTo({
+                        url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+                      });
+                    }
+                  }
+                });
+                return _context.abrupt("return", false);
+              case 4:
+                return _context.abrupt("return", true);
+              case 5:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee);
+      }))();
+    },
     // 计算年龄（月）
     calculateAgeInMonths: function calculateAgeInMonths(birthDate) {
       if (!birthDate) return 0;
@@ -764,14 +867,6 @@ var _default = {
       if (ageInMonths < 48) return '3-4岁';
       if (ageInMonths < 60) return '4-5岁';
       return '5-6岁';
-    },
-    // 选择性别
-    selectGender: function selectGender(gender) {
-      this.formData.gender = gender;
-    },
-    // 选择主要照顾者
-    selectCaregiver: function selectCaregiver(caregiver) {
-      this.formData.caregiver = caregiver;
     },
     // 出生日期改变
     onBirthDateChange: function onBirthDateChange(e) {
@@ -823,19 +918,19 @@ var _default = {
     },
     // 选择视频
     chooseVideo: function chooseVideo() {
-      var _this = this;
+      var _this2 = this;
       uni.chooseVideo({
         sourceType: ['album', 'camera'],
         maxDuration: 30,
         success: function success(res) {
-          if (_this.clinical.videos.length >= 6) {
+          if (_this2.clinical.videos.length >= 6) {
             uni.showToast({
               title: '最多只能上传6个视频',
               icon: 'none'
             });
             return;
           }
-          _this.clinical.videos.push({
+          _this2.clinical.videos.push({
             tempFilePath: res.tempFilePath,
             size: res.size,
             duration: res.duration
@@ -852,51 +947,81 @@ var _default = {
     },
     // 跳转到评估页面
     goToAssessment: function goToAssessment() {
-      var _this2 = this;
-      return (0, _asyncToGenerator2.default)( /*#__PURE__*/_regenerator.default.mark(function _callee() {
-        var clinical, diagnosis, habits, saveResult, childId, childInfo, _childInfo, _childInfo2;
-        return _regenerator.default.wrap(function _callee$(_context) {
+      var _this3 = this;
+      return (0, _asyncToGenerator2.default)( /*#__PURE__*/_regenerator.default.mark(function _callee2() {
+        var isLoggedIn, token, _saveResult$result, _saveResult$result2, _saveResult$result3, clinical, diagnosis, habits, saveResult, childId, childInfo, _saveResult$result4, _saveResult$result5, _saveResult$result6, _saveResult$result7, _saveResult$result8, errorCode, errorMsg, _childInfo, _childInfo4;
+        return _regenerator.default.wrap(function _callee2$(_context2) {
           while (1) {
-            switch (_context.prev = _context.next) {
+            switch (_context2.prev = _context2.next) {
               case 0:
-                if (_this2.isFormValid) {
-                  _context.next = 3;
+                _context2.next = 2;
+                return _this3.validateLoginBeforeSave();
+              case 2:
+                isLoggedIn = _context2.sent;
+                if (isLoggedIn) {
+                  _context2.next = 5;
+                  break;
+                }
+                return _context2.abrupt("return");
+              case 5:
+                if (_this3.isFormValid) {
+                  _context2.next = 8;
                   break;
                 }
                 uni.showToast({
                   title: '请完善必填信息',
                   icon: 'none'
                 });
-                return _context.abrupt("return");
-              case 3:
-                if (!(_this2.clinical.crawlStatus === 'months' && !_this2.clinical.crawlMonths)) {
-                  _context.next = 6;
+                return _context2.abrupt("return");
+              case 8:
+                if (!(_this3.clinical.crawlStatus === 'months' && !_this3.clinical.crawlMonths)) {
+                  _context2.next = 11;
                   break;
                 }
                 uni.showToast({
                   title: '请输入爬行月份',
                   icon: 'none'
                 });
-                return _context.abrupt("return");
-              case 6:
-                if (!(_this2.clinical.hearing.status === 'impaired' && (!_this2.clinical.hearing.dbLeft || !_this2.clinical.hearing.dbRight))) {
-                  _context.next = 9;
+                return _context2.abrupt("return");
+              case 11:
+                if (!(_this3.clinical.hearing.status === 'impaired' && (!_this3.clinical.hearing.dbLeft || !_this3.clinical.hearing.dbRight))) {
+                  _context2.next = 14;
                   break;
                 }
                 uni.showToast({
                   title: '请输入听力分贝',
                   icon: 'none'
                 });
-                return _context.abrupt("return");
-              case 9:
+                return _context2.abrupt("return");
+              case 14:
+                // 再次检查登录状态（双重验证）
+                token = uni.getStorageSync('uni_id_token');
+                if (token) {
+                  _context2.next = 18;
+                  break;
+                }
+                uni.showModal({
+                  title: '登录已失效',
+                  content: '登录状态已失效，需要重新登录才能保存',
+                  confirmText: '去登录',
+                  showCancel: false,
+                  success: function success() {
+                    uni.setStorageSync('redirectUrl', '/pages/child-info/child-info');
+                    uni.redirectTo({
+                      url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+                    });
+                  }
+                });
+                return _context2.abrupt("return");
+              case 18:
                 // 显示加载提示
                 uni.showLoading({
                   title: '保存中...',
                   mask: true
                 });
-                _context.prev = 10;
+                _context2.prev = 19;
                 // 准备数据
-                clinical = _this2.clinical; // 转换诊断数据格式
+                clinical = _this3.clinical; // 转换诊断数据格式
                 diagnosis = clinical.medicalDiagnosis || []; // 准备 habits 对象
                 habits = {
                   walkTime: clinical.walkingTime || '',
@@ -905,13 +1030,13 @@ var _default = {
                   kneel: clinical.kneelWalk,
                   hand: clinical.handedness || ''
                 }; // 调用云函数保存到数据库
-                _context.next = 16;
+                _context2.next = 25;
                 return uniCloud.callFunction({
                   name: 'saveChildProfile',
                   data: {
-                    name: _this2.formData.name,
-                    gender: _this2.formData.gender,
-                    birthDate: _this2.formData.birthDate,
+                    name: _this3.formData.name,
+                    gender: _this3.formData.gender,
+                    birthDate: _this3.formData.birthDate,
                     diagnosis: diagnosis,
                     habits: habits,
                     vision: clinical.vision || {
@@ -924,72 +1049,144 @@ var _default = {
                       dbRight: ''
                     },
                     epilepsy: clinical.epilepsy || 'none',
-                    caregiver: _this2.formData.caregiver || '',
-                    phone: _this2.formData.phone || '',
+                    caregiver: _this3.formData.caregiver || '',
+                    phone: _this3.formData.phone || '',
                     videos: clinical.videos || [],
                     homeGuide: clinical.homeGuide,
-                    notes: _this2.formData.notes || ''
+                    notes: _this3.formData.notes || ''
                   }
                 });
-              case 16:
-                saveResult = _context.sent;
+              case 25:
+                saveResult = _context2.sent;
                 uni.hideLoading();
-                if (saveResult.result.code === 0) {
-                  childId = saveResult.result.data.id; // 保存儿童信息到本地存储（包含 childId）
-                  childInfo = _objectSpread(_objectSpread({}, _this2.formData), {}, {
-                    clinical: _this2.clinical,
-                    childId: childId // 保存数据库返回的ID
-                  });
 
-                  uni.setStorageSync('childInfo', childInfo);
-                  uni.showToast({
-                    title: '保存成功',
-                    icon: 'success'
-                  });
-
-                  // 跳转到评估页面
-                  setTimeout(function () {
-                    uni.navigateTo({
-                      url: '/pages/assessment/assessment'
-                    });
-                  }, 500);
-                } else {
-                  // 保存失败，但仍然保存到本地存储以便后续使用
-                  _childInfo = _objectSpread(_objectSpread({}, _this2.formData), {}, {
-                    clinical: _this2.clinical
-                  });
-                  uni.setStorageSync('childInfo', _childInfo);
-                  uni.showToast({
-                    title: saveResult.result.msg || '保存失败，已保存到本地',
-                    icon: 'none',
-                    duration: 2000
-                  });
-
-                  // 即使失败也允许继续，因为已保存到本地
-                  setTimeout(function () {
-                    uni.navigateTo({
-                      url: '/pages/assessment/assessment'
-                    });
-                  }, 1500);
+                // 调试：打印完整响应
+                console.log('[child-info] 保存结果:', saveResult);
+                console.log('[child-info] result.code:', (_saveResult$result = saveResult.result) === null || _saveResult$result === void 0 ? void 0 : _saveResult$result.code);
+                console.log('[child-info] result.msg:', (_saveResult$result2 = saveResult.result) === null || _saveResult$result2 === void 0 ? void 0 : _saveResult$result2.msg);
+                console.log('[child-info] result.message:', (_saveResult$result3 = saveResult.result) === null || _saveResult$result3 === void 0 ? void 0 : _saveResult$result3.message);
+                if (!(saveResult.result && saveResult.result.code === 0)) {
+                  _context2.next = 40;
+                  break;
                 }
-                _context.next = 29;
+                childId = saveResult.result.data.id; // 保存儿童信息到本地存储（包含 childId，用于评估页面）
+                childInfo = _objectSpread(_objectSpread({}, _this3.formData), {}, {
+                  clinical: _this3.clinical,
+                  childId: childId // 保存数据库返回的ID
+                });
+
+                uni.setStorageSync('childInfo', childInfo);
+
+                // 清除本地备份数据（已成功保存到云端，不再需要备份）
+                // 注意：不要清除 childInfo，因为评估页面需要使用 childId
+
+                uni.showToast({
+                  title: '保存成功',
+                  icon: 'success'
+                });
+
+                // 清除旧草稿（新评估开始）
+                uni.removeStorageSync('assessmentDraft');
+
+                // 跳转到评估页面
+                setTimeout(function () {
+                  uni.navigateTo({
+                    url: '/pages/assessment/assessment'
+                  });
+                }, 500);
+                _context2.next = 51;
                 break;
-              case 21:
-                _context.prev = 21;
-                _context.t0 = _context["catch"](10);
+              case 40:
+                // 保存失败，检查是否是登录问题
+                errorCode = (_saveResult$result4 = saveResult.result) === null || _saveResult$result4 === void 0 ? void 0 : _saveResult$result4.code;
+                errorMsg = ((_saveResult$result5 = saveResult.result) === null || _saveResult$result5 === void 0 ? void 0 : _saveResult$result5.msg) || ((_saveResult$result6 = saveResult.result) === null || _saveResult$result6 === void 0 ? void 0 : _saveResult$result6.message) || '保存失败';
+                console.error('[child-info] 保存失败:', {
+                  code: errorCode,
+                  msg: (_saveResult$result7 = saveResult.result) === null || _saveResult$result7 === void 0 ? void 0 : _saveResult$result7.msg,
+                  message: (_saveResult$result8 = saveResult.result) === null || _saveResult$result8 === void 0 ? void 0 : _saveResult$result8.message,
+                  fullResult: saveResult.result
+                });
+
+                // 如果是登录问题，引导用户登录
+                if (!(errorCode === 401 || errorCode === 'NOT_LOGIN' || errorMsg.includes('未登录') || errorMsg.includes('登录'))) {
+                  _context2.next = 46;
+                  break;
+                }
+                uni.showModal({
+                  title: '需要登录',
+                  content: '保存信息需要登录，是否前往登录？',
+                  confirmText: '去登录',
+                  cancelText: '稍后',
+                  success: function success(res) {
+                    if (res.confirm) {
+                      // 保存当前表单数据到本地（避免数据丢失）
+                      var _childInfo2 = _objectSpread(_objectSpread({}, _this3.formData), {}, {
+                        clinical: _this3.clinical
+                      });
+                      uni.setStorageSync('childInfo', _childInfo2);
+                      // 保存当前页面路径
+                      uni.setStorageSync('redirectUrl', '/pages/child-info/child-info');
+                      uni.redirectTo({
+                        url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+                      });
+                    } else {
+                      // 用户选择稍后，保存到本地
+                      var _childInfo3 = _objectSpread(_objectSpread({}, _this3.formData), {}, {
+                        clinical: _this3.clinical
+                      });
+                      uni.setStorageSync('childInfo', _childInfo3);
+                      uni.showToast({
+                        title: '已保存到本地，登录后可同步',
+                        icon: 'none',
+                        duration: 2000
+                      });
+                    }
+                  }
+                });
+                return _context2.abrupt("return");
+              case 46:
+                // 其他错误，保存到本地并提示
+                _childInfo = _objectSpread(_objectSpread({}, _this3.formData), {}, {
+                  clinical: _this3.clinical
+                });
+                uni.setStorageSync('childInfo', _childInfo);
+                uni.showToast({
+                  title: errorMsg + '，已保存到本地',
+                  icon: 'none',
+                  duration: 3000
+                });
+
+                // 清除旧草稿（新评估开始）
+                uni.removeStorageSync('assessmentDraft');
+
+                // 即使失败也允许继续，因为已保存到本地
+                setTimeout(function () {
+                  uni.navigateTo({
+                    url: '/pages/assessment/assessment'
+                  });
+                }, 2000);
+              case 51:
+                _context2.next = 62;
+                break;
+              case 53:
+                _context2.prev = 53;
+                _context2.t0 = _context2["catch"](19);
                 uni.hideLoading();
-                console.error('保存儿童信息失败:', _context.t0);
+                console.error('保存儿童信息失败:', _context2.t0);
 
                 // 出错时仍保存到本地存储
-                _childInfo2 = _objectSpread(_objectSpread({}, _this2.formData), {}, {
-                  clinical: _this2.clinical
+                _childInfo4 = _objectSpread(_objectSpread({}, _this3.formData), {}, {
+                  clinical: _this3.clinical
                 });
-                uni.setStorageSync('childInfo', _childInfo2);
+                uni.setStorageSync('childInfo', _childInfo4);
                 uni.showToast({
                   title: '网络错误，已保存到本地',
                   icon: 'none',
                   duration: 2000
                 });
+
+                // 清除旧草稿（新评估开始）
+                uni.removeStorageSync('assessmentDraft');
 
                 // 允许继续使用本地数据
                 setTimeout(function () {
@@ -997,14 +1194,34 @@ var _default = {
                     url: '/pages/assessment/assessment'
                   });
                 }, 1500);
-              case 29:
+              case 62:
               case "end":
-                return _context.stop();
+                return _context2.stop();
             }
           }
-        }, _callee, null, [[10, 21]]);
+        }, _callee2, null, [[19, 53]]);
       }))();
     }
+  },
+  onLoad: function onLoad() {
+    console.log('[child-info] page loaded');
+
+    // 设置今天的日期作为最大可选日期
+    var today = new Date();
+    this.today = today.toISOString().split('T')[0];
+
+    // 登录守卫：页面加载时立即检查（优先级最高）
+    var isLoggedIn = this.checkLoginStatus();
+    if (!isLoggedIn) {
+      return; // 未登录，已跳转到登录页
+    }
+
+    // 登录成功后，尝试恢复之前保存的本地数据
+    this.restoreLocalData();
+  },
+  onShow: function onShow() {
+    // 每次页面显示时也检查登录状态（防止在后台时 token 过期）
+    this.checkLoginStatus();
   }
 };
 exports.default = _default;

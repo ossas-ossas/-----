@@ -1,0 +1,73 @@
+@charset "UTF-8";
+/**
+ * 知动儿童综合发育测评 - 全局样式变量
+ * 使用 pastel 柔和配色方案，适合儿童发育评估应用
+ */
+/* Pastel 柔和配色方案 */
+/* 主色调 - 天空蓝 */
+/* 辅助色 - 薄荷绿 */
+/* 警告色 - 珊瑚粉 */
+/* 错误色 - 柔和红 */
+/* 文字颜色 */
+/* 背景颜色 */
+/* 边框颜色 */
+/* 渐变背景 */
+/* 尺寸变量 */
+/* 图片尺寸 */
+/* 圆角尺寸 */
+/* 间距变量 */
+/* 阴影变量 */
+/* 透明度 */
+/* 动画时长 */
+/* 评分等级颜色 */
+/* 功能区域颜色 */
+.fab-login-box,
+.item {
+  display: flex;
+  box-sizing: border-box;
+  flex-direction: column;
+}
+.fab-login-box {
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: 750rpx;
+  justify-content: space-around;
+  position: fixed;
+  left: 0;
+}
+.item {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 200rpx;
+  cursor: pointer;
+}
+@media screen and (min-width: 690px) {
+.fab-login-box {
+    max-width: 500px;
+    margin-left: calc(50% - 250px);
+}
+.item {
+    height: 160rpx;
+}
+}
+@media screen and (max-width: 690px) {
+.fab-login-box {
+    bottom: 10rpx;
+}
+}
+.logo {
+  width: 60rpx;
+  height: 60rpx;
+  max-width: 40px;
+  max-height: 40px;
+  border-radius: 100%;
+  border: solid 1px #F6F6F6;
+}
+.login-title {
+  text-align: center;
+  margin-top: 6px;
+  color: #999;
+  font-size: 10px;
+  width: 80px;
+}

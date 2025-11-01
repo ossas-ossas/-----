@@ -1,0 +1,11 @@
+{
+  "passwordSecret": "dev_password_secret_change_me_please",
+  "tokenSecret": "dev_token_secret_change_me_please",
+  "tokenExpiresIn": 2592000,
+  "tokenExpiresThreshold": 43200,
+  "mp-weixin": {
+    "appid": "wx6c208f4a7597776e",
+    "appsecret": "4855fcb04dbb6c4a7171cf4b6a812c65"
+  }
+}
+

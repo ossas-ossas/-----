@@ -1,105 +1,149 @@
 /**
- * 评分聚合工具
- * 用于计算评估结果的统计信息
+ * 评估计算工具
+ * 提供题目加载、统计聚合等功能
  */
+
+const db = uniCloud.database();
+
+/**
+ * 根据 qid 数组加载题目数据
+ * @param {Array<string>} qids - 题目ID数组
+ * @returns {Promise<Array>} 题目文档数组
+ */
+async function loadQuestionsByQids(qids) {
+  if (!Array.isArray(qids) || qids.length === 0) {
+    return [];
+  }
+
+  try {
+    const result = await db.collection('questions_master')
+      .where({
+        qid: db.command.in(qids),
+        enabled: true // 只加载启用的题目
+      })
+      .get();
+
+    return result.data || [];
+  } catch (error) {
+    console.error('[loadQuestionsByQids] 错误:', error);
+    return [];
+  }
+}
 
 /**
  * 聚合评估结果
- * @param {Array} questions - 题目数组，每个题目包含 { qid, domain, subdomain, ageBand }
  * @param {Object} answers - 作答数据 { qid: 0|1 }
- * @returns {Object} - 聚合统计结果
+ * @param {Array} questionDocs - 题目文档数组，每个包含 { qid, domain, subdomain, ageBand, title }
+ * @returns {Object} - { domains, ageBands, overall, notAchieved }
  */
-function aggregate(questions, answers) {
+function aggregate(answers, questionDocs) {
   const domains = {};
-  const subdomains = {}; // 新增：子领域统计
   const ageBands = {};
+  const notAchieved = [];
   let total = 0;
   let passed = 0;
 
-  // 遍历所有题目进行统计
-  for (const q of questions) {
-    const ok = answers[q.qid] === 1; // 1=已完成，0=未完成
+  // 创建 qid -> question 映射
+  const questionMap = {};
+  questionDocs.forEach(q => {
+    questionMap[q.qid] = q;
+  });
+
+  // 遍历答案进行统计
+  Object.keys(answers).forEach(qid => {
+    const answer = answers[qid];
+    // 只处理 0 或 1 的答案
+    if (answer !== 0 && answer !== 1) {
+      return;
+    }
+
+    const question = questionMap[qid];
+    if (!question) {
+      // 忽略不存在的题目
+      return;
+    }
+
+    const isPassed = answer === 1;
     total += 1;
-    if (ok) passed += 1;
+    if (isPassed) {
+      passed += 1;
+    }
 
     // 按领域统计
-    const d = q.domain;
-    if (!domains[d]) {
-      domains[d] = { passed: 0, total: 0 };
+    const domain = question.domain || '未知';
+    if (!domains[domain]) {
+      domains[domain] = { passed: 0, total: 0 };
     }
-    domains[d].total++;
-    if (ok) domains[d].passed++;
+    domains[domain].total += 1;
+    if (isPassed) {
+      domains[domain].passed += 1;
+    }
 
     // 按年龄段统计
-    const a = q.ageBand;
-    if (!ageBands[a]) {
-      ageBands[a] = { passed: 0, total: 0 };
+    const ageBand = question.ageBand || '未知';
+    if (!ageBands[ageBand]) {
+      ageBands[ageBand] = { passed: 0, total: 0 };
     }
-    ageBands[a].total++;
-    if (ok) ageBands[a].passed++;
+    ageBands[ageBand].total += 1;
+    if (isPassed) {
+      ageBands[ageBand].passed += 1;
+    }
 
-    // 按子领域统计（用于柱状图展示）
-    const subdomain = q.subdomain || '未分类';
-    if (!subdomains[d]) {
-      subdomains[d] = {};
+    // 收集未达标题目（answer === 0）
+    // 注意：notAchieved 只在完整统计时生成，草稿保存时不包含
+    if (!isPassed) {
+      notAchieved.push({
+        qid: question.qid || qid,
+        domain: domain,
+        ageBand: ageBand,
+        title: question.title || question.text || ''
+      });
     }
-    if (!subdomains[d][subdomain]) {
-      subdomains[d][subdomain] = { passed: 0, total: 0 };
-    }
-    subdomains[d][subdomain].total++;
-    if (ok) subdomains[d][subdomain].passed++;
-  }
+  });
 
-  // 标准化：计算比例并保留4位小数
-  const norm = (m) =>
-    Object.fromEntries(
-      Object.entries(m).map(([k, v]) => [
-        k,
+  // 计算比例并标准化
+  const normalize = (stats) => {
+    return Object.fromEntries(
+      Object.entries(stats).map(([key, value]) => [
+        key,
         {
-          passed: v.passed,
-          total: v.total,
-          ratio: v.total ? +(v.passed / v.total).toFixed(4) : 0
+          passed: value.passed,
+          total: value.total,
+          ratio: value.total > 0 ? +(value.passed / value.total).toFixed(4) : 0
         }
       ])
     );
-
-  // 标准化子领域统计（包含在 domains 中）
-  const normSubdomains = {};
-  Object.keys(subdomains).forEach(domain => {
-    normSubdomains[domain] = norm(subdomains[domain]);
-  });
-
-  // 合并 domain 统计和 subdomain 统计
-  const domainStats = norm(domains);
-  Object.keys(normSubdomains).forEach(domain => {
-    if (domainStats[domain]) {
-      domainStats[domain].subdomains = normSubdomains[domain];
-    }
-  });
-
-  // 计算总体得分百分比
-  const scorePercent = total ? Math.round((passed / total) * 100) : 0;
+  };
 
   return {
-    stats: {
-      domains: domainStats,
-      ageBands: norm(ageBands),
-      overall: {
-        passed,
-        total,
-        ratio: total ? +(passed / total).toFixed(4) : 0
-      }
+    domains: normalize(domains),
+    ageBands: normalize(ageBands),
+    overall: {
+      passed,
+      total,
+      ratio: total > 0 ? +(passed / total).toFixed(4) : 0
     },
-    scorePercent
+    notAchieved
   };
 }
 
 /**
- * 计算发育等级
+ * 计算发育等级（新标准：A/B/C）
  * @param {number} scorePercent - 得分百分比 (0-100)
- * @returns {string} - 等级：优秀/良好/正常/需关注/需干预
+ * @returns {string} - 等级：A/B/C
  */
 function calculateLevel(scorePercent) {
+  if (scorePercent >= 85) return 'A';
+  if (scorePercent >= 70) return 'B';
+  return 'C';
+}
+
+/**
+ * 计算发育等级（旧标准：优秀/良好/正常/需关注/需干预）
+ * @param {number} scorePercent - 得分百分比 (0-100)
+ * @returns {string} - 等级
+ */
+function calculateLevelOld(scorePercent) {
   if (scorePercent >= 90) return '优秀';
   if (scorePercent >= 75) return '良好';
   if (scorePercent >= 60) return '正常';
@@ -120,9 +164,9 @@ function getBarColorClass(ratio) {
 }
 
 module.exports = {
+  loadQuestionsByQids,
   aggregate,
   calculateLevel,
+  calculateLevelOld,
   getBarColorClass
 };
-
-

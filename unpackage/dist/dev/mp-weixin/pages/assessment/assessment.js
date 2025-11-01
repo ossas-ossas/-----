@@ -107,37 +107,22 @@ var render = function () {
     var $orig = _vm.__get_orig(domain)
     var m0 = _vm.hasMatchingQuestionsInDomain(domain)
     var m1 = m0 ? _vm.getDomainLabel(domain) : null
-    var m2 = m0 ? _vm.getDomainStats(domain) : null
-    var m3 = m0 && m2 ? _vm.getDomainStats(domain) : null
-    var m4 = m0 && m2 ? _vm.getDomainStats(domain) : null
-    var m5 = m0 && m2 ? _vm.getDomainStats(domain) : null
     var l1 =
       m0 && _vm.expandedDomains[domain]
         ? _vm.__map(
             _vm.getSubdomainsInDomain(domain),
             function (subdomain, __i1__) {
               var $orig = _vm.__get_orig(subdomain)
-              var m6 = _vm.hasMatchingQuestionsInSubdomain(domain, subdomain)
-              var m7 = m6 ? _vm.getSubdomainLabel(subdomain) : null
-              var m8 = m6 ? _vm.getSubdomainStats(domain, subdomain) : null
-              var m9 =
-                m6 && m8 ? _vm.getSubdomainStats(domain, subdomain) : null
-              var m10 =
-                m6 && m8 ? _vm.getSubdomainStats(domain, subdomain) : null
-              var m11 =
-                m6 && m8 ? _vm.getSubdomainStats(domain, subdomain) : null
+              var m2 = _vm.hasMatchingQuestionsInSubdomain(domain, subdomain)
+              var m3 = m2 ? _vm.getSubdomainLabel(subdomain) : null
               var l0 =
-                m6 && _vm.expandedSubdomains[domain + "::" + subdomain]
+                m2 && _vm.expandedSubdomains[domain + "::" + subdomain]
                   ? _vm.getVisibleQuestions(domain, subdomain)
                   : null
               return {
                 $orig: $orig,
-                m6: m6,
-                m7: m7,
-                m8: m8,
-                m9: m9,
-                m10: m10,
-                m11: m11,
+                m2: m2,
+                m3: m3,
                 l0: l0,
               }
             }
@@ -147,10 +132,6 @@ var render = function () {
       $orig: $orig,
       m0: m0,
       m1: m1,
-      m2: m2,
-      m3: m3,
-      m4: m4,
-      m5: m5,
       l1: l1,
     }
   })
@@ -230,15 +211,17 @@ __webpack_require__.r(__webpack_exports__);
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-/* WEBPACK VAR INJECTION */(function(uni) {
+/* WEBPACK VAR INJECTION */(function(uni, uniCloud) {
 
 var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
+var _regenerator = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/regenerator */ 28));
 var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
 var _toConsumableArray2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/toConsumableArray */ 18));
+var _asyncToGenerator2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ 31));
 var _questionBank = __webpack_require__(/*! @/common/questionBank.js */ 68);
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
@@ -279,6 +262,8 @@ var _default = {
       expandedSubdomains: {},
       // 答案（1=完成，0=未完成）
       answers: {},
+      // 答案更新计数器（用于强制 computed 重新计算）
+      answersVersion: 0,
       // 筛选器
       filters: {
         keyword: '',
@@ -303,13 +288,16 @@ var _default = {
     // 统计信息
     derivedStats: function derivedStats() {
       var _this = this;
+      // 依赖 answersVersion 来强制重新计算
+      var version = this.answersVersion;
       var stats = {
         global: {
           selected: 0,
           total: 0,
           ratio: 0
         },
-        byDomain: {}
+        byDomain: {},
+        bySubdomain: {} // 添加子领域统计
       };
 
       // 统计全局
@@ -318,36 +306,91 @@ var _default = {
           return s + qs.length;
         }, 0);
       }, 0);
-      var selectedQs = Object.values(this.answers).filter(function (v) {
-        return v === 1;
-      }).length;
+
+      // 访问 answers 的所有值来触发依赖收集
+      var answersKeys = Object.keys(this.answers);
+      var selectedQs = 0;
+      answersKeys.forEach(function (k) {
+        if (_this.answers[k] === 1) {
+          selectedQs++;
+        }
+      });
       stats.global.total = totalQs;
       stats.global.selected = selectedQs;
       if (totalQs > 0) {
         stats.global.ratio = Math.round(selectedQs / totalQs * 100);
       }
 
-      // 统计每个 domain
+      // 统计每个 domain 和 subdomain
       this.allDomains.forEach(function (domain) {
         var domainQs = _this.getQuestionsInDomain(domain);
-        var selected = domainQs.filter(function (q) {
-          return _this.answers[q.id] === 1;
-        }).length;
+        var selected = 0;
+        domainQs.forEach(function (q) {
+          // 确保访问 answers[q.id] 以触发依赖
+          if (_this.answers[q.id] === 1) {
+            selected++;
+          }
+        });
         stats.byDomain[domain] = {
           selected: selected,
           total: domainQs.length,
           ratio: domainQs.length > 0 ? Math.round(selected / domainQs.length * 100) : 0
         };
+
+        // 统计每个 subdomain
+        if (!stats.bySubdomain[domain]) {
+          stats.bySubdomain[domain] = {};
+        }
+        var subdomains = _this.getSubdomainsInDomain(domain);
+        subdomains.forEach(function (subdomain) {
+          var _this$questionsByDoma;
+          var subdomainQs = ((_this$questionsByDoma = _this.questionsByDomain[domain]) === null || _this$questionsByDoma === void 0 ? void 0 : _this$questionsByDoma[subdomain]) || [];
+          var subdomainSelected = 0;
+          subdomainQs.forEach(function (q) {
+            // 确保访问 answers[q.id] 以触发依赖
+            if (_this.answers[q.id] === 1) {
+              subdomainSelected++;
+            }
+          });
+          stats.bySubdomain[domain][subdomain] = {
+            selected: subdomainSelected,
+            total: subdomainQs.length,
+            ratio: subdomainQs.length > 0 ? Math.round(subdomainSelected / subdomainQs.length * 100) : 0
+          };
+        });
       });
       return stats;
     }
   },
+  onShow: function onShow() {
+    // 登录守卫：检查是否已登录
+    var token = uni.getStorageSync('uni_id_token');
+    if (!token) {
+      uni.navigateTo({
+        url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+      });
+      return;
+    }
+  },
   onLoad: function onLoad() {
-    var _this2 = this;
+    var _this$childInfo,
+      _this$childInfo2,
+      _this2 = this;
     console.log('[assessment] onLoad start');
     this.loadChildInfo();
+
+    // 检查是否需要清除旧草稿
     var draft = uni.getStorageSync('assessmentDraft');
-    var hasDraft = draft && Object.keys(draft).length > 0;
+    var currentChildId = ((_this$childInfo = this.childInfo) === null || _this$childInfo === void 0 ? void 0 : _this$childInfo.childId) || ((_this$childInfo2 = this.childInfo) === null || _this$childInfo2 === void 0 ? void 0 : _this$childInfo2._id);
+    var draftChildId = draft === null || draft === void 0 ? void 0 : draft.childId;
+
+    // 如果 childId 不匹配，说明是新评估，清除旧草稿
+    if (draft && draftChildId && currentChildId && draftChildId !== currentChildId) {
+      console.log('[assessment] 检测到新的 childId，清除旧草稿');
+      uni.removeStorageSync('assessmentDraft');
+      uni.removeStorageSync('assessmentResult');
+    }
+    var hasDraft = draft && Object.keys(draft).length > 0 && (!currentChildId || draftChildId === currentChildId);
     this.initData();
     if (!hasDraft) {
       // 首次进入：只展开第一个 domain 的第一个 subdomain
@@ -404,22 +447,100 @@ var _default = {
     },
     // 加载草稿
     loadDraft: function loadDraft() {
+      var _this$childInfo3,
+        _this$childInfo4,
+        _this4 = this;
       var draft = uni.getStorageSync('assessmentDraft');
-      if (draft) {
-        if (draft.answers) this.answers = draft.answers;
+      var currentChildId = ((_this$childInfo3 = this.childInfo) === null || _this$childInfo3 === void 0 ? void 0 : _this$childInfo3.childId) || ((_this$childInfo4 = this.childInfo) === null || _this$childInfo4 === void 0 ? void 0 : _this$childInfo4._id);
+      var draftChildId = draft === null || draft === void 0 ? void 0 : draft.childId;
+
+      // 只加载匹配当前 childId 的草稿
+      if (draft && (!currentChildId || !draftChildId || draftChildId === currentChildId)) {
+        if (draft.answers) {
+          // 使用 $set 逐个设置答案，确保响应式
+          Object.keys(this.answers).forEach(function (k) {
+            delete _this4.answers[k];
+          });
+          Object.keys(draft.answers).forEach(function (k) {
+            _this4.$set(_this4.answers, k, draft.answers[k]);
+          });
+          // 更新版本号，强制 computed 重新计算
+          this.answersVersion++;
+        }
         if (draft.expandedDomains) this.expandedDomains = draft.expandedDomains;
         if (draft.expandedSubdomains) this.expandedSubdomains = draft.expandedSubdomains;
         if (draft.filters) this.filters = draft.filters;
+        // 强制更新视图
+        this.$nextTick(function () {
+          _this4.$forceUpdate();
+        });
       }
     },
     // 保存草稿
     saveDraft: function saveDraft() {
-      uni.setStorageSync('assessmentDraft', {
-        answers: this.answers,
-        expandedDomains: this.expandedDomains,
-        expandedSubdomains: this.expandedSubdomains,
-        filters: this.filters
-      });
+      var _this5 = this;
+      return (0, _asyncToGenerator2.default)( /*#__PURE__*/_regenerator.default.mark(function _callee() {
+        var _this5$childInfo, _this5$childInfo2;
+        var currentChildId, result;
+        return _regenerator.default.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                currentChildId = ((_this5$childInfo = _this5.childInfo) === null || _this5$childInfo === void 0 ? void 0 : _this5$childInfo.childId) || ((_this5$childInfo2 = _this5.childInfo) === null || _this5$childInfo2 === void 0 ? void 0 : _this5$childInfo2._id);
+                if (currentChildId) {
+                  _context.next = 4;
+                  break;
+                }
+                // 如果没有 childId，只保存到本地
+                uni.setStorageSync('assessmentDraft', {
+                  childId: currentChildId,
+                  answers: _this5.answers,
+                  expandedDomains: _this5.expandedDomains,
+                  expandedSubdomains: _this5.expandedSubdomains,
+                  filters: _this5.filters
+                });
+                return _context.abrupt("return");
+              case 4:
+                // 同时保存到本地和云端
+                uni.setStorageSync('assessmentDraft', {
+                  childId: currentChildId,
+                  answers: _this5.answers,
+                  expandedDomains: _this5.expandedDomains,
+                  expandedSubdomains: _this5.expandedSubdomains,
+                  filters: _this5.filters
+                });
+
+                // 异步保存到云端数据库（不阻塞 UI）
+                _context.prev = 5;
+                _context.next = 8;
+                return uniCloud.callFunction({
+                  name: 'saveAssessment',
+                  data: {
+                    childId: currentChildId,
+                    answers: _this5.answers
+                  }
+                });
+              case 8:
+                result = _context.sent;
+                if (result.result && !result.result.ok) {
+                  console.error('[saveDraft] 云端保存失败:', result.result.msg);
+                } else {
+                  console.log('[saveDraft] 云端保存成功');
+                }
+                _context.next = 15;
+                break;
+              case 12:
+                _context.prev = 12;
+                _context.t0 = _context["catch"](5);
+                console.error('[saveDraft] 云端保存异常:', _context.t0);
+                // 静默失败，不影响用户体验
+              case 15:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee, null, [[5, 12]]);
+      }))();
     },
     // 切换 domain
     toggleDomain: function toggleDomain(domain) {
@@ -449,10 +570,10 @@ var _default = {
     },
     // 获取领域统计
     getDomainStats: function getDomainStats(domain) {
-      var _this4 = this;
+      var _this6 = this;
       var questions = this.getQuestionsInDomain(domain);
       var selected = questions.filter(function (q) {
-        return _this4.answers[q.id] === 1;
+        return _this6.answers[q.id] === 1;
       }).length;
       return {
         selected: selected,
@@ -462,11 +583,11 @@ var _default = {
     },
     // 获取子领域统计
     getSubdomainStats: function getSubdomainStats(domain, subdomain) {
-      var _this$questionsByDoma,
-        _this5 = this;
-      var questions = ((_this$questionsByDoma = this.questionsByDomain[domain]) === null || _this$questionsByDoma === void 0 ? void 0 : _this$questionsByDoma[subdomain]) || [];
+      var _this$questionsByDoma2,
+        _this7 = this;
+      var questions = ((_this$questionsByDoma2 = this.questionsByDomain[domain]) === null || _this$questionsByDoma2 === void 0 ? void 0 : _this$questionsByDoma2[subdomain]) || [];
       var selected = questions.filter(function (q) {
-        return _this5.answers[q.id] === 1;
+        return _this7.answers[q.id] === 1;
       }).length;
       return {
         selected: selected,
@@ -497,8 +618,8 @@ var _default = {
     },
     // 检查 subdomain 是否有匹配的题目
     hasMatchingQuestionsInSubdomain: function hasMatchingQuestionsInSubdomain(domain, subdomain) {
-      var _this$questionsByDoma2;
-      var questions = ((_this$questionsByDoma2 = this.questionsByDomain[domain]) === null || _this$questionsByDoma2 === void 0 ? void 0 : _this$questionsByDoma2[subdomain]) || [];
+      var _this$questionsByDoma3;
+      var questions = ((_this$questionsByDoma3 = this.questionsByDomain[domain]) === null || _this$questionsByDoma3 === void 0 ? void 0 : _this$questionsByDoma3[subdomain]) || [];
       if (questions.length === 0) return false;
 
       // 如果没有搜索条件，返回 true
@@ -511,31 +632,31 @@ var _default = {
     },
     // 获取可见的题目（应用筛选）
     getVisibleQuestions: function getVisibleQuestions(domain, subdomain) {
-      var _this$questionsByDoma3;
-      var questions = ((_this$questionsByDoma3 = this.questionsByDomain[domain]) === null || _this$questionsByDoma3 === void 0 ? void 0 : _this$questionsByDoma3[subdomain]) || [];
+      var _this$questionsByDoma4;
+      var questions = ((_this$questionsByDoma4 = this.questionsByDomain[domain]) === null || _this$questionsByDoma4 === void 0 ? void 0 : _this$questionsByDoma4[subdomain]) || [];
 
       // 应用筛选
       return this.applyFiltersToQuestions(questions);
     },
     // 对题目应用筛选
     applyFiltersToQuestions: function applyFiltersToQuestions(questions) {
-      var _this6 = this;
+      var _this8 = this;
       return questions.filter(function (q) {
         // 关键词筛选
-        if (_this6.filters.keyword) {
-          var keyword = _this6.filters.keyword.toLowerCase();
+        if (_this8.filters.keyword) {
+          var keyword = _this8.filters.keyword.toLowerCase();
           if (!q.text.toLowerCase().includes(keyword)) {
             return false;
           }
         }
 
         // 领域筛选
-        if (_this6.filters.domains.length > 0 && !_this6.filters.domains.includes(q.domain)) {
+        if (_this8.filters.domains.length > 0 && !_this8.filters.domains.includes(q.domain)) {
           return false;
         }
 
         // 仅看未完成
-        if (_this6.filters.onlyUnfinished && _this6.answers[q.id] === 1) {
+        if (_this8.filters.onlyUnfinished && _this8.answers[q.id] === 1) {
           return false;
         }
         return true;
@@ -543,8 +664,14 @@ var _default = {
     },
     // 切换答案
     toggleAnswer: function toggleAnswer(qid) {
-      this.$set(this.answers, qid, this.answers[qid] === 1 ? 0 : 1);
+      var newValue = this.answers[qid] === 1 ? 0 : 1;
+      // 使用 $set 确保响应式
+      this.$set(this.answers, qid, newValue);
+      // 更新版本号，强制 computed 重新计算
+      this.answersVersion++;
       this.saveDraft();
+      // 强制更新视图
+      this.$forceUpdate();
     },
     // 领域筛选切换
     toggleDomainFilter: function toggleDomainFilter(domain) {
@@ -563,19 +690,19 @@ var _default = {
     },
     // 应用筛选（搜索时）
     applyFilters: function applyFilters() {
-      var _this7 = this;
+      var _this9 = this;
       // 如果有搜索关键词，自动展开包含匹配题目的 domain 和 subdomain
       if (this.filters.keyword) {
         this.allDomains.forEach(function (domain) {
-          if (_this7.hasMatchingQuestionsInDomain(domain)) {
+          if (_this9.hasMatchingQuestionsInDomain(domain)) {
             // 展开 domain
-            _this7.$set(_this7.expandedDomains, domain, true);
+            _this9.$set(_this9.expandedDomains, domain, true);
 
             // 展开有匹配题目的 subdomain
-            var subdomains = _this7.getSubdomainsInDomain(domain);
+            var subdomains = _this9.getSubdomainsInDomain(domain);
             subdomains.forEach(function (subdomain) {
-              if (_this7.hasMatchingQuestionsInSubdomain(domain, subdomain)) {
-                _this7.$set(_this7.expandedSubdomains, "".concat(domain, "::").concat(subdomain), true);
+              if (_this9.hasMatchingQuestionsInSubdomain(domain, subdomain)) {
+                _this9.$set(_this9.expandedSubdomains, "".concat(domain, "::").concat(subdomain), true);
               }
             });
           }
@@ -586,81 +713,183 @@ var _default = {
     },
     // 全选本领域
     selectAllInDomain: function selectAllInDomain(domain) {
-      var _this8 = this;
+      var _this10 = this;
       var questions = this.getQuestionsInDomain(domain);
-      questions.forEach(function (q) {
-        _this8.$set(_this8.answers, q.id, 1);
-      });
-      this.saveDraft();
-    },
-    // 清空本领域
-    clearDomain: function clearDomain(domain) {
-      var _this9 = this;
-      var questions = this.getQuestionsInDomain(domain);
-      questions.forEach(function (q) {
-        _this9.$set(_this9.answers, q.id, 0);
-      });
-      this.saveDraft();
-    },
-    // 全选本子领域
-    selectAllInSubdomain: function selectAllInSubdomain(domain, subdomain) {
-      var _this$questionsByDoma4,
-        _this10 = this;
-      var questions = ((_this$questionsByDoma4 = this.questionsByDomain[domain]) === null || _this$questionsByDoma4 === void 0 ? void 0 : _this$questionsByDoma4[subdomain]) || [];
+      // 批量更新答案，使用 $set 确保响应式
       questions.forEach(function (q) {
         _this10.$set(_this10.answers, q.id, 1);
       });
+      // 更新版本号，强制 computed 重新计算
+      this.answersVersion++;
       this.saveDraft();
+      // 强制更新视图，确保统计信息立即刷新
+      this.$forceUpdate();
     },
-    // 清空本子领域
-    clearSubdomain: function clearSubdomain(domain, subdomain) {
-      var _this$questionsByDoma5,
-        _this11 = this;
-      var questions = ((_this$questionsByDoma5 = this.questionsByDomain[domain]) === null || _this$questionsByDoma5 === void 0 ? void 0 : _this$questionsByDoma5[subdomain]) || [];
+    // 清空本领域
+    clearDomain: function clearDomain(domain) {
+      var _this11 = this;
+      var questions = this.getQuestionsInDomain(domain);
+      // 批量更新答案，使用 $set 确保响应式
       questions.forEach(function (q) {
         _this11.$set(_this11.answers, q.id, 0);
       });
+      // 更新版本号，强制 computed 重新计算
+      this.answersVersion++;
       this.saveDraft();
+      // 强制更新视图，确保统计信息立即刷新
+      this.$forceUpdate();
+    },
+    // 全选本子领域
+    selectAllInSubdomain: function selectAllInSubdomain(domain, subdomain) {
+      var _this$questionsByDoma5,
+        _this12 = this;
+      var questions = ((_this$questionsByDoma5 = this.questionsByDomain[domain]) === null || _this$questionsByDoma5 === void 0 ? void 0 : _this$questionsByDoma5[subdomain]) || [];
+      // 批量更新答案，使用 $set 确保响应式
+      questions.forEach(function (q) {
+        _this12.$set(_this12.answers, q.id, 1);
+      });
+      // 更新版本号，强制 computed 重新计算
+      this.answersVersion++;
+      this.saveDraft();
+      // 强制更新视图，确保统计信息立即刷新
+      this.$forceUpdate();
+    },
+    // 清空本子领域
+    clearSubdomain: function clearSubdomain(domain, subdomain) {
+      var _this$questionsByDoma6,
+        _this13 = this;
+      var questions = ((_this$questionsByDoma6 = this.questionsByDomain[domain]) === null || _this$questionsByDoma6 === void 0 ? void 0 : _this$questionsByDoma6[subdomain]) || [];
+      // 批量更新答案，使用 $set 确保响应式
+      questions.forEach(function (q) {
+        _this13.$set(_this13.answers, q.id, 0);
+      });
+      // 更新版本号，强制 computed 重新计算
+      this.answersVersion++;
+      this.saveDraft();
+      // 强制更新视图，确保统计信息立即刷新
+      this.$forceUpdate();
     },
     // 提交评估
     submitAssessment: function submitAssessment() {
-      if (this.isSubmitting) return;
-      this.isSubmitting = true;
+      var _this14 = this;
+      return (0, _asyncToGenerator2.default)( /*#__PURE__*/_regenerator.default.mark(function _callee2() {
+        var _this14$childInfo, _this14$childInfo2;
+        var currentChildId, submitResult, _submitResult$result, errorMsg, assessmentResult;
+        return _regenerator.default.wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                if (!_this14.isSubmitting) {
+                  _context2.next = 2;
+                  break;
+                }
+                return _context2.abrupt("return");
+              case 2:
+                currentChildId = ((_this14$childInfo = _this14.childInfo) === null || _this14$childInfo === void 0 ? void 0 : _this14$childInfo.childId) || ((_this14$childInfo2 = _this14.childInfo) === null || _this14$childInfo2 === void 0 ? void 0 : _this14$childInfo2._id);
+                if (currentChildId) {
+                  _context2.next = 7;
+                  break;
+                }
+                uni.showToast({
+                  title: '缺少儿童信息，请重新填写',
+                  icon: 'none',
+                  duration: 2000
+                });
+                setTimeout(function () {
+                  uni.navigateBack();
+                }, 2000);
+                return _context2.abrupt("return");
+              case 7:
+                _this14.isSubmitting = true;
+                uni.showLoading({
+                  title: '提交中...',
+                  mask: true
+                });
+                _context2.prev = 9;
+                _context2.next = 12;
+                return uniCloud.callFunction({
+                  name: 'submitAssessment',
+                  data: {
+                    childId: currentChildId,
+                    answers: _this14.answers
+                  }
+                });
+              case 12:
+                submitResult = _context2.sent;
+                uni.hideLoading();
+                if (!(!submitResult.result || !submitResult.result.ok)) {
+                  _context2.next = 19;
+                  break;
+                }
+                errorMsg = ((_submitResult$result = submitResult.result) === null || _submitResult$result === void 0 ? void 0 : _submitResult$result.msg) || '提交失败，请重试';
+                uni.showToast({
+                  title: errorMsg,
+                  icon: 'none',
+                  duration: 2000
+                });
+                _this14.isSubmitting = false;
+                return _context2.abrupt("return");
+              case 19:
+                // 生成评估结果（包含云端返回的数据）
+                assessmentResult = {
+                  childInfo: _this14.childInfo,
+                  answers: _this14.answers,
+                  formState: _this14.formatFormState(),
+                  checkedCount: _this14.derivedStats.global.selected,
+                  totalCount: _this14.derivedStats.global.total,
+                  progressPercent: _this14.derivedStats.global.ratio,
+                  assessmentDate: new Date().toISOString(),
+                  assessmentId: submitResult.result.assessmentId,
+                  scorePercent: submitResult.result.scorePercent,
+                  level: submitResult.result.level
+                }; // 保存评估结果到本地
+                uni.setStorageSync('assessmentResult', assessmentResult);
 
-      // 生成评估结果
-      var assessmentResult = {
-        childInfo: this.childInfo,
-        answers: this.answers,
-        formState: this.formatFormState(),
-        checkedCount: this.derivedStats.global.selected,
-        totalCount: this.derivedStats.global.total,
-        progressPercent: this.derivedStats.global.ratio,
-        assessmentDate: new Date().toISOString()
-      };
+                // 清除草稿
+                uni.removeStorageSync('assessmentDraft');
+                uni.showToast({
+                  title: '提交成功',
+                  icon: 'success',
+                  duration: 1000
+                });
 
-      // 保存评估结果
-      uni.setStorageSync('assessmentResult', assessmentResult);
-
-      // 清除草稿
-      uni.removeStorageSync('assessmentDraft');
-
-      // 延迟跳转
-      setTimeout(function () {
-        uni.redirectTo({
-          url: '/pages/result/result'
-        });
-      }, 1000);
+                // 延迟跳转
+                setTimeout(function () {
+                  uni.redirectTo({
+                    url: '/pages/result/result'
+                  });
+                }, 1000);
+                _context2.next = 32;
+                break;
+              case 26:
+                _context2.prev = 26;
+                _context2.t0 = _context2["catch"](9);
+                uni.hideLoading();
+                console.error('[submitAssessment] 提交异常:', _context2.t0);
+                uni.showToast({
+                  title: '提交失败：' + (_context2.t0.message || '网络错误'),
+                  icon: 'none',
+                  duration: 2000
+                });
+                _this14.isSubmitting = false;
+              case 32:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2, null, [[9, 26]]);
+      }))();
     },
     // 格式化 formState（兼容旧格式）
     formatFormState: function formatFormState() {
-      var _this12 = this;
+      var _this15 = this;
       var formState = {};
       Object.keys(this.questionsByDomain).forEach(function (domain) {
         formState[domain] = [];
-        Object.values(_this12.questionsByDomain[domain]).forEach(function (list) {
+        Object.values(_this15.questionsByDomain[domain]).forEach(function (list) {
           list.forEach(function (q) {
             formState[domain].push(_objectSpread(_objectSpread({}, q), {}, {
-              checked: _this12.answers[q.id] === 1
+              checked: _this15.answers[q.id] === 1
             }));
           });
         });
@@ -677,7 +906,7 @@ var _default = {
   }
 };
 exports.default = _default;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"], __webpack_require__(/*! ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/uni-cloud/dist/index.js */ 27)["uniCloud"]))
 
 /***/ }),
 

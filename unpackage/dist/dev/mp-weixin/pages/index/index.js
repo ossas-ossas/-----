@@ -207,6 +207,11 @@ exports.default = void 0;
 //
 //
 //
+//
+//
+//
+//
+//
 var _default = {
   data: function data() {
     return {
@@ -220,6 +225,11 @@ var _default = {
     startAssessment: function startAssessment() {
       uni.navigateTo({
         url: '/pages/child-info/child-info'
+      });
+    },
+    goLogin: function goLogin() {
+      uni.navigateTo({
+        url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
       });
     }
   }

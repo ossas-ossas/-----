@@ -9,7 +9,8 @@ const db = uniCloud.database();
  * - name: 儿童姓名（必填）
  * - gender: 性别 male/female（必填）
  * - birthDate: 出生日期 YYYY-MM-DD（必填）
- * - ownerUid: 用户UID（必填，从 context 获取）
+ * 
+ * 注意：需要用户已登录，uid 从 context.auth.uid 获取
  * - diagnosis: 医疗诊断数组（可选）
  * - habits: 行为习惯对象（可选）
  * - vision: 视觉障碍信息（可选）
@@ -27,6 +28,16 @@ const db = uniCloud.database();
  * - data.id: 儿童档案 _id
  */
 exports.main = async (event, context) => {
+  // 强制登录验证
+  const uid = context.auth && context.auth.uid;
+  if (!uid) {
+    console.error('[saveChildProfile] 未登录，context.auth:', context.auth);
+    return { 
+      code: 401, 
+      msg: '未登录，请先登录' 
+    };
+  }
+
   try {
     // 1. 参数校验
     const {
@@ -54,32 +65,13 @@ exports.main = async (event, context) => {
       };
     }
 
-    // 获取用户UID（支持多种方式）
-    let ownerUid = context.uid || event.ownerUid;
-    
-    // 如果没有用户ID，尝试从其他途径获取或生成临时ID
-    if (!ownerUid) {
-      // 尝试从 context 的其他属性获取
-      if (context.APPID) {
-        // 开发环境或未登录状态，可以使用临时标识
-        // 在实际生产环境中，应该要求用户登录
-        ownerUid = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        console.warn('[saveChildProfile] 未获取到用户ID，使用临时ID:', ownerUid);
-      } else {
-        return {
-          code: 401,
-          msg: '未获取到用户身份，请先登录'
-        };
-      }
-    }
-
     // 2. 准备数据
     const now = Date.now();
     const profileData = {
       name: String(name).trim(),
       gender: gender,
       birthDate: String(birthDate).trim(),
-      ownerUid: ownerUid,
+      ownerUid: uid,
       updatedAt: now
     };
 
@@ -148,39 +140,75 @@ exports.main = async (event, context) => {
     // 3. 判断是新增还是更新
     if (childId) {
       // 更新现有档案
-      const updateResult = await db.collection('child_profiles')
-        .doc(childId)
-        .update({
-          ...profileData,
-          updatedAt: now
-        });
+      console.log('[saveChildProfile] 更新现有档案，childId:', childId);
+      try {
+        const updateResult = await db.collection('child_profiles')
+          .doc(childId)
+          .update({
+            ...profileData,
+            updatedAt: now
+          });
 
-      if (updateResult.updated === 0) {
+        if (updateResult.updated === 0) {
+          console.warn('[saveChildProfile] 更新失败：未找到对应的儿童档案，childId:', childId);
+          return {
+            code: 404,
+            msg: '未找到对应的儿童档案'
+          };
+        }
+
+        result = {
+          id: childId,
+          isNew: false
+        };
+      } catch (updateError) {
+        console.error('[saveChildProfile] 更新数据库失败:', updateError);
         return {
-          code: 404,
-          msg: '未找到对应的儿童档案'
+          code: 500,
+          msg: '更新儿童档案失败：' + (updateError.message || String(updateError))
         };
       }
-
-      result = {
-        id: childId,
-        isNew: false
-      };
     } else {
       // 创建新档案
       profileData.createdAt = now;
+      console.log('[saveChildProfile] 创建新档案，数据字段:', Object.keys(profileData));
+      console.log('[saveChildProfile] 必填字段检查:', {
+        name: !!profileData.name,
+        gender: !!profileData.gender,
+        birthDate: !!profileData.birthDate,
+        ownerUid: !!profileData.ownerUid,
+        createdAt: !!profileData.createdAt
+      });
       
-      const insertResult = await db.collection('child_profiles').add(profileData);
-      result = {
-        id: insertResult.id,
-        isNew: true
-      };
+      try {
+        const insertResult = await db.collection('child_profiles').add(profileData);
+        if (!insertResult || !insertResult.id) {
+          throw new Error('数据库插入失败：未返回记录ID');
+        }
+        result = {
+          id: insertResult.id,
+          isNew: true
+        };
+      } catch (insertError) {
+        console.error('[saveChildProfile] 插入数据库失败:', insertError);
+        console.error('[saveChildProfile] 尝试插入的数据摘要:', {
+          name: profileData.name,
+          gender: profileData.gender,
+          birthDate: profileData.birthDate,
+          ownerUid: profileData.ownerUid,
+          hasCreatedAt: !!profileData.createdAt
+        });
+        return {
+          code: 500,
+          msg: '创建儿童档案失败：' + (insertError.message || String(insertError))
+        };
+      }
     }
 
     console.log('[saveChildProfile] 成功保存儿童档案', {
       childId: result.id,
       name,
-      ownerUid,
+      ownerUid: uid,
       isNew: result.isNew
     });
 

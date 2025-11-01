@@ -1,0 +1,62 @@
+@charset "UTF-8";
+/**
+ * 知动儿童综合发育测评 - 全局样式变量
+ * 使用 pastel 柔和配色方案，适合儿童发育评估应用
+ */
+/* Pastel 柔和配色方案 */
+/* 主色调 - 天空蓝 */
+/* 辅助色 - 薄荷绿 */
+/* 警告色 - 珊瑚粉 */
+/* 错误色 - 柔和红 */
+/* 文字颜色 */
+/* 背景颜色 */
+/* 边框颜色 */
+/* 渐变背景 */
+/* 尺寸变量 */
+/* 图片尺寸 */
+/* 圆角尺寸 */
+/* 间距变量 */
+/* 阴影变量 */
+/* 透明度 */
+/* 动画时长 */
+/* 评分等级颜色 */
+/* 功能区域颜色 */
+.box.data-v-4835b4e9 {
+  position: relative;
+  margin-top: 10px;
+}
+.short-code-btn.data-v-4835b4e9 {
+  padding: 0;
+  position: absolute;
+  top: 0;
+  right: 8px;
+  width: 260rpx;
+  max-width: 130px;
+  height: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.inner-text.data-v-4835b4e9 {
+  font-size: 14px;
+  color: #AAAAAA;
+}
+.inner-text-active.data-v-4835b4e9 {
+  color: #04498c;
+}
+.captcha.data-v-4835b4e9 {
+  width: 350rpx;
+}
+.input-box.data-v-4835b4e9 {
+  margin: 0;
+  padding: 4px;
+  background-color: #F8F8F8;
+  font-size: 14px;
+}
+.box.data-v-4835b4e9  .content-clear-icon {
+  margin-right: 100px;
+}
+.box.data-v-4835b4e9 {
+  display: flex;
+  flex-direction: row;
+}

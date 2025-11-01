@@ -1,0 +1,8 @@
+{
+  "name": "testConfig",
+  "version": "1.0.0",
+  "description": "测试 uni-id 配置文件加载",
+  "main": "index.js",
+  "dependencies": {}
+}
+

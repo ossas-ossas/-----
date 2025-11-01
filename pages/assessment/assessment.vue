@@ -33,9 +33,9 @@
 					<!-- domain 头部 -->
 				<view class="domain-header" @click="toggleDomain(domain)">
 						<text class="domain-title">{{ getDomainLabel(domain) }}</text>
-						<text class="domain-stats" v-if="getDomainStats(domain)">
-							{{ getDomainStats(domain).selected }}/{{ getDomainStats(domain).total }}
-							({{ getDomainStats(domain).ratio }}%)
+						<text class="domain-stats" v-if="derivedStats.byDomain[domain]">
+							{{ derivedStats.byDomain[domain].selected }}/{{ derivedStats.byDomain[domain].total }}
+							({{ derivedStats.byDomain[domain].ratio }}%)
 						</text>
 						<view class="domain-actions">
 							<text class="action-btn" @click.stop="selectAllInDomain(domain)">全选</text>
@@ -57,9 +57,9 @@
 							<!-- subdomain 头部 -->
 							<view class="subdomain-header" @click="toggleSubdomain(`${domain}::${subdomain}`)">
 								<text class="subdomain-title">{{ getSubdomainLabel(subdomain) }}</text>
-								<text class="subdomain-stats" v-if="getSubdomainStats(domain, subdomain)">
-									{{ getSubdomainStats(domain, subdomain).selected }}/{{ getSubdomainStats(domain, subdomain).total }}
-									({{ getSubdomainStats(domain, subdomain).ratio }}%)
+								<text class="subdomain-stats" v-if="derivedStats.bySubdomain[domain] && derivedStats.bySubdomain[domain][subdomain]">
+									{{ derivedStats.bySubdomain[domain][subdomain].selected }}/{{ derivedStats.bySubdomain[domain][subdomain].total }}
+									({{ derivedStats.bySubdomain[domain][subdomain].ratio }}%)
 								</text>
 								<view class="subdomain-actions">
 									<text class="action-btn" @click.stop="selectAllInSubdomain(domain, subdomain)">全选</text>
@@ -172,6 +172,9 @@ const subdomainLabels = {
 			// 答案（1=完成，0=未完成）
 			answers: {},
 			
+			// 答案更新计数器（用于强制 computed 重新计算）
+			answersVersion: 0,
+			
 			// 筛选器
 			filters: {
 				keyword: '',
@@ -198,9 +201,13 @@ const subdomainLabels = {
 		
 		// 统计信息
 		derivedStats() {
+			// 依赖 answersVersion 来强制重新计算
+			const version = this.answersVersion
+			
 			const stats = {
 				global: { selected: 0, total: 0, ratio: 0 },
-				byDomain: {}
+				byDomain: {},
+				bySubdomain: {} // 添加子领域统计
 			}
 			
 			// 统计全局
@@ -208,7 +215,14 @@ const subdomainLabels = {
 				return sum + Object.values(subdomains).reduce((s, qs) => s + qs.length, 0)
 			}, 0)
 			
-			const selectedQs = Object.values(this.answers).filter(v => v === 1).length
+			// 访问 answers 的所有值来触发依赖收集
+			const answersKeys = Object.keys(this.answers)
+			let selectedQs = 0
+			answersKeys.forEach(k => {
+				if (this.answers[k] === 1) {
+					selectedQs++
+				}
+			})
 			
 			stats.global.total = totalQs
 			stats.global.selected = selectedQs
@@ -216,25 +230,74 @@ const subdomainLabels = {
 				stats.global.ratio = Math.round((selectedQs / totalQs) * 100)
 			}
 			
-			// 统计每个 domain
+			// 统计每个 domain 和 subdomain
 			this.allDomains.forEach(domain => {
 				const domainQs = this.getQuestionsInDomain(domain)
-				const selected = domainQs.filter(q => this.answers[q.id] === 1).length
+				let selected = 0
+				domainQs.forEach(q => {
+					// 确保访问 answers[q.id] 以触发依赖
+					if (this.answers[q.id] === 1) {
+						selected++
+					}
+				})
 				stats.byDomain[domain] = {
 					selected,
 					total: domainQs.length,
 					ratio: domainQs.length > 0 ? Math.round((selected / domainQs.length) * 100) : 0
 				}
+				
+				// 统计每个 subdomain
+				if (!stats.bySubdomain[domain]) {
+					stats.bySubdomain[domain] = {}
+				}
+				const subdomains = this.getSubdomainsInDomain(domain)
+				subdomains.forEach(subdomain => {
+					const subdomainQs = this.questionsByDomain[domain]?.[subdomain] || []
+					let subdomainSelected = 0
+					subdomainQs.forEach(q => {
+						// 确保访问 answers[q.id] 以触发依赖
+						if (this.answers[q.id] === 1) {
+							subdomainSelected++
+						}
+					})
+					stats.bySubdomain[domain][subdomain] = {
+						selected: subdomainSelected,
+						total: subdomainQs.length,
+						ratio: subdomainQs.length > 0 ? Math.round((subdomainSelected / subdomainQs.length) * 100) : 0
+					}
+				})
 			})
 			
 			return stats
 			}
 		},
+		onShow() {
+			// 登录守卫：检查是否已登录
+			const token = uni.getStorageSync('uni_id_token')
+			if (!token) {
+				uni.navigateTo({
+					url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+				})
+				return
+			}
+		},
 		onLoad() {
 		console.log('[assessment] onLoad start')
 			this.loadChildInfo()
+		
+		// 检查是否需要清除旧草稿
 		const draft = uni.getStorageSync('assessmentDraft')
-		const hasDraft = draft && Object.keys(draft).length > 0
+		const currentChildId = this.childInfo?.childId || this.childInfo?._id
+		const draftChildId = draft?.childId
+		
+		// 如果 childId 不匹配，说明是新评估，清除旧草稿
+		if (draft && draftChildId && currentChildId && draftChildId !== currentChildId) {
+			console.log('[assessment] 检测到新的 childId，清除旧草稿')
+			uni.removeStorageSync('assessmentDraft')
+			uni.removeStorageSync('assessmentResult')
+		}
+		
+		const hasDraft = draft && Object.keys(draft).length > 0 && (!currentChildId || draftChildId === currentChildId)
 		
 		this.initData()
 		
@@ -298,22 +361,75 @@ const subdomainLabels = {
 		// 加载草稿
 		loadDraft() {
 			const draft = uni.getStorageSync('assessmentDraft')
-			if (draft) {
-				if (draft.answers) this.answers = draft.answers
+			const currentChildId = this.childInfo?.childId || this.childInfo?._id
+			const draftChildId = draft?.childId
+			
+			// 只加载匹配当前 childId 的草稿
+			if (draft && (!currentChildId || !draftChildId || draftChildId === currentChildId)) {
+				if (draft.answers) {
+					// 使用 $set 逐个设置答案，确保响应式
+					Object.keys(this.answers).forEach(k => {
+						delete this.answers[k]
+					})
+					Object.keys(draft.answers).forEach(k => {
+						this.$set(this.answers, k, draft.answers[k])
+					})
+					// 更新版本号，强制 computed 重新计算
+					this.answersVersion++
+				}
 				if (draft.expandedDomains) this.expandedDomains = draft.expandedDomains
 				if (draft.expandedSubdomains) this.expandedSubdomains = draft.expandedSubdomains
 				if (draft.filters) this.filters = draft.filters
+				// 强制更新视图
+				this.$nextTick(() => {
+					this.$forceUpdate()
+				})
 			}
 		},
 		
 		// 保存草稿
-		saveDraft() {
+		async saveDraft() {
+			const currentChildId = this.childInfo?.childId || this.childInfo?._id
+			if (!currentChildId) {
+				// 如果没有 childId，只保存到本地
+				uni.setStorageSync('assessmentDraft', {
+					childId: currentChildId,
+					answers: this.answers,
+					expandedDomains: this.expandedDomains,
+					expandedSubdomains: this.expandedSubdomains,
+					filters: this.filters
+				})
+				return
+			}
+			
+			// 同时保存到本地和云端
 			uni.setStorageSync('assessmentDraft', {
+				childId: currentChildId,
 				answers: this.answers,
 				expandedDomains: this.expandedDomains,
 				expandedSubdomains: this.expandedSubdomains,
 				filters: this.filters
 			})
+			
+			// 异步保存到云端数据库（不阻塞 UI）
+			try {
+				const result = await uniCloud.callFunction({
+					name: 'saveAssessment',
+					data: {
+						childId: currentChildId,
+						answers: this.answers
+					}
+				})
+				
+				if (result.result && !result.result.ok) {
+					console.error('[saveDraft] 云端保存失败:', result.result.msg)
+				} else {
+					console.log('[saveDraft] 云端保存成功')
+				}
+			} catch (error) {
+				console.error('[saveDraft] 云端保存异常:', error)
+				// 静默失败，不影响用户体验
+			}
 		},
 		
 		// 切换 domain
@@ -442,8 +558,14 @@ const subdomainLabels = {
 		
 		// 切换答案
 		toggleAnswer(qid) {
-			this.$set(this.answers, qid, this.answers[qid] === 1 ? 0 : 1)
+			const newValue = this.answers[qid] === 1 ? 0 : 1
+			// 使用 $set 确保响应式
+			this.$set(this.answers, qid, newValue)
+			// 更新版本号，强制 computed 重新计算
+			this.answersVersion++
 			this.saveDraft()
+			// 强制更新视图
+			this.$forceUpdate()
 		},
 		
 		// 领域筛选切换
@@ -490,68 +612,144 @@ const subdomainLabels = {
 		// 全选本领域
 		selectAllInDomain(domain) {
 			const questions = this.getQuestionsInDomain(domain)
+			// 批量更新答案，使用 $set 确保响应式
 			questions.forEach(q => {
 				this.$set(this.answers, q.id, 1)
 			})
+			// 更新版本号，强制 computed 重新计算
+			this.answersVersion++
 			this.saveDraft()
+			// 强制更新视图，确保统计信息立即刷新
+			this.$forceUpdate()
 		},
 		
 		// 清空本领域
 		clearDomain(domain) {
 			const questions = this.getQuestionsInDomain(domain)
+			// 批量更新答案，使用 $set 确保响应式
 			questions.forEach(q => {
 				this.$set(this.answers, q.id, 0)
 			})
+			// 更新版本号，强制 computed 重新计算
+			this.answersVersion++
 			this.saveDraft()
+			// 强制更新视图，确保统计信息立即刷新
+			this.$forceUpdate()
 		},
 		
 		// 全选本子领域
 		selectAllInSubdomain(domain, subdomain) {
 			const questions = this.questionsByDomain[domain]?.[subdomain] || []
+			// 批量更新答案，使用 $set 确保响应式
 			questions.forEach(q => {
 				this.$set(this.answers, q.id, 1)
 			})
+			// 更新版本号，强制 computed 重新计算
+			this.answersVersion++
 			this.saveDraft()
+			// 强制更新视图，确保统计信息立即刷新
+			this.$forceUpdate()
 		},
 		
 		// 清空本子领域
 		clearSubdomain(domain, subdomain) {
 			const questions = this.questionsByDomain[domain]?.[subdomain] || []
+			// 批量更新答案，使用 $set 确保响应式
 			questions.forEach(q => {
 				this.$set(this.answers, q.id, 0)
 			})
+			// 更新版本号，强制 computed 重新计算
+			this.answersVersion++
 			this.saveDraft()
-			},
+			// 强制更新视图，确保统计信息立即刷新
+			this.$forceUpdate()
+		},
 			
 			// 提交评估
-			submitAssessment() {
+			async submitAssessment() {
 			if (this.isSubmitting) return
 				
-				this.isSubmitting = true
-				
-				// 生成评估结果
-				const assessmentResult = {
-					childInfo: this.childInfo,
-				answers: this.answers,
-				formState: this.formatFormState(),
-				checkedCount: this.derivedStats.global.selected,
-				totalCount: this.derivedStats.global.total,
-				progressPercent: this.derivedStats.global.ratio,
-					assessmentDate: new Date().toISOString()
+				const currentChildId = this.childInfo?.childId || this.childInfo?._id
+				if (!currentChildId) {
+					uni.showToast({
+						title: '缺少儿童信息，请重新填写',
+						icon: 'none',
+						duration: 2000
+					})
+					setTimeout(() => {
+						uni.navigateBack()
+					}, 2000)
+					return
 				}
 				
-				// 保存评估结果
-				uni.setStorageSync('assessmentResult', assessmentResult)
-			
-			// 清除草稿
-			uni.removeStorageSync('assessmentDraft')
+				this.isSubmitting = true
+				uni.showLoading({ title: '提交中...', mask: true })
 				
-				// 延迟跳转
-				setTimeout(() => {
-					uni.redirectTo({
-						url: '/pages/result/result'
+				try {
+					// 调用云函数提交到数据库
+					const submitResult = await uniCloud.callFunction({
+						name: 'submitAssessment',
+						data: {
+							childId: currentChildId,
+							answers: this.answers
+						}
 					})
-			}, 1000)
+					
+					uni.hideLoading()
+					
+					if (!submitResult.result || !submitResult.result.ok) {
+						const errorMsg = submitResult.result?.msg || '提交失败，请重试'
+						uni.showToast({
+							title: errorMsg,
+							icon: 'none',
+							duration: 2000
+						})
+						this.isSubmitting = false
+						return
+					}
+					
+					// 生成评估结果（包含云端返回的数据）
+					const assessmentResult = {
+						childInfo: this.childInfo,
+						answers: this.answers,
+						formState: this.formatFormState(),
+						checkedCount: this.derivedStats.global.selected,
+						totalCount: this.derivedStats.global.total,
+						progressPercent: this.derivedStats.global.ratio,
+						assessmentDate: new Date().toISOString(),
+						assessmentId: submitResult.result.assessmentId,
+						scorePercent: submitResult.result.scorePercent,
+						level: submitResult.result.level
+					}
+					
+					// 保存评估结果到本地
+					uni.setStorageSync('assessmentResult', assessmentResult)
+					
+					// 清除草稿
+					uni.removeStorageSync('assessmentDraft')
+					
+					uni.showToast({
+						title: '提交成功',
+						icon: 'success',
+						duration: 1000
+					})
+					
+					// 延迟跳转
+					setTimeout(() => {
+						uni.redirectTo({
+							url: '/pages/result/result'
+						})
+					}, 1000)
+				} catch (error) {
+					uni.hideLoading()
+					console.error('[submitAssessment] 提交异常:', error)
+					uni.showToast({
+						title: '提交失败：' + (error.message || '网络错误'),
+						icon: 'none',
+						duration: 2000
+					})
+					this.isSubmitting = false
+				}
 		},
 		
 		// 格式化 formState（兼容旧格式）
