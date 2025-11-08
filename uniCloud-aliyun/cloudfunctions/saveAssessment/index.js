@@ -3,6 +3,89 @@
 const db = uniCloud.database();
 const { loadQuestionsByQids, aggregate } = require('./calc.js');
 
+// 尝试导入 jsonwebtoken 模块（如果可用）
+let jwt = null;
+try {
+  jwt = require('jsonwebtoken');
+} catch (e) {
+  console.warn('[saveAssessment] jsonwebtoken 模块不可用，将使用手动解析');
+}
+
+// 尝试导入 uni-id-common（如果可用）
+let uniIdCommon = null;
+try {
+  uniIdCommon = uniCloud.importObject('uni-id-co');
+} catch (e) {
+  console.warn('[saveAssessment] 无法导入 uni-id-co，尝试手动解析 token');
+}
+
+/**
+ * 从 token 中解析 uid（增强版，支持多种方式）
+ * @param {string} token - JWT token
+ * @returns {string|null} - 用户ID，解析失败返回 null
+ */
+async function parseTokenToUid(token) {
+  if (!token || typeof token !== 'string') {
+    return null;
+  }
+
+  // 方法1：尝试使用 uni-id-co 验证（最可靠）
+  if (uniIdCommon) {
+    try {
+      const payload = await uniIdCommon.checkToken(token);
+      if (payload && payload.uid && !payload.errCode) {
+        return payload.uid;
+      }
+    } catch (e) {
+      console.warn('[saveAssessment] uni-id-co 验证失败:', e.message);
+    }
+  }
+
+  // 方法2：尝试使用 jsonwebtoken 模块验证
+  if (jwt) {
+    try {
+      let tokenSecret = 'dev_token_secret_change_me_please';
+      try {
+        const createConfig = require('uni-config-center');
+        const uniIdConfig = createConfig({ pluginId: 'uni-id' });
+        tokenSecret = uniIdConfig.config('tokenSecret') || tokenSecret;
+      } catch (e) {
+        console.warn('[saveAssessment] 无法获取 tokenSecret，使用默认值');
+      }
+
+      const decoded = jwt.verify(token, tokenSecret);
+      if (decoded && decoded.uid) {
+        return decoded.uid;
+      }
+    } catch (e) {
+      console.warn('[saveAssessment] jsonwebtoken 验证失败:', e.message);
+    }
+  }
+
+  // 方法3：手动解析 JWT token（兜底方案）
+  try {
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const payloadJson = Buffer.from(parts[1], 'base64').toString('utf-8');
+      const payload = JSON.parse(payloadJson);
+      const now = Math.floor(Date.now() / 1000);
+      
+      if (payload.exp && payload.exp <= now) {
+        console.error('[saveAssessment] Token 已过期:', { exp: payload.exp, now });
+        return null;
+      }
+      
+      if (payload.uid) {
+        return payload.uid;
+      }
+    }
+  } catch (e) {
+    console.error('[saveAssessment] 手动解析 token 失败:', e);
+  }
+
+  return null;
+}
+
 /**
  * 保存评估草稿（Upsert）
  * 
@@ -24,17 +107,48 @@ const { loadQuestionsByQids, aggregate } = require('./calc.js');
  */
 exports.main = async (event, context) => {
   // 强制登录验证
-  const uid = context.auth && context.auth.uid;
+  // 优先从 context 获取 uid（uniCloud 自动解析）
+  let uid = (context.auth && context.auth.uid) || context.uid;
+  
+  // 如果 context 中没有 uid，则尝试从前端 token 解析
+  if (!uid) {
+    const token = (event && event.uniIdToken) || (event && event.args && event.args.uniIdToken);
+    
+    if (token) {
+      console.log('[saveAssessment] 尝试从 token 解析 uid');
+      try {
+        uid = await parseTokenToUid(token);
+        if (uid) {
+          console.log('[saveAssessment] Token 解析成功，uid:', uid);
+        } else {
+          console.error('[saveAssessment] Token 解析失败或已过期');
+          return { 
+            code: 30202, 
+            msg: '登录已失效，请重新登录' 
+          };
+        }
+      } catch (e) {
+        console.error('[saveAssessment] Token 验证出错:', e);
+        return { 
+          code: 30202, 
+          msg: '登录已失效，请重新登录' 
+        };
+      }
+    }
+  }
+  
   if (!uid) {
     return { 
-      code: 'NOT_LOGIN', 
-      message: '未登录，请先登录' 
+      code: 30202, 
+      msg: '未登录或 token 无效' 
     };
   }
 
   try {
     // 1. 参数校验
-    const { childId, answers } = event || {};
+    // 注意：参数可能在 event 或 event.args 中（取决于调用方式）
+    const eventData = event.args || event;
+    const { childId, answers } = eventData || {};
 
     if (!childId) {
       return {
@@ -141,6 +255,27 @@ exports.main = async (event, context) => {
     let result;
     try {
       if (existingDraft.data && existingDraft.data.length > 0) {
+        // 检查数据是否真的变化了（减少不必要的更新）
+        const existingAnswers = existingDraft.data[0].answers || {};
+        const newAnswers = draftData.answers || {};
+        const existingAnswersStr = JSON.stringify(existingAnswers);
+        const newAnswersStr = JSON.stringify(newAnswers);
+        
+        if (existingAnswersStr === newAnswersStr) {
+          // 答案未变化，不需要更新数据库
+          console.log('[saveAssessment] 答案未变化，跳过数据库更新');
+          return {
+            ok: true,
+            childId: String(childId),
+            stats: {
+              overall: {
+                ratio: stats.overall.ratio
+              }
+            },
+            skipped: true // 标记为跳过更新
+          };
+        }
+        
         // 更新现有草稿
         const draftId = existingDraft.data[0]._id;
         console.log('[saveAssessment] 更新现有草稿，ID:', draftId);

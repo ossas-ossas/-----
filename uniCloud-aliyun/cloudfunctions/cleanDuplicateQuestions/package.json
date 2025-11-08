@@ -1,0 +1,9 @@
+{
+  "name": "cleanDuplicateQuestions",
+  "version": "1.0.0",
+  "description": "清理重复的题目数据",
+  "main": "index.js",
+  "dependencies": {}
+}
+
+

@@ -3,9 +3,9 @@
   "required": ["qid", "domain", "ageBand", "title"],
   "permission": {
     "read": true,
-    "create": false,
+    "create": true,
     "update": false,
-    "delete": false
+    "delete": true
   },
   "properties": {
     "qid": {

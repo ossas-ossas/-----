@@ -1,0 +1,9 @@
+{
+  "name": "initQuestions",
+  "version": "1.0.0",
+  "description": "初始化题目数据到 questions_master 集合",
+  "main": "index.js",
+  "dependencies": {}
+}
+
+

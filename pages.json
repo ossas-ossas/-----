@@ -39,6 +39,14 @@
 				"navigationBarBackgroundColor": "#E8F4FD",
 				"navigationBarTextStyle": "black"
 			}
+		},
+		{
+			"path": "pages/admin/init-questions",
+			"style": {
+				"navigationBarTitleText": "初始化题目",
+				"navigationBarBackgroundColor": "#E8F4FD",
+				"navigationBarTextStyle": "black"
+			}
 		}
 	,{
     "path": "uni_modules/uni-id-pages/pages/register/register",

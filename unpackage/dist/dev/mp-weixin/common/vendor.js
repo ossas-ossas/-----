@@ -67,6 +67,687 @@ module.exports = _nonIterableRest, module.exports.__esModule = true, module.expo
 
 /***/ }),
 
+/***/ 102:
+/*!************************************************************************************************************!*\
+  !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-id-pages/pages/register/validator.js ***!
+  \************************************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
+var _password = _interopRequireDefault(__webpack_require__(/*! @/uni_modules/uni-id-pages/common/password.js */ 103));
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+var _default = _objectSpread({
+  "username": {
+    "rules": [{
+      required: true,
+      errorMessage: '请输入用户名'
+    }, {
+      minLength: 3,
+      maxLength: 32,
+      errorMessage: '用户名长度在 {minLength} 到 {maxLength} 个字符'
+    }, {
+      validateFunction: function validateFunction(rule, value, data, callback) {
+        // console.log(value);
+        if (/^1\d{10}$/.test(value) || /^(\w-*\.*)+@(\w-?)+(\.\w{2,})+$/.test(value)) {
+          callback('用户名不能是：手机号或邮箱');
+        }
+        ;
+        if (/^\d+$/.test(value)) {
+          callback('用户名不能为纯数字');
+        }
+        ;
+        if (/[\u4E00-\u9FA5\uF900-\uFA2D]{1,}/.test(value)) {
+          callback('用户名不能包含中文');
+        }
+        return true;
+      }
+    }],
+    "label": "用户名"
+  },
+  "nickname": {
+    "rules": [{
+      minLength: 3,
+      maxLength: 32,
+      errorMessage: '昵称长度在 {minLength} 到 {maxLength} 个字符'
+    }, {
+      validateFunction: function validateFunction(rule, value, data, callback) {
+        // console.log(value);
+        if (/^1\d{10}$/.test(value) || /^(\w-*\.*)+@(\w-?)+(\.\w{2,})+$/.test(value)) {
+          callback('昵称不能是：手机号或邮箱');
+        }
+        ;
+        if (/^\d+$/.test(value)) {
+          callback('昵称不能为纯数字');
+        }
+        ;
+        if (/[\u4E00-\u9FA5\uF900-\uFA2D]{1,}/.test(value)) {
+          callback('昵称不能包含中文');
+        }
+        return true;
+      }
+    }],
+    "label": "昵称"
+  }
+}, _password.default.getPwdRules());
+exports.default = _default;
+
+/***/ }),
+
+/***/ 103:
+/*!***************************************************************************************************!*\
+  !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-id-pages/common/password.js ***!
+  \***************************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _config = _interopRequireDefault(__webpack_require__(/*! @/uni_modules/uni-id-pages/config.js */ 104));
+// 导入配置
+
+var passwordStrength = _config.default.passwordStrength;
+
+// 密码强度表达式
+var passwordRules = {
+  // 密码必须包含大小写字母、数字和特殊符号
+  super: /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[~!@#$%^&*_\-+=`|\\(){}[\]:;"'<>,.?/])[0-9a-zA-Z~!@#$%^&*_\-+=`|\\(){}[\]:;"'<>,.?/]{8,16}$/,
+  // 密码必须包含字母、数字和特殊符号
+  strong: /^(?=.*[0-9])(?=.*[a-zA-Z])(?=.*[~!@#$%^&*_\-+=`|\\(){}[\]:;"'<>,.?/])[0-9a-zA-Z~!@#$%^&*_\-+=`|\\(){}[\]:;"'<>,.?/]{8,16}$/,
+  // 密码必须为字母、数字和特殊符号任意两种的组合
+  medium: /^(?![0-9]+$)(?![a-zA-Z]+$)(?![~!@#$%^&*_\-+=`|\\(){}[\]:;"'<>,.?/]+$)[0-9a-zA-Z~!@#$%^&*_\-+=`|\\(){}[\]:;"'<>,.?/]{8,16}$/,
+  // 密码必须包含字母和数字
+  weak: /^(?=.*[0-9])(?=.*[a-zA-Z])[0-9a-zA-Z~!@#$%^&*_\-+=`|\\(){}[\]:;"'<>,.?/]{6,16}$/
+};
+var ERROR = {
+  normal: {
+    noPwd: '请输入密码',
+    noRePwd: '再次输入密码',
+    rePwdErr: '两次输入密码不一致'
+  },
+  passwordStrengthError: {
+    super: '密码必须包含大小写字母、数字和特殊符号，密码长度必须在8-16位之间',
+    strong: '密码必须包含字母、数字和特殊符号，密码长度必须在8-16位之间',
+    medium: '密码必须为字母、数字和特殊符号任意两种的组合，密码长度必须在8-16位之间',
+    weak: '密码必须包含字母，密码长度必须在6-16位之间'
+  }
+};
+function validPwd(password) {
+  //强度校验
+  if (passwordStrength && passwordRules[passwordStrength]) {
+    if (!new RegExp(passwordRules[passwordStrength]).test(password)) {
+      return ERROR.passwordStrengthError[passwordStrength];
+    }
+  }
+  return true;
+}
+function getPwdRules() {
+  var pwdName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'password';
+  var rePwdName = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'password2';
+  var rules = {};
+  rules[pwdName] = {
+    rules: [{
+      required: true,
+      errorMessage: ERROR.normal.noPwd
+    }, {
+      validateFunction: function validateFunction(rule, value, data, callback) {
+        var checkRes = validPwd(value);
+        if (checkRes !== true) {
+          callback(checkRes);
+        }
+        return true;
+      }
+    }]
+  };
+  if (rePwdName) {
+    rules[rePwdName] = {
+      rules: [{
+        required: true,
+        errorMessage: ERROR.normal.noRePwd
+      }, {
+        validateFunction: function validateFunction(rule, value, data, callback) {
+          if (value != data[pwdName]) {
+            callback(ERROR.normal.rePwdErr);
+          }
+          return true;
+        }
+      }]
+    };
+  }
+  return rules;
+}
+var _default = {
+  ERROR: ERROR,
+  validPwd: validPwd,
+  getPwdRules: getPwdRules
+};
+exports.default = _default;
+
+/***/ }),
+
+/***/ 104:
+/*!******************************************************************************************!*\
+  !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-id-pages/config.js ***!
+  \******************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = {
+  // 调试模式
+  debug: false,
+  /*
+  登录类型 未列举到的或运行环境不支持的，将被自动隐藏。
+  如果需要在不同平台有不同的配置，直接用条件编译即可
+  */
+  isAdmin: false,
+  // 区分管理端与用户端
+  loginTypes: [
+  // "qq",
+  // "xiaomi",
+  // "sinaweibo",
+  // "taobao",
+  // "facebook",
+  // "google",
+  // "alipay",
+  // "douyin",
+
+  // 微信登录已禁用（开发环境不支持）
+
+  // 'weixin',
+
+  'username', 'smsCode'],
+  // 政策协议
+  agreements: {
+    serviceUrl: 'https://xxx',
+    // 用户服务协议链接
+    privacyUrl: 'https://xxx',
+    // 隐私政策条款链接
+    huaweiConsumerPrivacyUrl: 'https://privacy.consumer.huawei.com/legal/id/authentication-terms.htm?code=CN&language=zh-CN',
+    // 华为账号用户认证协议
+    // 哪些场景下显示，1.注册（包括登录并注册，如：微信登录、苹果登录、短信验证码登录）、2.登录（如：用户名密码登录）
+    scope: ['register', 'login', 'realNameVerify']
+  },
+  // 提供各类服务接入（如微信登录服务）的应用id
+  appid: {
+    weixin: {
+      // 微信公众号的appid，来源:登录微信公众号（https://mp.weixin.qq.com）-> 设置与开发 -> 基本配置 -> 公众号开发信息 -> AppID
+      h5: 'xxxxxx',
+      // 微信开放平台的appid，来源:登录微信开放平台（https://open.weixin.qq.com） -> 管理中心 -> 网站应用 -> 选择对应的应用名称，点击查看 -> AppID
+      web: 'xxxxxx'
+    }
+  },
+  /**
+  * 密码强度
+  * super（超强：密码必须包含大小写字母、数字和特殊符号，长度范围：8-16位之间）
+  * strong（强: 密密码必须包含字母、数字和特殊符号，长度范围：8-16位之间）
+  * medium (中：密码必须为字母、数字和特殊符号任意两种的组合，长度范围：8-16位之间)
+  * weak（弱：密码必须包含字母和数字，长度范围：6-16位之间）
+  * 为空或false则不验证密码强度
+  */
+  passwordStrength: 'medium',
+  /**
+  * 登录后允许用户设置密码（只针对未设置密码得用户）
+  * 开启此功能将 setPasswordAfterLogin 设置为 true 即可
+  * "setPasswordAfterLogin": false
+  *
+  * 如果允许用户跳过设置密码 将 allowSkip 设置为 true
+  * "setPasswordAfterLogin": {
+  *   "allowSkip": true
+  * }
+  * */
+  setPasswordAfterLogin: false
+};
+exports.default = _default;
+
+/***/ }),
+
+/***/ 105:
+/*!***********************************************************************************************************!*\
+  !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-id-pages/common/login-page.mixin.js ***!
+  \***********************************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(uni) {
+
+var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
+var _store = __webpack_require__(/*! @/uni_modules/uni-id-pages/common/store.js */ 106);
+var _config = _interopRequireDefault(__webpack_require__(/*! @/uni_modules/uni-id-pages/config.js */ 104));
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+var mixin = {
+  data: function data() {
+    return {
+      config: _config.default,
+      uniIdRedirectUrl: '',
+      isMounted: false
+    };
+  },
+  onUnload: function onUnload() {},
+  mounted: function mounted() {
+    this.isMounted = true;
+  },
+  onLoad: function onLoad(e) {
+    var _this = this;
+    if (e.is_weixin_redirect) {
+      uni.showLoading({
+        mask: true
+      });
+      if (window.location.href.includes('#')) {
+        // 将url通过 ? 分割获取后面的参数字符串 再通过 & 将每一个参数单独分割出来
+        var paramsArr = window.location.href.split('?')[1].split('&');
+        paramsArr.forEach(function (item) {
+          var arr = item.split('=');
+          if (arr[0] == 'code') {
+            e.code = arr[1];
+          }
+        });
+      }
+      this.$nextTick(function (n) {
+        // console.log(this.$refs.uniFabLogin);
+        _this.$refs.uniFabLogin.login({
+          code: e.code
+        }, 'weixin');
+      });
+    }
+
+    // 优先使用 URL 参数中的跳转地址
+    if (e.uniIdRedirectUrl) {
+      this.uniIdRedirectUrl = decodeURIComponent(e.uniIdRedirectUrl);
+    } else {
+      // 如果没有 URL 参数，尝试从本地存储读取（兼容自定义跳转）
+      var savedRedirectUrl = uni.getStorageSync('redirectUrl');
+      if (savedRedirectUrl) {
+        this.uniIdRedirectUrl = savedRedirectUrl;
+        console.log('[login-page] 从本地存储读取跳转地址:', savedRedirectUrl);
+      }
+    }
+    if (getCurrentPages().length === 1) {
+      uni.hideHomeButton();
+      console.log('已隐藏：返回首页按钮');
+    }
+  },
+  computed: {
+    needAgreements: function needAgreements() {
+      if (this.isMounted) {
+        if (this.$refs.agreements) {
+          return this.$refs.agreements.needAgreements;
+        } else {
+          return false;
+        }
+      }
+    },
+    agree: {
+      get: function get() {
+        if (this.isMounted) {
+          if (this.$refs.agreements) {
+            return this.$refs.agreements.isAgree;
+          } else {
+            return true;
+          }
+        }
+      },
+      set: function set(agree) {
+        if (this.$refs.agreements) {
+          this.$refs.agreements.isAgree = agree;
+        } else {
+          console.log('不存在 隐私政策协议组件');
+        }
+      }
+    }
+  },
+  methods: {
+    loginSuccess: function loginSuccess(e) {
+      _store.mutations.loginSuccess(_objectSpread(_objectSpread({}, e), {}, {
+        uniIdRedirectUrl: this.uniIdRedirectUrl
+      }));
+    }
+  }
+};
+var _default = mixin;
+exports.default = _default;
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
+
+/***/ }),
+
+/***/ 106:
+/*!************************************************************************************************!*\
+  !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-id-pages/common/store.js ***!
+  \************************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(uniCloud, uni) {
+
+var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.store = exports.mutations = void 0;
+var _regenerator = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/regenerator */ 28));
+var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
+var _asyncToGenerator2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ 31));
+var _pages = _interopRequireDefault(__webpack_require__(/*! @/pages.json */ 37));
+var _config = _interopRequireDefault(__webpack_require__(/*! @/uni_modules/uni-id-pages/config.js */ 104));
+var _vue = _interopRequireDefault(__webpack_require__(/*! vue */ 25));
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+// 延迟初始化 uniCloud，避免模块加载时就调用
+function getUniIdCo() {
+  if (!uniCloud || !uniCloud.importObject) {
+    console.warn('[uni-id-pages] uniCloud 未初始化');
+    return null;
+  }
+  return uniCloud.importObject("uni-id-co");
+}
+function getDatabase() {
+  if (!uniCloud || !uniCloud.database) {
+    console.warn('[uni-id-pages] uniCloud 未初始化');
+    return null;
+  }
+  return uniCloud.database();
+}
+function getUsersTable() {
+  var db = getDatabase();
+  if (!db) return null;
+  return db.collection('uni-id-users');
+}
+var uniIdCo = getUniIdCo();
+var hostUserInfo = uni.getStorageSync('uni-id-pages-userInfo') || {};
+var data = {
+  userInfo: hostUserInfo,
+  hasLogin: Object.keys(hostUserInfo).length != 0
+};
+
+// 定义 mutations, 修改属性
+var mutations = {
+  // data不为空，表示传递要更新的值(注意不是覆盖是合并),什么也不传时，直接查库获取更新
+  updateUserInfo: function updateUserInfo() {
+    var _arguments = arguments,
+      _this = this;
+    return (0, _asyncToGenerator2.default)( /*#__PURE__*/_regenerator.default.mark(function _callee() {
+      var data, usersTable, _id, userInfo, _uniIdCo, _usersTable, res, realNameRes;
+      return _regenerator.default.wrap(function _callee$(_context) {
+        while (1) {
+          switch (_context.prev = _context.next) {
+            case 0:
+              data = _arguments.length > 0 && _arguments[0] !== undefined ? _arguments[0] : false;
+              if (!data) {
+                _context.next = 9;
+                break;
+              }
+              usersTable = getUsersTable();
+              if (usersTable) {
+                _context.next = 6;
+                break;
+              }
+              console.warn('[uni-id-pages] 无法更新用户信息，uniCloud 未初始化');
+              return _context.abrupt("return");
+            case 6:
+              usersTable.where('_id==$env.uid').update(data).then(function (e) {
+                // console.log(e);
+                if (e.result.updated) {
+                  uni.showToast({
+                    title: "更新成功",
+                    icon: 'none',
+                    duration: 3000
+                  });
+                  _this.setUserInfo(data);
+                } else {
+                  uni.showToast({
+                    title: "没有改变",
+                    icon: 'none',
+                    duration: 3000
+                  });
+                }
+              });
+              _context.next = 31;
+              break;
+            case 9:
+              // 不等待联网查询，立即更新用户_id确保store.userInfo中的_id是最新的
+              _id = null;
+              try {
+                userInfo = uniCloud.getCurrentUserInfo();
+                _id = userInfo ? userInfo.uid : null;
+              } catch (e) {
+                console.warn('[uni-id-pages] 无法获取当前用户信息:', e);
+              }
+              if (_id) {
+                _this.setUserInfo({
+                  _id: _id
+                }, {
+                  cover: true
+                });
+              }
+              // 查库获取用户信息，更新store.userInfo
+              _uniIdCo = getUniIdCo() || uniCloud.importObject("uni-id-co", {
+                customUI: true
+              });
+              _usersTable = getUsersTable();
+              if (_usersTable) {
+                _context.next = 17;
+                break;
+              }
+              console.warn('[uni-id-pages] 无法查询用户信息，uniCloud 未初始化');
+              return _context.abrupt("return");
+            case 17:
+              _context.prev = 17;
+              _context.next = 20;
+              return _usersTable.where("'_id' == $cloudEnv_uid").field('mobile,nickname,username,email,avatar_file').get();
+            case 20:
+              res = _context.sent;
+              _context.next = 23;
+              return _uniIdCo.getRealNameInfo();
+            case 23:
+              realNameRes = _context.sent;
+              // console.log('fromDbData',res.result.data);
+              _this.setUserInfo(_objectSpread(_objectSpread({}, res.result.data[0]), {}, {
+                realNameAuth: realNameRes
+              }));
+              _context.next = 31;
+              break;
+            case 27:
+              _context.prev = 27;
+              _context.t0 = _context["catch"](17);
+              _this.setUserInfo({}, {
+                cover: true
+              });
+              console.error(_context.t0.message, _context.t0.errCode);
+            case 31:
+            case "end":
+              return _context.stop();
+          }
+        }
+      }, _callee, null, [[17, 27]]);
+    }))();
+  },
+  setUserInfo: function setUserInfo(data) {
+    var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
+        cover: false
+      },
+      cover = _ref.cover;
+    // console.log('set-userInfo', data);
+    var userInfo = cover ? data : Object.assign(store.userInfo, data);
+    store.userInfo = Object.assign({}, userInfo);
+    store.hasLogin = Object.keys(store.userInfo).length != 0;
+    // console.log('store.userInfo', store.userInfo);
+    uni.setStorageSync('uni-id-pages-userInfo', store.userInfo);
+    return data;
+  },
+  logout: function logout() {
+    var _this2 = this;
+    return (0, _asyncToGenerator2.default)( /*#__PURE__*/_regenerator.default.mark(function _callee2() {
+      var userInfo, currentUniIdCo;
+      return _regenerator.default.wrap(function _callee2$(_context2) {
+        while (1) {
+          switch (_context2.prev = _context2.next) {
+            case 0:
+              _context2.prev = 0;
+              userInfo = uniCloud.getCurrentUserInfo();
+              if (!(userInfo && userInfo.tokenExpired > Date.now())) {
+                _context2.next = 13;
+                break;
+              }
+              currentUniIdCo = getUniIdCo() || uniIdCo;
+              if (!currentUniIdCo) {
+                _context2.next = 13;
+                break;
+              }
+              _context2.prev = 5;
+              _context2.next = 8;
+              return currentUniIdCo.logout();
+            case 8:
+              _context2.next = 13;
+              break;
+            case 10:
+              _context2.prev = 10;
+              _context2.t0 = _context2["catch"](5);
+              console.error(_context2.t0);
+            case 13:
+              _context2.next = 18;
+              break;
+            case 15:
+              _context2.prev = 15;
+              _context2.t1 = _context2["catch"](0);
+              console.warn('[uni-id-pages] 注销时出错:', _context2.t1);
+            case 18:
+              uni.removeStorageSync('uni_id_token');
+              uni.setStorageSync('uni_id_token_expired', 0);
+              _this2.setUserInfo({}, {
+                cover: true
+              });
+              uni.$emit('uni-id-pages-logout');
+              uni.redirectTo({
+                url: "/".concat(_pages.default.uniIdRouter && _pages.default.uniIdRouter.loginPage ? _pages.default.uniIdRouter.loginPage : 'uni_modules/uni-id-pages/pages/login/login-withpwd')
+              });
+            case 23:
+            case "end":
+              return _context2.stop();
+          }
+        }
+      }, _callee2, null, [[0, 15], [5, 10]]);
+    }))();
+  },
+  loginBack: function loginBack() {
+    var e = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var _e$uniIdRedirectUrl = e.uniIdRedirectUrl,
+      uniIdRedirectUrl = _e$uniIdRedirectUrl === void 0 ? '' : _e$uniIdRedirectUrl;
+
+    // 如果登录参数中没有跳转地址，尝试从本地存储读取
+    if (!uniIdRedirectUrl) {
+      uniIdRedirectUrl = uni.getStorageSync('redirectUrl') || '';
+      if (uniIdRedirectUrl) {
+        console.log('[store] 从本地存储读取跳转地址:', uniIdRedirectUrl);
+        // 读取后清除，避免重复跳转
+        uni.removeStorageSync('redirectUrl');
+      }
+    }
+    var delta = 0; //判断需要返回几层
+    var pages = getCurrentPages();
+    // console.log(pages);
+    pages.forEach(function (page, index) {
+      if (pages[pages.length - index - 1].route.split('/')[3] == 'login') {
+        delta++;
+      }
+    });
+    // console.log('判断需要返回几层:', delta);
+    if (uniIdRedirectUrl) {
+      return uni.redirectTo({
+        url: uniIdRedirectUrl,
+        fail: function fail(err1) {
+          uni.switchTab({
+            url: uniIdRedirectUrl,
+            fail: function fail(err2) {
+              console.log(err1, err2);
+            }
+          });
+        }
+      });
+    }
+    if (delta) {
+      var page = _pages.default.pages[0];
+      return uni.reLaunch({
+        url: "/".concat(page.path)
+      });
+    }
+    uni.navigateBack({
+      delta: delta
+    });
+  },
+  loginSuccess: function loginSuccess() {
+    var e = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var _e$showToast = e.showToast,
+      showToast = _e$showToast === void 0 ? true : _e$showToast,
+      _e$toastText = e.toastText,
+      toastText = _e$toastText === void 0 ? '登录成功' : _e$toastText,
+      _e$autoBack = e.autoBack,
+      autoBack = _e$autoBack === void 0 ? true : _e$autoBack,
+      _e$uniIdRedirectUrl2 = e.uniIdRedirectUrl,
+      uniIdRedirectUrl = _e$uniIdRedirectUrl2 === void 0 ? '' : _e$uniIdRedirectUrl2,
+      passwordConfirmed = e.passwordConfirmed;
+    // console.log({toastText,autoBack});
+    if (showToast) {
+      uni.showToast({
+        title: toastText,
+        icon: 'none',
+        duration: 3000
+      });
+    }
+    // 异步调用（更新用户信息）防止获取头像等操作阻塞页面返回
+    this.updateUserInfo();
+    uni.$emit('uni-id-pages-login-success');
+    if (_config.default.setPasswordAfterLogin && !passwordConfirmed) {
+      return uni.redirectTo({
+        url: uniIdRedirectUrl ? "/uni_modules/uni-id-pages/pages/userinfo/set-pwd/set-pwd?uniIdRedirectUrl=".concat(uniIdRedirectUrl, "&loginType=").concat(e.loginType) : "/uni_modules/uni-id-pages/pages/userinfo/set-pwd/set-pwd?loginType=".concat(e.loginType),
+        fail: function fail(err) {
+          console.log(err);
+        }
+      });
+    }
+    if (autoBack) {
+      this.loginBack({
+        uniIdRedirectUrl: uniIdRedirectUrl
+      });
+    }
+  }
+};
+exports.mutations = mutations;
+// 通过Vue.observable创建一个可响应的对象
+var store = _vue.default.observable(data);
+exports.store = store;
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/uni-cloud/dist/index.js */ 27)["uniCloud"], __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
+
+/***/ }),
+
 /***/ 11:
 /*!***************************************************************!*\
   !*** ./node_modules/@babel/runtime/helpers/defineProperty.js ***!
@@ -2761,86 +3442,6 @@ module.exports = _nonIterableSpread, module.exports.__esModule = true, module.ex
 
 /***/ }),
 
-/***/ 216:
-/*!************************************************************************!*\
-  !*** ./node_modules/@babel/runtime/helpers/objectWithoutProperties.js ***!
-  \************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-var objectWithoutPropertiesLoose = __webpack_require__(/*! ./objectWithoutPropertiesLoose.js */ 217);
-function _objectWithoutProperties(source, excluded) {
-  if (source == null) return {};
-  var target = objectWithoutPropertiesLoose(source, excluded);
-  var key, i;
-  if (Object.getOwnPropertySymbols) {
-    var sourceSymbolKeys = Object.getOwnPropertySymbols(source);
-    for (i = 0; i < sourceSymbolKeys.length; i++) {
-      key = sourceSymbolKeys[i];
-      if (excluded.indexOf(key) >= 0) continue;
-      if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
-      target[key] = source[key];
-    }
-  }
-  return target;
-}
-module.exports = _objectWithoutProperties, module.exports.__esModule = true, module.exports["default"] = module.exports;
-
-/***/ }),
-
-/***/ 217:
-/*!*****************************************************************************!*\
-  !*** ./node_modules/@babel/runtime/helpers/objectWithoutPropertiesLoose.js ***!
-  \*****************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-function _objectWithoutPropertiesLoose(source, excluded) {
-  if (source == null) return {};
-  var target = {};
-  var sourceKeys = Object.keys(source);
-  var key, i;
-  for (i = 0; i < sourceKeys.length; i++) {
-    key = sourceKeys[i];
-    if (excluded.indexOf(key) >= 0) continue;
-    target[key] = source[key];
-  }
-  return target;
-}
-module.exports = _objectWithoutPropertiesLoose, module.exports.__esModule = true, module.exports["default"] = module.exports;
-
-/***/ }),
-
-/***/ 218:
-/*!********************************************************************************************************!*\
-  !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-id-pages/common/check-id-card.js ***!
-  \********************************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-function checkIdCard(idCardNumber) {
-  if (!idCardNumber || typeof idCardNumber !== 'string' || idCardNumber.length !== 18) return false;
-  var coefficient = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
-  var checkCode = [1, 0, 'x', 9, 8, 7, 6, 5, 4, 3, 2];
-  var code = idCardNumber.substring(17);
-  var sum = 0;
-  for (var i = 0; i < 17; i++) {
-    sum += Number(idCardNumber.charAt(i)) * coefficient[i];
-  }
-  return checkCode[sum % 11].toString() === code.toLowerCase();
-}
-var _default = checkIdCard;
-exports.default = _default;
-
-/***/ }),
-
 /***/ 22:
 /*!*************************************************************!*\
   !*** ./node_modules/@dcloudio/uni-i18n/dist/uni-i18n.es.js ***!
@@ -3378,7 +3979,103 @@ function resolveLocaleChain(locale) {
 
 /***/ }),
 
+/***/ 225:
+/*!************************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/objectWithoutProperties.js ***!
+  \************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var objectWithoutPropertiesLoose = __webpack_require__(/*! ./objectWithoutPropertiesLoose.js */ 226);
+function _objectWithoutProperties(source, excluded) {
+  if (source == null) return {};
+  var target = objectWithoutPropertiesLoose(source, excluded);
+  var key, i;
+  if (Object.getOwnPropertySymbols) {
+    var sourceSymbolKeys = Object.getOwnPropertySymbols(source);
+    for (i = 0; i < sourceSymbolKeys.length; i++) {
+      key = sourceSymbolKeys[i];
+      if (excluded.indexOf(key) >= 0) continue;
+      if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+      target[key] = source[key];
+    }
+  }
+  return target;
+}
+module.exports = _objectWithoutProperties, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
 /***/ 226:
+/*!*****************************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/objectWithoutPropertiesLoose.js ***!
+  \*****************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+function _objectWithoutPropertiesLoose(source, excluded) {
+  if (source == null) return {};
+  var target = {};
+  var sourceKeys = Object.keys(source);
+  var key, i;
+  for (i = 0; i < sourceKeys.length; i++) {
+    key = sourceKeys[i];
+    if (excluded.indexOf(key) >= 0) continue;
+    target[key] = source[key];
+  }
+  return target;
+}
+module.exports = _objectWithoutPropertiesLoose, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ 227:
+/*!********************************************************************************************************!*\
+  !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-id-pages/common/check-id-card.js ***!
+  \********************************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+function checkIdCard(idCardNumber) {
+  if (!idCardNumber || typeof idCardNumber !== 'string' || idCardNumber.length !== 18) return false;
+  var coefficient = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+  var checkCode = [1, 0, 'x', 9, 8, 7, 6, 5, 4, 3, 2];
+  var code = idCardNumber.substring(17);
+  var sum = 0;
+  for (var i = 0; i < 17; i++) {
+    sum += Number(idCardNumber.charAt(i)) * coefficient[i];
+  }
+  return checkCode[sum % 11].toString() === code.toLowerCase();
+}
+var _default = checkIdCard;
+exports.default = _default;
+
+/***/ }),
+
+/***/ 23:
+/*!***************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/classCallCheck.js ***!
+  \***************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+function _classCallCheck(instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+}
+module.exports = _classCallCheck, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ 235:
 /*!**************************************************************************************************************!*\
   !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-forms/components/uni-forms/validate.js ***!
   \**************************************************************************************************************/
@@ -4070,7 +4767,7 @@ exports.default = _default;
 
 /***/ }),
 
-/***/ 227:
+/***/ 236:
 /*!***********************************************************************************************************!*\
   !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-forms/components/uni-forms/utils.js ***!
   \***********************************************************************************************************/
@@ -4403,22 +5100,6 @@ var isEqual = function isEqual(a, b) {
   }
 };
 exports.isEqual = isEqual;
-
-/***/ }),
-
-/***/ 23:
-/*!***************************************************************!*\
-  !*** ./node_modules/@babel/runtime/helpers/classCallCheck.js ***!
-  \***************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-function _classCallCheck(instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-}
-module.exports = _classCallCheck, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
 /***/ }),
 
@@ -11078,7 +11759,7 @@ var b = "development" === "development",
   k = "true" === undefined || !0 === undefined,
   A = T([]),
   P = "h5" === E ? "web" : "app-plus" === E || "app-harmony" === E ? "app" : E,
-  C = T({"address":["127.0.0.1","192.168.20.9"],"servePort":7000,"debugPort":9001,"initialLaunchType":"remote","skipFiles":["<node_internals>/**","C:/Users/86182/Downloads/HBuilderX.4.76.2025082103/HBuilderX/plugins/unicloud/**/*.js"]}),
+  C = T({"address":["127.0.0.1","192.168.20.11"],"servePort":7000,"debugPort":9000,"initialLaunchType":"remote","skipFiles":["<node_internals>/**","C:/Users/86182/Downloads/HBuilderX.4.76.2025082103/HBuilderX/plugins/unicloud/**/*.js"]}),
   O = T([{"provider":"aliyun","spaceName":"evaldemo","spaceId":"mp-5303b4dc-df3a-4fca-82e6-5b7b825a8efb","clientSecret":"82R2IP+Ky8O4BBH1RAYKwQ==","endpoint":"https://api.next.bspapp.com"}]) || [],
   x = true;
 var N = "";
@@ -19379,7 +20060,35 @@ module.exports = _asyncToGenerator, module.exports.__esModule = true, module.exp
 
 /***/ }),
 
-/***/ 312:
+/***/ 32:
+/*!*********************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/inherits.js ***!
+  \*********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var setPrototypeOf = __webpack_require__(/*! ./setPrototypeOf.js */ 16);
+function _inherits(subClass, superClass) {
+  if (typeof superClass !== "function" && superClass !== null) {
+    throw new TypeError("Super expression must either be null or a function");
+  }
+  subClass.prototype = Object.create(superClass && superClass.prototype, {
+    constructor: {
+      value: subClass,
+      writable: true,
+      configurable: true
+    }
+  });
+  Object.defineProperty(subClass, "prototype", {
+    writable: false
+  });
+  if (superClass) setPrototypeOf(subClass, superClass);
+}
+module.exports = _inherits, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ 321:
 /*!***********************************************************************************************************!*\
   !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-popup/components/uni-popup/popup.js ***!
   \***********************************************************************************************************/
@@ -19421,7 +20130,7 @@ exports.default = _default;
 
 /***/ }),
 
-/***/ 313:
+/***/ 322:
 /*!****************************************************************************************************************!*\
   !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-popup/components/uni-popup/i18n/index.js ***!
   \****************************************************************************************************************/
@@ -19436,9 +20145,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-var _en = _interopRequireDefault(__webpack_require__(/*! ./en.json */ 314));
-var _zhHans = _interopRequireDefault(__webpack_require__(/*! ./zh-Hans.json */ 315));
-var _zhHant = _interopRequireDefault(__webpack_require__(/*! ./zh-Hant.json */ 316));
+var _en = _interopRequireDefault(__webpack_require__(/*! ./en.json */ 323));
+var _zhHans = _interopRequireDefault(__webpack_require__(/*! ./zh-Hans.json */ 324));
+var _zhHant = _interopRequireDefault(__webpack_require__(/*! ./zh-Hant.json */ 325));
 var _default = {
   en: _en.default,
   'zh-Hans': _zhHans.default,
@@ -19448,7 +20157,7 @@ exports.default = _default;
 
 /***/ }),
 
-/***/ 314:
+/***/ 323:
 /*!***************************************************************************************************************!*\
   !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-popup/components/uni-popup/i18n/en.json ***!
   \***************************************************************************************************************/
@@ -19459,7 +20168,7 @@ module.exports = JSON.parse("{\"uni-popup.cancel\":\"cancel\",\"uni-popup.ok\":\
 
 /***/ }),
 
-/***/ 315:
+/***/ 324:
 /*!********************************************************************************************************************!*\
   !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-popup/components/uni-popup/i18n/zh-Hans.json ***!
   \********************************************************************************************************************/
@@ -19470,7 +20179,7 @@ module.exports = JSON.parse("{\"uni-popup.cancel\":\"取消\",\"uni-popup.ok\":\
 
 /***/ }),
 
-/***/ 316:
+/***/ 325:
 /*!********************************************************************************************************************!*\
   !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-popup/components/uni-popup/i18n/zh-Hant.json ***!
   \********************************************************************************************************************/
@@ -19478,34 +20187,6 @@ module.exports = JSON.parse("{\"uni-popup.cancel\":\"取消\",\"uni-popup.ok\":\
 /***/ (function(module) {
 
 module.exports = JSON.parse("{\"uni-popup.cancel\":\"取消\",\"uni-popup.ok\":\"確定\",\"uni-popup.placeholder\":\"請輸入\",\"uni-popup.title\":\"提示\",\"uni-popup.shareTitle\":\"分享到\"}");
-
-/***/ }),
-
-/***/ 32:
-/*!*********************************************************!*\
-  !*** ./node_modules/@babel/runtime/helpers/inherits.js ***!
-  \*********************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-var setPrototypeOf = __webpack_require__(/*! ./setPrototypeOf.js */ 16);
-function _inherits(subClass, superClass) {
-  if (typeof superClass !== "function" && superClass !== null) {
-    throw new TypeError("Super expression must either be null or a function");
-  }
-  subClass.prototype = Object.create(superClass && superClass.prototype, {
-    constructor: {
-      value: subClass,
-      writable: true,
-      configurable: true
-    }
-  });
-  Object.defineProperty(subClass, "prototype", {
-    writable: false
-  });
-  if (superClass) setPrototypeOf(subClass, superClass);
-}
-module.exports = _inherits, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
 /***/ }),
 
@@ -19530,7 +20211,24 @@ module.exports = _possibleConstructorReturn, module.exports.__esModule = true, m
 
 /***/ }),
 
-/***/ 331:
+/***/ 34:
+/*!***************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/getPrototypeOf.js ***!
+  \***************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+function _getPrototypeOf(o) {
+  module.exports = _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function _getPrototypeOf(o) {
+    return o.__proto__ || Object.getPrototypeOf(o);
+  }, module.exports.__esModule = true, module.exports["default"] = module.exports;
+  return _getPrototypeOf(o);
+}
+module.exports = _getPrototypeOf, module.exports.__esModule = true, module.exports["default"] = module.exports;
+
+/***/ }),
+
+/***/ 340:
 /*!******************************************************************************************************************************!*\
   !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-id-pages/pages/userinfo/cropImage/limeClipper/utils.js ***!
   \******************************************************************************************************************************/
@@ -19786,24 +20484,48 @@ function imageTouchMoveOfCalcOffset(data, clientXForLeft, clientYForLeft) {
 
 /***/ }),
 
-/***/ 34:
-/*!***************************************************************!*\
-  !*** ./node_modules/@babel/runtime/helpers/getPrototypeOf.js ***!
-  \***************************************************************/
+/***/ 35:
+/*!****************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/wrapNativeSuper.js ***!
+  \****************************************************************/
 /*! no static exports found */
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
 
-function _getPrototypeOf(o) {
-  module.exports = _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function _getPrototypeOf(o) {
-    return o.__proto__ || Object.getPrototypeOf(o);
+var getPrototypeOf = __webpack_require__(/*! ./getPrototypeOf.js */ 34);
+var setPrototypeOf = __webpack_require__(/*! ./setPrototypeOf.js */ 16);
+var isNativeFunction = __webpack_require__(/*! ./isNativeFunction.js */ 36);
+var construct = __webpack_require__(/*! ./construct.js */ 15);
+function _wrapNativeSuper(Class) {
+  var _cache = typeof Map === "function" ? new Map() : undefined;
+  module.exports = _wrapNativeSuper = function _wrapNativeSuper(Class) {
+    if (Class === null || !isNativeFunction(Class)) return Class;
+    if (typeof Class !== "function") {
+      throw new TypeError("Super expression must either be null or a function");
+    }
+    if (typeof _cache !== "undefined") {
+      if (_cache.has(Class)) return _cache.get(Class);
+      _cache.set(Class, Wrapper);
+    }
+    function Wrapper() {
+      return construct(Class, arguments, getPrototypeOf(this).constructor);
+    }
+    Wrapper.prototype = Object.create(Class.prototype, {
+      constructor: {
+        value: Wrapper,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+    return setPrototypeOf(Wrapper, Class);
   }, module.exports.__esModule = true, module.exports["default"] = module.exports;
-  return _getPrototypeOf(o);
+  return _wrapNativeSuper(Class);
 }
-module.exports = _getPrototypeOf, module.exports.__esModule = true, module.exports["default"] = module.exports;
+module.exports = _wrapNativeSuper, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
 /***/ }),
 
-/***/ 346:
+/***/ 355:
 /*!***********************************************************************************************************************!*\
   !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-icons/components/uni-icons/uniicons_file_vue.js ***!
   \***********************************************************************************************************************/
@@ -20307,47 +21029,6 @@ exports.fontData = fontData;
 
 /***/ }),
 
-/***/ 35:
-/*!****************************************************************!*\
-  !*** ./node_modules/@babel/runtime/helpers/wrapNativeSuper.js ***!
-  \****************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-var getPrototypeOf = __webpack_require__(/*! ./getPrototypeOf.js */ 34);
-var setPrototypeOf = __webpack_require__(/*! ./setPrototypeOf.js */ 16);
-var isNativeFunction = __webpack_require__(/*! ./isNativeFunction.js */ 36);
-var construct = __webpack_require__(/*! ./construct.js */ 15);
-function _wrapNativeSuper(Class) {
-  var _cache = typeof Map === "function" ? new Map() : undefined;
-  module.exports = _wrapNativeSuper = function _wrapNativeSuper(Class) {
-    if (Class === null || !isNativeFunction(Class)) return Class;
-    if (typeof Class !== "function") {
-      throw new TypeError("Super expression must either be null or a function");
-    }
-    if (typeof _cache !== "undefined") {
-      if (_cache.has(Class)) return _cache.get(Class);
-      _cache.set(Class, Wrapper);
-    }
-    function Wrapper() {
-      return construct(Class, arguments, getPrototypeOf(this).constructor);
-    }
-    Wrapper.prototype = Object.create(Class.prototype, {
-      constructor: {
-        value: Wrapper,
-        enumerable: false,
-        writable: true,
-        configurable: true
-      }
-    });
-    return setPrototypeOf(Wrapper, Class);
-  }, module.exports.__esModule = true, module.exports["default"] = module.exports;
-  return _wrapNativeSuper(Class);
-}
-module.exports = _wrapNativeSuper, module.exports.__esModule = true, module.exports["default"] = module.exports;
-
-/***/ }),
-
 /***/ 36:
 /*!*****************************************************************!*\
   !*** ./node_modules/@babel/runtime/helpers/isNativeFunction.js ***!
@@ -20366,7 +21047,162 @@ module.exports = _isNativeFunction, module.exports.__esModule = true, module.exp
 
 /***/ }),
 
-/***/ 366:
+/***/ 37:
+/*!***********************************************************************************************!*\
+  !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/pages.json?{"type":"origin-pages-json"} ***!
+  \***********************************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = {
+  "pages": [{
+    "path": "pages/index/index",
+    "style": {
+      "navigationBarTitleText": "知动儿童综合发育测评",
+      "navigationBarBackgroundColor": "#E8F4FD",
+      "navigationBarTextStyle": "black"
+    }
+  }, {
+    "path": "pages/child-info/child-info",
+    "style": {
+      "navigationBarTitleText": "儿童信息",
+      "navigationBarBackgroundColor": "#E8F4FD",
+      "navigationBarTextStyle": "black"
+    }
+  }, {
+    "path": "pages/assessment/assessment",
+    "style": {
+      "navigationBarTitleText": "发育评估",
+      "navigationBarBackgroundColor": "#E8F4FD",
+      "navigationBarTextStyle": "black"
+    }
+  }, {
+    "path": "pages/result/result",
+    "style": {
+      "navigationBarTitleText": "评估结果",
+      "navigationBarBackgroundColor": "#E8F4FD",
+      "navigationBarTextStyle": "black"
+    }
+  }, {
+    "path": "pages/history/history",
+    "style": {
+      "navigationBarTitleText": "历史记录",
+      "navigationBarBackgroundColor": "#E8F4FD",
+      "navigationBarTextStyle": "black"
+    }
+  }, {
+    "path": "pages/admin/init-questions",
+    "style": {
+      "navigationBarTitleText": "初始化题目",
+      "navigationBarBackgroundColor": "#E8F4FD",
+      "navigationBarTextStyle": "black"
+    }
+  }, {
+    "path": "uni_modules/uni-id-pages/pages/register/register",
+    "style": {
+      "navigationBarTitleText": "注册"
+    }
+  }, {
+    "path": "uni_modules/uni-id-pages/pages/login/login-withoutpwd",
+    "style": {
+      "navigationBarTitleText": "登录"
+    }
+  }, {
+    "path": "uni_modules/uni-id-pages/pages/login/login-withpwd",
+    "style": {
+      "navigationBarTitleText": "账号密码登录"
+    }
+  }, {
+    "path": "uni_modules/uni-id-pages/pages/login/login-smscode",
+    "style": {
+      "navigationBarTitleText": "手机验证码登录"
+    }
+  }, {
+    "path": "uni_modules/uni-id-pages/pages/userinfo/userinfo",
+    "style": {
+      "navigationBarTitleText": "个人资料"
+    }
+  }, {
+    "path": "uni_modules/uni-id-pages/pages/userinfo/bind-mobile/bind-mobile",
+    "style": {
+      "navigationBarTitleText": "绑定手机号码"
+    }
+  }, {
+    "path": "uni_modules/uni-id-pages/pages/userinfo/cropImage/cropImage",
+    "style": {
+      "navigationBarTitleText": ""
+    }
+  }, {
+    "path": "uni_modules/uni-id-pages/pages/register/register-by-email",
+    "style": {
+      "navigationBarTitleText": "邮箱验证码注册"
+    }
+  }, {
+    "path": "uni_modules/uni-id-pages/pages/retrieve/retrieve",
+    "style": {
+      "navigationBarTitleText": "重置密码"
+    }
+  }, {
+    "path": "uni_modules/uni-id-pages/pages/retrieve/retrieve-by-email",
+    "style": {
+      "navigationBarTitleText": "通过邮箱重置密码"
+    }
+  }, {
+    "path": "uni_modules/uni-id-pages/pages/common/webview/webview",
+    "style": {
+      "enablePullDownRefresh": false,
+      "navigationBarTitleText": ""
+    }
+  }, {
+    "path": "uni_modules/uni-id-pages/pages/userinfo/change_pwd/change_pwd",
+    "style": {
+      "enablePullDownRefresh": false,
+      "navigationBarTitleText": "修改密码"
+    }
+  }, {
+    "path": "uni_modules/uni-id-pages/pages/register/register-admin",
+    "style": {
+      "enablePullDownRefresh": false,
+      "navigationBarTitleText": "注册管理员账号"
+    }
+  }, {
+    "path": "uni_modules/uni-id-pages/pages/userinfo/set-pwd/set-pwd",
+    "style": {
+      "enablePullDownRefresh": false,
+      "navigationBarTitleText": "设置密码"
+    }
+  }, {
+    "path": "uni_modules/uni-id-pages/pages/userinfo/deactivate/deactivate",
+    "style": {
+      "navigationBarTitleText": "注销账号"
+    }
+  }, {
+    "path": "uni_modules/uni-id-pages/pages/userinfo/realname-verify/realname-verify",
+    "style": {
+      "enablePullDownRefresh": false,
+      "navigationBarTitleText": "实名认证"
+    }
+  }],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "知动儿童综合发育测评",
+    "navigationBarBackgroundColor": "#E8F4FD",
+    "backgroundColor": "#F8F9FA"
+  },
+  "uniIdRouter": {}
+};
+exports.default = _default;
+
+/***/ }),
+
+/***/ 375:
 /*!*******************************************************************************************************************************!*\
   !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-transition/components/uni-transition/createAnimation.js ***!
   \*******************************************************************************************************************************/
@@ -20498,154 +21334,6 @@ function createAnimation(option, _this) {
   return new MPAnimation(option, _this);
 }
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
-
-/***/ }),
-
-/***/ 37:
-/*!***********************************************************************************************!*\
-  !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/pages.json?{"type":"origin-pages-json"} ***!
-  \***********************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _default = {
-  "pages": [{
-    "path": "pages/index/index",
-    "style": {
-      "navigationBarTitleText": "知动儿童综合发育测评",
-      "navigationBarBackgroundColor": "#E8F4FD",
-      "navigationBarTextStyle": "black"
-    }
-  }, {
-    "path": "pages/child-info/child-info",
-    "style": {
-      "navigationBarTitleText": "儿童信息",
-      "navigationBarBackgroundColor": "#E8F4FD",
-      "navigationBarTextStyle": "black"
-    }
-  }, {
-    "path": "pages/assessment/assessment",
-    "style": {
-      "navigationBarTitleText": "发育评估",
-      "navigationBarBackgroundColor": "#E8F4FD",
-      "navigationBarTextStyle": "black"
-    }
-  }, {
-    "path": "pages/result/result",
-    "style": {
-      "navigationBarTitleText": "评估结果",
-      "navigationBarBackgroundColor": "#E8F4FD",
-      "navigationBarTextStyle": "black"
-    }
-  }, {
-    "path": "pages/history/history",
-    "style": {
-      "navigationBarTitleText": "历史记录",
-      "navigationBarBackgroundColor": "#E8F4FD",
-      "navigationBarTextStyle": "black"
-    }
-  }, {
-    "path": "uni_modules/uni-id-pages/pages/register/register",
-    "style": {
-      "navigationBarTitleText": "注册"
-    }
-  }, {
-    "path": "uni_modules/uni-id-pages/pages/login/login-withoutpwd",
-    "style": {
-      "navigationBarTitleText": "登录"
-    }
-  }, {
-    "path": "uni_modules/uni-id-pages/pages/login/login-withpwd",
-    "style": {
-      "navigationBarTitleText": "账号密码登录"
-    }
-  }, {
-    "path": "uni_modules/uni-id-pages/pages/login/login-smscode",
-    "style": {
-      "navigationBarTitleText": "手机验证码登录"
-    }
-  }, {
-    "path": "uni_modules/uni-id-pages/pages/userinfo/userinfo",
-    "style": {
-      "navigationBarTitleText": "个人资料"
-    }
-  }, {
-    "path": "uni_modules/uni-id-pages/pages/userinfo/bind-mobile/bind-mobile",
-    "style": {
-      "navigationBarTitleText": "绑定手机号码"
-    }
-  }, {
-    "path": "uni_modules/uni-id-pages/pages/userinfo/cropImage/cropImage",
-    "style": {
-      "navigationBarTitleText": ""
-    }
-  }, {
-    "path": "uni_modules/uni-id-pages/pages/register/register-by-email",
-    "style": {
-      "navigationBarTitleText": "邮箱验证码注册"
-    }
-  }, {
-    "path": "uni_modules/uni-id-pages/pages/retrieve/retrieve",
-    "style": {
-      "navigationBarTitleText": "重置密码"
-    }
-  }, {
-    "path": "uni_modules/uni-id-pages/pages/retrieve/retrieve-by-email",
-    "style": {
-      "navigationBarTitleText": "通过邮箱重置密码"
-    }
-  }, {
-    "path": "uni_modules/uni-id-pages/pages/common/webview/webview",
-    "style": {
-      "enablePullDownRefresh": false,
-      "navigationBarTitleText": ""
-    }
-  }, {
-    "path": "uni_modules/uni-id-pages/pages/userinfo/change_pwd/change_pwd",
-    "style": {
-      "enablePullDownRefresh": false,
-      "navigationBarTitleText": "修改密码"
-    }
-  }, {
-    "path": "uni_modules/uni-id-pages/pages/register/register-admin",
-    "style": {
-      "enablePullDownRefresh": false,
-      "navigationBarTitleText": "注册管理员账号"
-    }
-  }, {
-    "path": "uni_modules/uni-id-pages/pages/userinfo/set-pwd/set-pwd",
-    "style": {
-      "enablePullDownRefresh": false,
-      "navigationBarTitleText": "设置密码"
-    }
-  }, {
-    "path": "uni_modules/uni-id-pages/pages/userinfo/deactivate/deactivate",
-    "style": {
-      "navigationBarTitleText": "注销账号"
-    }
-  }, {
-    "path": "uni_modules/uni-id-pages/pages/userinfo/realname-verify/realname-verify",
-    "style": {
-      "enablePullDownRefresh": false,
-      "navigationBarTitleText": "实名认证"
-    }
-  }],
-  "globalStyle": {
-    "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "知动儿童综合发育测评",
-    "navigationBarBackgroundColor": "#E8F4FD",
-    "backgroundColor": "#F8F9FA"
-  },
-  "uniIdRouter": {}
-};
-exports.default = _default;
 
 /***/ }),
 
@@ -20875,7 +21563,393 @@ module.exports = _arrayWithHoles, module.exports.__esModule = true, module.expor
 
 /***/ }),
 
-/***/ 68:
+/***/ 60:
+/*!**********************************************************************!*\
+  !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/common/auth.js ***!
+  \**********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(uniCloud, uni) {
+
+var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.canCallCloudFunction = canCallCloudFunction;
+exports.checkLoginSilently = checkLoginSilently;
+exports.checkLoginStatus = checkLoginStatus;
+exports.clearUserData = clearUserData;
+exports.getCurrentUserId = getCurrentUserId;
+exports.getUserStorageKey = getUserStorageKey;
+exports.handleLoginError = handleLoginError;
+exports.requireLogin = requireLogin;
+var _typeof2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/typeof */ 13));
+/**
+ * 统一的登录状态管理工具
+ * 避免重复的登录检查和不必要的登录提示
+ */
+
+// Token 过期前的缓冲时间（毫秒），提前 5 分钟刷新
+var TOKEN_REFRESH_THRESHOLD = 5 * 60 * 1000; // 5 分钟
+
+/**
+ * 检查登录状态（静默检查，不跳转）
+ * @returns {Object} { isLoggedIn: boolean, shouldRefresh: boolean, reason?: string }
+ */
+function checkLoginStatus() {
+  // 优先从 uniCloud 获取用户信息（最可靠的方式）
+  try {
+    var userInfo = uniCloud.getCurrentUserInfo && uniCloud.getCurrentUserInfo();
+    if (userInfo && userInfo.uid) {
+      // 有有效的用户ID，说明已登录
+      return {
+        isLoggedIn: true,
+        shouldRefresh: false,
+        reason: 'valid_uid'
+      };
+    }
+  } catch (e) {
+    console.warn('[auth] 无法从 uniCloud 获取用户信息:', e);
+  }
+
+  // 备用方案：检查 uni-id-pages 的用户信息
+  var storedUserInfo = uni.getStorageSync('uni-id-pages-userInfo');
+  if (storedUserInfo && storedUserInfo._id) {
+    // 有用户信息，检查是否有 token
+    var _token = uni.getStorageSync('uni_id_token');
+    if (_token) {
+      var _tokenExpired = uni.getStorageSync('uni_id_token_expired');
+      var _now = Date.now();
+
+      // 检查过期时间
+      if (_tokenExpired && _tokenExpired > 0) {
+        // 如果已经过期
+        if (_now >= _tokenExpired) {
+          return {
+            isLoggedIn: false,
+            shouldRefresh: false,
+            reason: 'token_expired'
+          };
+        }
+
+        // 如果即将过期（在缓冲时间内），标记需要刷新
+        var timeUntilExpiry = _tokenExpired - _now;
+        if (timeUntilExpiry <= TOKEN_REFRESH_THRESHOLD) {
+          return {
+            isLoggedIn: true,
+            shouldRefresh: true,
+            reason: 'token_expiring_soon'
+          };
+        }
+      }
+
+      // Token 存在且有效
+      return {
+        isLoggedIn: true,
+        shouldRefresh: false,
+        reason: 'valid_token'
+      };
+    }
+
+    // 有用户信息但没有 token，可能 token 被清除但用户信息还在
+    // 这种情况下，尝试通过 uniCloud 验证
+    return {
+      isLoggedIn: false,
+      shouldRefresh: false,
+      reason: 'no_token_but_has_userinfo'
+    };
+  }
+
+  // 最后检查：只有 token 没有用户信息
+  var token = uni.getStorageSync('uni_id_token');
+  if (!token) {
+    return {
+      isLoggedIn: false,
+      shouldRefresh: false,
+      reason: 'no_token'
+    };
+  }
+
+  // 只有 token 的情况，检查过期时间
+  var tokenExpired = uni.getStorageSync('uni_id_token_expired');
+  var now = Date.now();
+  if (tokenExpired && tokenExpired > 0 && now >= tokenExpired) {
+    return {
+      isLoggedIn: false,
+      shouldRefresh: false,
+      reason: 'token_expired'
+    };
+  }
+
+  // 有 token 且未过期
+  return {
+    isLoggedIn: true,
+    shouldRefresh: false,
+    reason: 'valid_token_only'
+  };
+}
+
+/**
+ * 检查登录状态，如果需要登录则跳转（带用户交互）
+ * @param {Object} options 选项
+ * @param {string} options.redirectUrl 登录后跳转的页面路径
+ * @param {boolean} options.saveData 是否保存当前页面数据到本地
+ * @param {Object} options.dataToSave 需要保存的数据
+ * @returns {boolean} 是否已登录
+ */
+function requireLogin() {
+  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var redirectUrl = options.redirectUrl,
+    _options$saveData = options.saveData,
+    saveData = _options$saveData === void 0 ? false : _options$saveData,
+    _options$dataToSave = options.dataToSave,
+    dataToSave = _options$dataToSave === void 0 ? null : _options$dataToSave;
+  var status = checkLoginStatus();
+  if (!status.isLoggedIn) {
+    // 保存跳转地址
+    if (redirectUrl) {
+      uni.setStorageSync('redirectUrl', redirectUrl);
+    }
+
+    // 保存数据（如果需要，使用用户专属存储）
+    if (saveData && dataToSave) {
+      // 根据当前页面路径保存对应的数据
+      var currentPage = getCurrentPages();
+      if (currentPage.length > 0) {
+        var page = currentPage[currentPage.length - 1];
+        var route = page.route || '';
+        if (route.includes('child-info')) {
+          var userKey = getUserStorageKey('childInfo');
+          uni.setStorageSync(userKey, dataToSave);
+          uni.setStorageSync('childInfo', dataToSave); // 兼容旧数据
+        } else if (route.includes('assessment')) {
+          var _userKey = getUserStorageKey('assessmentDraft');
+          uni.setStorageSync(_userKey, dataToSave);
+          uni.setStorageSync('assessmentDraft', dataToSave); // 兼容旧数据
+        }
+      }
+    }
+
+    // 注意：不在登录失败时清除数据，保留用户填写的内容
+    // 清除操作应该在登录成功后进行（在页面的 onLoad 中）
+
+    // 跳转到登录页
+    uni.redirectTo({
+      url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+    });
+    return false;
+  }
+  return true;
+}
+
+/**
+ * 静默检查登录状态，只在确实需要时才提示
+ * @param {Object} options 选项
+ * @returns {boolean} 是否已登录
+ */
+function checkLoginSilently() {
+  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var status = checkLoginStatus();
+  if (!status.isLoggedIn) {
+    // 静默返回，不跳转，让调用方决定如何处理
+    return false;
+  }
+
+  // 如果需要刷新 token，静默处理（这里可以添加 token 刷新逻辑）
+  if (status.shouldRefresh) {
+    // 可以在这里添加自动刷新 token 的逻辑
+    console.log('[auth] Token 即将过期，建议刷新');
+  }
+  return true;
+}
+
+/**
+ * 处理云函数返回的登录错误
+ * @param {Object} result 云函数返回结果
+ * @param {Object} options 选项
+ * @returns {boolean} 是否已处理登录错误
+ */
+function handleLoginError(result) {
+  var _result$result, _result$result2, _result$result3;
+  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  var redirectUrl = options.redirectUrl,
+    _options$saveData2 = options.saveData,
+    saveData = _options$saveData2 === void 0 ? false : _options$saveData2,
+    _options$dataToSave2 = options.dataToSave,
+    dataToSave = _options$dataToSave2 === void 0 ? null : _options$dataToSave2;
+
+  // 从 result 或 result.result 中提取错误信息
+  // 注意：result 可能是完整的 uniCloud 响应 {success, errCode, result: {...}}
+  // 也可能是云函数返回的对象 {code, msg, ...}
+  var errorCode = (result === null || result === void 0 ? void 0 : result.code) || (result === null || result === void 0 ? void 0 : (_result$result = result.result) === null || _result$result === void 0 ? void 0 : _result$result.code);
+  var errorMsg = (result === null || result === void 0 ? void 0 : result.msg) || (result === null || result === void 0 ? void 0 : (_result$result2 = result.result) === null || _result$result2 === void 0 ? void 0 : _result$result2.msg) || (result === null || result === void 0 ? void 0 : result.message) || (result === null || result === void 0 ? void 0 : (_result$result3 = result.result) === null || _result$result3 === void 0 ? void 0 : _result$result3.message) || '';
+
+  // 重要：即使 uniCloud 调用成功（success=true, errCode=0），
+  // 如果云函数明确返回了登录错误（NOT_LOGIN 或 401），也应该当作登录错误处理
+  var isExplicitLoginError = errorCode === 401 || errorCode === 'NOT_LOGIN' || String(errorCode) === '401' || String(errorCode) === 'NOT_LOGIN';
+
+  // 如果 uniCloud 调用成功，但云函数返回了明确的登录错误，需要处理
+  // 如果 uniCloud 调用失败，也需要检查是否是登录错误
+  if (result && (0, _typeof2.default)(result) === 'object' && result.success === true && result.errCode === 0) {
+    // uniCloud 调用成功，但如果云函数返回了明确的登录错误，仍然需要处理
+    if (!isExplicitLoginError && !errorMsg.includes('未登录') && !errorMsg.includes('请先登录')) {
+      // 不是登录错误，返回 false
+      return false;
+    }
+    // 继续处理登录错误
+  }
+
+  // 判断是否是登录相关错误（必须是明确的登录错误）
+  // 注意：code 可能是字符串 'NOT_LOGIN' 或数字 401
+  var isLoginError = errorCode === 401 || errorCode === 'NOT_LOGIN' || String(errorCode) === '401' || String(errorCode) === 'NOT_LOGIN' || errorMsg && (errorMsg.includes('未登录') || errorMsg.includes('登录已失效') || errorMsg.includes('token已过期') || errorMsg.includes('token无效') || errorMsg.includes('auth failed') || errorMsg.includes('authentication') || errorMsg.includes('请先登录'));
+  if (isLoginError) {
+    // 清除可能过期的 token
+    uni.removeStorageSync('uni_id_token');
+    uni.removeStorageSync('uni_id_token_expired');
+
+    // 保存数据（如果需要，使用用户专属存储）
+    if (saveData && dataToSave) {
+      var currentPage = getCurrentPages();
+      if (currentPage.length > 0) {
+        var page = currentPage[currentPage.length - 1];
+        var route = page.route || '';
+        if (route.includes('child-info')) {
+          var userKey = getUserStorageKey('childInfo');
+          uni.setStorageSync(userKey, dataToSave);
+          uni.setStorageSync('childInfo', dataToSave); // 兼容旧数据
+        } else if (route.includes('assessment')) {
+          var _userKey2 = getUserStorageKey('assessmentDraft');
+          uni.setStorageSync(_userKey2, dataToSave);
+          uni.setStorageSync('assessmentDraft', dataToSave); // 兼容旧数据
+        }
+      }
+    }
+
+    // 注意：登录错误时不清除数据，保留用户填写的内容
+    // 清除操作应该在登录成功后进行（在页面的 onLoad 中）
+
+    // 保存跳转地址
+    if (redirectUrl) {
+      uni.setStorageSync('redirectUrl', redirectUrl);
+    }
+
+    // 显示登录提示（只显示一次）
+    uni.showModal({
+      title: '登录已失效',
+      content: '登录状态已失效，需要重新登录才能继续',
+      confirmText: '去登录',
+      cancelText: '稍后',
+      success: function success(res) {
+        if (res.confirm) {
+          uni.redirectTo({
+            url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+          });
+        } else {
+          // 用户选择稍后，提示数据已保存
+          if (saveData && dataToSave) {
+            uni.showToast({
+              title: '已保存到本地，登录后可同步',
+              icon: 'none',
+              duration: 2000
+            });
+          }
+        }
+      }
+    });
+    return true; // 已处理登录错误
+  }
+
+  return false; // 不是登录错误
+}
+
+/**
+ * 验证是否可以调用云函数（检查登录状态）
+ * @param {Object} options 选项
+ * @returns {boolean} 是否可以调用
+ */
+function canCallCloudFunction() {
+  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var _options$showToast = options.showToast,
+    showToast = _options$showToast === void 0 ? false : _options$showToast;
+  var status = checkLoginStatus();
+  if (!status.isLoggedIn) {
+    if (showToast) {
+      uni.showToast({
+        title: '请先登录',
+        icon: 'none',
+        duration: 2000
+      });
+    }
+    return false;
+  }
+  return true;
+}
+
+/**
+ * 获取当前登录用户ID
+ * @returns {string|null} 用户ID，未登录返回 null
+ */
+function getCurrentUserId() {
+  try {
+    var userInfo = uniCloud.getCurrentUserInfo && uniCloud.getCurrentUserInfo();
+    if (userInfo && userInfo.uid) {
+      return userInfo.uid;
+    }
+    // 备用方案：从 uni-id-pages 的 store 中获取
+    var storedUserInfo = uni.getStorageSync('uni-id-pages-userInfo');
+    if (storedUserInfo && storedUserInfo._id) {
+      return storedUserInfo._id;
+    }
+    return null;
+  } catch (e) {
+    console.warn('[auth] 无法获取用户ID:', e);
+    return null;
+  }
+}
+
+/**
+ * 获取用户专属的存储键名
+ * @param {string} baseKey 基础键名
+ * @returns {string} 带用户ID的键名
+ */
+function getUserStorageKey(baseKey) {
+  var userId = getCurrentUserId();
+  if (userId) {
+    return "".concat(baseKey, "_").concat(userId);
+  }
+  // 未登录时返回原始键名（用于临时数据）
+  return baseKey;
+}
+
+/**
+ * 清除当前用户的所有数据
+ * 在用户切换或登出时调用
+ * 注意：不会清除 token 和用户信息
+ */
+function clearUserData() {
+  var userId = getCurrentUserId();
+  if (userId) {
+    // 清除带用户ID的业务数据（不包括 token 和用户信息）
+    uni.removeStorageSync(getUserStorageKey('childInfo'));
+    uni.removeStorageSync(getUserStorageKey('assessmentDraft'));
+    uni.removeStorageSync(getUserStorageKey('assessmentResult'));
+  }
+  // 同时清除不带用户ID的临时数据（兼容旧数据）
+  uni.removeStorageSync('childInfo');
+  uni.removeStorageSync('assessmentDraft');
+  uni.removeStorageSync('assessmentResult');
+  // 注意：不清除以下内容，保持登录状态：
+  // - uni_id_token
+  // - uni_id_token_expired
+  // - uni-id-pages-userInfo
+}
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/uni-cloud/dist/index.js */ 27)["uniCloud"], __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
+
+/***/ }),
+
+/***/ 69:
 /*!******************************************************************************!*\
   !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/common/questionBank.js ***!
   \******************************************************************************/
@@ -29469,687 +30543,6 @@ function _arrayLikeToArray(arr, len) {
   return arr2;
 }
 module.exports = _arrayLikeToArray, module.exports.__esModule = true, module.exports["default"] = module.exports;
-
-/***/ }),
-
-/***/ 93:
-/*!************************************************************************************************************!*\
-  !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-id-pages/pages/register/validator.js ***!
-  \************************************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
-var _password = _interopRequireDefault(__webpack_require__(/*! @/uni_modules/uni-id-pages/common/password.js */ 94));
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
-var _default = _objectSpread({
-  "username": {
-    "rules": [{
-      required: true,
-      errorMessage: '请输入用户名'
-    }, {
-      minLength: 3,
-      maxLength: 32,
-      errorMessage: '用户名长度在 {minLength} 到 {maxLength} 个字符'
-    }, {
-      validateFunction: function validateFunction(rule, value, data, callback) {
-        // console.log(value);
-        if (/^1\d{10}$/.test(value) || /^(\w-*\.*)+@(\w-?)+(\.\w{2,})+$/.test(value)) {
-          callback('用户名不能是：手机号或邮箱');
-        }
-        ;
-        if (/^\d+$/.test(value)) {
-          callback('用户名不能为纯数字');
-        }
-        ;
-        if (/[\u4E00-\u9FA5\uF900-\uFA2D]{1,}/.test(value)) {
-          callback('用户名不能包含中文');
-        }
-        return true;
-      }
-    }],
-    "label": "用户名"
-  },
-  "nickname": {
-    "rules": [{
-      minLength: 3,
-      maxLength: 32,
-      errorMessage: '昵称长度在 {minLength} 到 {maxLength} 个字符'
-    }, {
-      validateFunction: function validateFunction(rule, value, data, callback) {
-        // console.log(value);
-        if (/^1\d{10}$/.test(value) || /^(\w-*\.*)+@(\w-?)+(\.\w{2,})+$/.test(value)) {
-          callback('昵称不能是：手机号或邮箱');
-        }
-        ;
-        if (/^\d+$/.test(value)) {
-          callback('昵称不能为纯数字');
-        }
-        ;
-        if (/[\u4E00-\u9FA5\uF900-\uFA2D]{1,}/.test(value)) {
-          callback('昵称不能包含中文');
-        }
-        return true;
-      }
-    }],
-    "label": "昵称"
-  }
-}, _password.default.getPwdRules());
-exports.default = _default;
-
-/***/ }),
-
-/***/ 94:
-/*!***************************************************************************************************!*\
-  !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-id-pages/common/password.js ***!
-  \***************************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _config = _interopRequireDefault(__webpack_require__(/*! @/uni_modules/uni-id-pages/config.js */ 95));
-// 导入配置
-
-var passwordStrength = _config.default.passwordStrength;
-
-// 密码强度表达式
-var passwordRules = {
-  // 密码必须包含大小写字母、数字和特殊符号
-  super: /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[~!@#$%^&*_\-+=`|\\(){}[\]:;"'<>,.?/])[0-9a-zA-Z~!@#$%^&*_\-+=`|\\(){}[\]:;"'<>,.?/]{8,16}$/,
-  // 密码必须包含字母、数字和特殊符号
-  strong: /^(?=.*[0-9])(?=.*[a-zA-Z])(?=.*[~!@#$%^&*_\-+=`|\\(){}[\]:;"'<>,.?/])[0-9a-zA-Z~!@#$%^&*_\-+=`|\\(){}[\]:;"'<>,.?/]{8,16}$/,
-  // 密码必须为字母、数字和特殊符号任意两种的组合
-  medium: /^(?![0-9]+$)(?![a-zA-Z]+$)(?![~!@#$%^&*_\-+=`|\\(){}[\]:;"'<>,.?/]+$)[0-9a-zA-Z~!@#$%^&*_\-+=`|\\(){}[\]:;"'<>,.?/]{8,16}$/,
-  // 密码必须包含字母和数字
-  weak: /^(?=.*[0-9])(?=.*[a-zA-Z])[0-9a-zA-Z~!@#$%^&*_\-+=`|\\(){}[\]:;"'<>,.?/]{6,16}$/
-};
-var ERROR = {
-  normal: {
-    noPwd: '请输入密码',
-    noRePwd: '再次输入密码',
-    rePwdErr: '两次输入密码不一致'
-  },
-  passwordStrengthError: {
-    super: '密码必须包含大小写字母、数字和特殊符号，密码长度必须在8-16位之间',
-    strong: '密码必须包含字母、数字和特殊符号，密码长度必须在8-16位之间',
-    medium: '密码必须为字母、数字和特殊符号任意两种的组合，密码长度必须在8-16位之间',
-    weak: '密码必须包含字母，密码长度必须在6-16位之间'
-  }
-};
-function validPwd(password) {
-  //强度校验
-  if (passwordStrength && passwordRules[passwordStrength]) {
-    if (!new RegExp(passwordRules[passwordStrength]).test(password)) {
-      return ERROR.passwordStrengthError[passwordStrength];
-    }
-  }
-  return true;
-}
-function getPwdRules() {
-  var pwdName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'password';
-  var rePwdName = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'password2';
-  var rules = {};
-  rules[pwdName] = {
-    rules: [{
-      required: true,
-      errorMessage: ERROR.normal.noPwd
-    }, {
-      validateFunction: function validateFunction(rule, value, data, callback) {
-        var checkRes = validPwd(value);
-        if (checkRes !== true) {
-          callback(checkRes);
-        }
-        return true;
-      }
-    }]
-  };
-  if (rePwdName) {
-    rules[rePwdName] = {
-      rules: [{
-        required: true,
-        errorMessage: ERROR.normal.noRePwd
-      }, {
-        validateFunction: function validateFunction(rule, value, data, callback) {
-          if (value != data[pwdName]) {
-            callback(ERROR.normal.rePwdErr);
-          }
-          return true;
-        }
-      }]
-    };
-  }
-  return rules;
-}
-var _default = {
-  ERROR: ERROR,
-  validPwd: validPwd,
-  getPwdRules: getPwdRules
-};
-exports.default = _default;
-
-/***/ }),
-
-/***/ 95:
-/*!******************************************************************************************!*\
-  !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-id-pages/config.js ***!
-  \******************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _default = {
-  // 调试模式
-  debug: false,
-  /*
-  登录类型 未列举到的或运行环境不支持的，将被自动隐藏。
-  如果需要在不同平台有不同的配置，直接用条件编译即可
-  */
-  isAdmin: false,
-  // 区分管理端与用户端
-  loginTypes: [
-  // "qq",
-  // "xiaomi",
-  // "sinaweibo",
-  // "taobao",
-  // "facebook",
-  // "google",
-  // "alipay",
-  // "douyin",
-
-  // 微信登录已禁用（开发环境不支持）
-
-  // 'weixin',
-
-  'username', 'smsCode'],
-  // 政策协议
-  agreements: {
-    serviceUrl: 'https://xxx',
-    // 用户服务协议链接
-    privacyUrl: 'https://xxx',
-    // 隐私政策条款链接
-    huaweiConsumerPrivacyUrl: 'https://privacy.consumer.huawei.com/legal/id/authentication-terms.htm?code=CN&language=zh-CN',
-    // 华为账号用户认证协议
-    // 哪些场景下显示，1.注册（包括登录并注册，如：微信登录、苹果登录、短信验证码登录）、2.登录（如：用户名密码登录）
-    scope: ['register', 'login', 'realNameVerify']
-  },
-  // 提供各类服务接入（如微信登录服务）的应用id
-  appid: {
-    weixin: {
-      // 微信公众号的appid，来源:登录微信公众号（https://mp.weixin.qq.com）-> 设置与开发 -> 基本配置 -> 公众号开发信息 -> AppID
-      h5: 'xxxxxx',
-      // 微信开放平台的appid，来源:登录微信开放平台（https://open.weixin.qq.com） -> 管理中心 -> 网站应用 -> 选择对应的应用名称，点击查看 -> AppID
-      web: 'xxxxxx'
-    }
-  },
-  /**
-  * 密码强度
-  * super（超强：密码必须包含大小写字母、数字和特殊符号，长度范围：8-16位之间）
-  * strong（强: 密密码必须包含字母、数字和特殊符号，长度范围：8-16位之间）
-  * medium (中：密码必须为字母、数字和特殊符号任意两种的组合，长度范围：8-16位之间)
-  * weak（弱：密码必须包含字母和数字，长度范围：6-16位之间）
-  * 为空或false则不验证密码强度
-  */
-  passwordStrength: 'medium',
-  /**
-  * 登录后允许用户设置密码（只针对未设置密码得用户）
-  * 开启此功能将 setPasswordAfterLogin 设置为 true 即可
-  * "setPasswordAfterLogin": false
-  *
-  * 如果允许用户跳过设置密码 将 allowSkip 设置为 true
-  * "setPasswordAfterLogin": {
-  *   "allowSkip": true
-  * }
-  * */
-  setPasswordAfterLogin: false
-};
-exports.default = _default;
-
-/***/ }),
-
-/***/ 96:
-/*!***********************************************************************************************************!*\
-  !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-id-pages/common/login-page.mixin.js ***!
-  \***********************************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(uni) {
-
-var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
-var _store = __webpack_require__(/*! @/uni_modules/uni-id-pages/common/store.js */ 97);
-var _config = _interopRequireDefault(__webpack_require__(/*! @/uni_modules/uni-id-pages/config.js */ 95));
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
-var mixin = {
-  data: function data() {
-    return {
-      config: _config.default,
-      uniIdRedirectUrl: '',
-      isMounted: false
-    };
-  },
-  onUnload: function onUnload() {},
-  mounted: function mounted() {
-    this.isMounted = true;
-  },
-  onLoad: function onLoad(e) {
-    var _this = this;
-    if (e.is_weixin_redirect) {
-      uni.showLoading({
-        mask: true
-      });
-      if (window.location.href.includes('#')) {
-        // 将url通过 ? 分割获取后面的参数字符串 再通过 & 将每一个参数单独分割出来
-        var paramsArr = window.location.href.split('?')[1].split('&');
-        paramsArr.forEach(function (item) {
-          var arr = item.split('=');
-          if (arr[0] == 'code') {
-            e.code = arr[1];
-          }
-        });
-      }
-      this.$nextTick(function (n) {
-        // console.log(this.$refs.uniFabLogin);
-        _this.$refs.uniFabLogin.login({
-          code: e.code
-        }, 'weixin');
-      });
-    }
-
-    // 优先使用 URL 参数中的跳转地址
-    if (e.uniIdRedirectUrl) {
-      this.uniIdRedirectUrl = decodeURIComponent(e.uniIdRedirectUrl);
-    } else {
-      // 如果没有 URL 参数，尝试从本地存储读取（兼容自定义跳转）
-      var savedRedirectUrl = uni.getStorageSync('redirectUrl');
-      if (savedRedirectUrl) {
-        this.uniIdRedirectUrl = savedRedirectUrl;
-        console.log('[login-page] 从本地存储读取跳转地址:', savedRedirectUrl);
-      }
-    }
-    if (getCurrentPages().length === 1) {
-      uni.hideHomeButton();
-      console.log('已隐藏：返回首页按钮');
-    }
-  },
-  computed: {
-    needAgreements: function needAgreements() {
-      if (this.isMounted) {
-        if (this.$refs.agreements) {
-          return this.$refs.agreements.needAgreements;
-        } else {
-          return false;
-        }
-      }
-    },
-    agree: {
-      get: function get() {
-        if (this.isMounted) {
-          if (this.$refs.agreements) {
-            return this.$refs.agreements.isAgree;
-          } else {
-            return true;
-          }
-        }
-      },
-      set: function set(agree) {
-        if (this.$refs.agreements) {
-          this.$refs.agreements.isAgree = agree;
-        } else {
-          console.log('不存在 隐私政策协议组件');
-        }
-      }
-    }
-  },
-  methods: {
-    loginSuccess: function loginSuccess(e) {
-      _store.mutations.loginSuccess(_objectSpread(_objectSpread({}, e), {}, {
-        uniIdRedirectUrl: this.uniIdRedirectUrl
-      }));
-    }
-  }
-};
-var _default = mixin;
-exports.default = _default;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
-
-/***/ }),
-
-/***/ 97:
-/*!************************************************************************************************!*\
-  !*** C:/Users/86182/Documents/HBuilderProjects/前端小程序/uni_modules/uni-id-pages/common/store.js ***!
-  \************************************************************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(uniCloud, uni) {
-
-var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.store = exports.mutations = void 0;
-var _regenerator = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/regenerator */ 28));
-var _defineProperty2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/defineProperty */ 11));
-var _asyncToGenerator2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ 31));
-var _pages = _interopRequireDefault(__webpack_require__(/*! @/pages.json */ 37));
-var _config = _interopRequireDefault(__webpack_require__(/*! @/uni_modules/uni-id-pages/config.js */ 95));
-var _vue = _interopRequireDefault(__webpack_require__(/*! vue */ 25));
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0, _defineProperty2.default)(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
-// 延迟初始化 uniCloud，避免模块加载时就调用
-function getUniIdCo() {
-  if (!uniCloud || !uniCloud.importObject) {
-    console.warn('[uni-id-pages] uniCloud 未初始化');
-    return null;
-  }
-  return uniCloud.importObject("uni-id-co");
-}
-function getDatabase() {
-  if (!uniCloud || !uniCloud.database) {
-    console.warn('[uni-id-pages] uniCloud 未初始化');
-    return null;
-  }
-  return uniCloud.database();
-}
-function getUsersTable() {
-  var db = getDatabase();
-  if (!db) return null;
-  return db.collection('uni-id-users');
-}
-var uniIdCo = getUniIdCo();
-var hostUserInfo = uni.getStorageSync('uni-id-pages-userInfo') || {};
-var data = {
-  userInfo: hostUserInfo,
-  hasLogin: Object.keys(hostUserInfo).length != 0
-};
-
-// 定义 mutations, 修改属性
-var mutations = {
-  // data不为空，表示传递要更新的值(注意不是覆盖是合并),什么也不传时，直接查库获取更新
-  updateUserInfo: function updateUserInfo() {
-    var _arguments = arguments,
-      _this = this;
-    return (0, _asyncToGenerator2.default)( /*#__PURE__*/_regenerator.default.mark(function _callee() {
-      var data, usersTable, _id, userInfo, _uniIdCo, _usersTable, res, realNameRes;
-      return _regenerator.default.wrap(function _callee$(_context) {
-        while (1) {
-          switch (_context.prev = _context.next) {
-            case 0:
-              data = _arguments.length > 0 && _arguments[0] !== undefined ? _arguments[0] : false;
-              if (!data) {
-                _context.next = 9;
-                break;
-              }
-              usersTable = getUsersTable();
-              if (usersTable) {
-                _context.next = 6;
-                break;
-              }
-              console.warn('[uni-id-pages] 无法更新用户信息，uniCloud 未初始化');
-              return _context.abrupt("return");
-            case 6:
-              usersTable.where('_id==$env.uid').update(data).then(function (e) {
-                // console.log(e);
-                if (e.result.updated) {
-                  uni.showToast({
-                    title: "更新成功",
-                    icon: 'none',
-                    duration: 3000
-                  });
-                  _this.setUserInfo(data);
-                } else {
-                  uni.showToast({
-                    title: "没有改变",
-                    icon: 'none',
-                    duration: 3000
-                  });
-                }
-              });
-              _context.next = 31;
-              break;
-            case 9:
-              // 不等待联网查询，立即更新用户_id确保store.userInfo中的_id是最新的
-              _id = null;
-              try {
-                userInfo = uniCloud.getCurrentUserInfo();
-                _id = userInfo ? userInfo.uid : null;
-              } catch (e) {
-                console.warn('[uni-id-pages] 无法获取当前用户信息:', e);
-              }
-              if (_id) {
-                _this.setUserInfo({
-                  _id: _id
-                }, {
-                  cover: true
-                });
-              }
-              // 查库获取用户信息，更新store.userInfo
-              _uniIdCo = getUniIdCo() || uniCloud.importObject("uni-id-co", {
-                customUI: true
-              });
-              _usersTable = getUsersTable();
-              if (_usersTable) {
-                _context.next = 17;
-                break;
-              }
-              console.warn('[uni-id-pages] 无法查询用户信息，uniCloud 未初始化');
-              return _context.abrupt("return");
-            case 17:
-              _context.prev = 17;
-              _context.next = 20;
-              return _usersTable.where("'_id' == $cloudEnv_uid").field('mobile,nickname,username,email,avatar_file').get();
-            case 20:
-              res = _context.sent;
-              _context.next = 23;
-              return _uniIdCo.getRealNameInfo();
-            case 23:
-              realNameRes = _context.sent;
-              // console.log('fromDbData',res.result.data);
-              _this.setUserInfo(_objectSpread(_objectSpread({}, res.result.data[0]), {}, {
-                realNameAuth: realNameRes
-              }));
-              _context.next = 31;
-              break;
-            case 27:
-              _context.prev = 27;
-              _context.t0 = _context["catch"](17);
-              _this.setUserInfo({}, {
-                cover: true
-              });
-              console.error(_context.t0.message, _context.t0.errCode);
-            case 31:
-            case "end":
-              return _context.stop();
-          }
-        }
-      }, _callee, null, [[17, 27]]);
-    }))();
-  },
-  setUserInfo: function setUserInfo(data) {
-    var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
-        cover: false
-      },
-      cover = _ref.cover;
-    // console.log('set-userInfo', data);
-    var userInfo = cover ? data : Object.assign(store.userInfo, data);
-    store.userInfo = Object.assign({}, userInfo);
-    store.hasLogin = Object.keys(store.userInfo).length != 0;
-    // console.log('store.userInfo', store.userInfo);
-    uni.setStorageSync('uni-id-pages-userInfo', store.userInfo);
-    return data;
-  },
-  logout: function logout() {
-    var _this2 = this;
-    return (0, _asyncToGenerator2.default)( /*#__PURE__*/_regenerator.default.mark(function _callee2() {
-      var userInfo, currentUniIdCo;
-      return _regenerator.default.wrap(function _callee2$(_context2) {
-        while (1) {
-          switch (_context2.prev = _context2.next) {
-            case 0:
-              _context2.prev = 0;
-              userInfo = uniCloud.getCurrentUserInfo();
-              if (!(userInfo && userInfo.tokenExpired > Date.now())) {
-                _context2.next = 13;
-                break;
-              }
-              currentUniIdCo = getUniIdCo() || uniIdCo;
-              if (!currentUniIdCo) {
-                _context2.next = 13;
-                break;
-              }
-              _context2.prev = 5;
-              _context2.next = 8;
-              return currentUniIdCo.logout();
-            case 8:
-              _context2.next = 13;
-              break;
-            case 10:
-              _context2.prev = 10;
-              _context2.t0 = _context2["catch"](5);
-              console.error(_context2.t0);
-            case 13:
-              _context2.next = 18;
-              break;
-            case 15:
-              _context2.prev = 15;
-              _context2.t1 = _context2["catch"](0);
-              console.warn('[uni-id-pages] 注销时出错:', _context2.t1);
-            case 18:
-              uni.removeStorageSync('uni_id_token');
-              uni.setStorageSync('uni_id_token_expired', 0);
-              _this2.setUserInfo({}, {
-                cover: true
-              });
-              uni.$emit('uni-id-pages-logout');
-              uni.redirectTo({
-                url: "/".concat(_pages.default.uniIdRouter && _pages.default.uniIdRouter.loginPage ? _pages.default.uniIdRouter.loginPage : 'uni_modules/uni-id-pages/pages/login/login-withpwd')
-              });
-            case 23:
-            case "end":
-              return _context2.stop();
-          }
-        }
-      }, _callee2, null, [[0, 15], [5, 10]]);
-    }))();
-  },
-  loginBack: function loginBack() {
-    var e = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    var _e$uniIdRedirectUrl = e.uniIdRedirectUrl,
-      uniIdRedirectUrl = _e$uniIdRedirectUrl === void 0 ? '' : _e$uniIdRedirectUrl;
-
-    // 如果登录参数中没有跳转地址，尝试从本地存储读取
-    if (!uniIdRedirectUrl) {
-      uniIdRedirectUrl = uni.getStorageSync('redirectUrl') || '';
-      if (uniIdRedirectUrl) {
-        console.log('[store] 从本地存储读取跳转地址:', uniIdRedirectUrl);
-        // 读取后清除，避免重复跳转
-        uni.removeStorageSync('redirectUrl');
-      }
-    }
-    var delta = 0; //判断需要返回几层
-    var pages = getCurrentPages();
-    // console.log(pages);
-    pages.forEach(function (page, index) {
-      if (pages[pages.length - index - 1].route.split('/')[3] == 'login') {
-        delta++;
-      }
-    });
-    // console.log('判断需要返回几层:', delta);
-    if (uniIdRedirectUrl) {
-      return uni.redirectTo({
-        url: uniIdRedirectUrl,
-        fail: function fail(err1) {
-          uni.switchTab({
-            url: uniIdRedirectUrl,
-            fail: function fail(err2) {
-              console.log(err1, err2);
-            }
-          });
-        }
-      });
-    }
-    if (delta) {
-      var page = _pages.default.pages[0];
-      return uni.reLaunch({
-        url: "/".concat(page.path)
-      });
-    }
-    uni.navigateBack({
-      delta: delta
-    });
-  },
-  loginSuccess: function loginSuccess() {
-    var e = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    var _e$showToast = e.showToast,
-      showToast = _e$showToast === void 0 ? true : _e$showToast,
-      _e$toastText = e.toastText,
-      toastText = _e$toastText === void 0 ? '登录成功' : _e$toastText,
-      _e$autoBack = e.autoBack,
-      autoBack = _e$autoBack === void 0 ? true : _e$autoBack,
-      _e$uniIdRedirectUrl2 = e.uniIdRedirectUrl,
-      uniIdRedirectUrl = _e$uniIdRedirectUrl2 === void 0 ? '' : _e$uniIdRedirectUrl2,
-      passwordConfirmed = e.passwordConfirmed;
-    // console.log({toastText,autoBack});
-    if (showToast) {
-      uni.showToast({
-        title: toastText,
-        icon: 'none',
-        duration: 3000
-      });
-    }
-    // 异步调用（更新用户信息）防止获取头像等操作阻塞页面返回
-    this.updateUserInfo();
-    uni.$emit('uni-id-pages-login-success');
-    if (_config.default.setPasswordAfterLogin && !passwordConfirmed) {
-      return uni.redirectTo({
-        url: uniIdRedirectUrl ? "/uni_modules/uni-id-pages/pages/userinfo/set-pwd/set-pwd?uniIdRedirectUrl=".concat(uniIdRedirectUrl, "&loginType=").concat(e.loginType) : "/uni_modules/uni-id-pages/pages/userinfo/set-pwd/set-pwd?loginType=".concat(e.loginType),
-        fail: function fail(err) {
-          console.log(err);
-        }
-      });
-    }
-    if (autoBack) {
-      this.loginBack({
-        uniIdRedirectUrl: uniIdRedirectUrl
-      });
-    }
-  }
-};
-exports.mutations = mutations;
-// 通过Vue.observable创建一个可响应的对象
-var store = _vue.default.observable(data);
-exports.store = store;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/uni-cloud/dist/index.js */ 27)["uniCloud"], __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
 
 /***/ })
 

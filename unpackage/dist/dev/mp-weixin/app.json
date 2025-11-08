@@ -5,6 +5,7 @@
     "pages/assessment/assessment",
     "pages/result/result",
     "pages/history/history",
+    "pages/admin/init-questions",
     "uni_modules/uni-id-pages/pages/register/register",
     "uni_modules/uni-id-pages/pages/login/login-withoutpwd",
     "uni_modules/uni-id-pages/pages/login/login-withpwd",

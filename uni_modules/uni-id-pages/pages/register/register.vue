@@ -117,8 +117,31 @@
 						this.loginSuccess(e)
 					})
 					.catch(e => {
-						console.log(e.message);
-						//更好的体验：登录错误，直接刷新验证码
+						console.error('[register] 注册失败:', e);
+						
+						// 检查是否是资源耗尽错误
+						const errorMsg = e.message || e.errMsg || String(e) || '';
+						const isResourceExhausted = errorMsg.includes('resource exhausted') || 
+						                             errorMsg.includes('资源耗尽') ||
+						                             errorMsg.includes('PrePayResourceExhausted') ||
+						                             errorMsg.includes('db write action failed');
+						
+						if (isResourceExhausted) {
+							// 数据库资源耗尽，提供友好提示
+							uni.showModal({
+								title: '数据库繁忙',
+								content: '数据库暂时繁忙，可能是数据库配额已用完。请稍后重试，或联系管理员检查数据库配额。',
+								showCancel: false,
+								confirmText: '我知道了',
+								success: () => {
+									// 刷新验证码
+									this.$refs.captcha.getImageCaptcha()
+								}
+							});
+							return;
+						}
+						
+						//更好的体验：注册错误，直接刷新验证码
 						this.$refs.captcha.getImageCaptcha()
 					})
 			},

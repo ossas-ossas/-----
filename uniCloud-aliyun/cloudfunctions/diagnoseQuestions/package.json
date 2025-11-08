@@ -1,0 +1,9 @@
+{
+  "name": "diagnoseQuestions",
+  "version": "1.0.0",
+  "description": "诊断题目数据，分析数据分布和格式",
+  "main": "index.js",
+  "dependencies": {}
+}
+
+

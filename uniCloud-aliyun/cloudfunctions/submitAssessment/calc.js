@@ -49,21 +49,16 @@ function aggregate(answers, questionDocs) {
     questionMap[q.qid] = q;
   });
 
-  // 遍历答案进行统计
-  Object.keys(answers).forEach(qid => {
+  // **重要修改**：统计所有题目，而不仅仅是答案中的题目
+  // 这样可以确保所有领域和年龄段都被统计，即使没有答案
+  questionDocs.forEach(question => {
+    const qid = question.qid;
     const answer = answers[qid];
-    // 只处理 0 或 1 的答案
-    if (answer !== 0 && answer !== 1) {
-      return;
-    }
-
-    const question = questionMap[qid];
-    if (!question) {
-      // 忽略不存在的题目
-      return;
-    }
-
-    const isPassed = answer === 1;
+    
+    // 对于没有答案的题目，默认为 0（未完成）
+    const answerValue = (answer === 0 || answer === 1) ? answer : 0;
+    const isPassed = answerValue === 1;
+    
     total += 1;
     if (isPassed) {
       passed += 1;
@@ -89,8 +84,7 @@ function aggregate(answers, questionDocs) {
       ageBands[ageBand].passed += 1;
     }
 
-    // 收集未达标题目（answer === 0）
-    // 注意：notAchieved 只在完整统计时生成，草稿保存时不包含
+    // 收集未达标题目（answer === 0 或没有答案）
     if (!isPassed) {
       notAchieved.push({
         qid: question.qid || qid,

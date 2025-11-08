@@ -460,6 +460,8 @@
 </template>
 
 <script>
+	import { checkLoginStatus, requireLogin, handleLoginError, canCallCloudFunction, getUserStorageKey, clearUserData, getCurrentUserId } from '@/common/auth.js';
+	
 	export default {
 		data() {
 			return {
@@ -526,43 +528,12 @@
 			}
 		},
 		methods: {
-			// 检查登录状态
-			checkLoginStatus() {
-				const token = uni.getStorageSync('uni_id_token')
-				const tokenExpired = uni.getStorageSync('uni_id_token_expired')
-				const now = Date.now()
-				
-				// 检查 token 是否存在
-				if (!token) {
-					console.warn('[child-info] 未检测到登录 token，跳转到登录页')
-					// 保存当前页面路径，登录后返回
-					uni.setStorageSync('redirectUrl', '/pages/child-info/child-info')
-					uni.redirectTo({
-						url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
-					})
-					return false
-				}
-				
-				// 检查 token 是否过期（如果存储了过期时间）
-				if (tokenExpired && tokenExpired > 0 && now >= tokenExpired) {
-					console.warn('[child-info] Token 已过期，跳转到登录页')
-					// 清除过期的 token
-					uni.removeStorageSync('uni_id_token')
-					uni.removeStorageSync('uni_id_token_expired')
-					// 保存当前页面路径
-					uni.setStorageSync('redirectUrl', '/pages/child-info/child-info')
-					uni.redirectTo({
-						url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
-					})
-					return false
-				}
-				
-				return true
-			},
 			
-			// 恢复本地保存的数据（登录成功后使用）
+			// 恢复本地保存的数据（登录成功后使用，使用用户专属存储）
 			restoreLocalData() {
-				const savedChildInfo = uni.getStorageSync('childInfo')
+				// 先尝试从用户专属存储读取
+				const userKey = getUserStorageKey('childInfo');
+				const savedChildInfo = uni.getStorageSync(userKey) || uni.getStorageSync('childInfo')
 				if (savedChildInfo && Object.keys(savedChildInfo).length > 0) {
 					console.log('[child-info] 恢复本地保存的数据')
 					// 恢复基本信息
@@ -596,35 +567,6 @@
 				this.formData.caregiver = caregiver
 			},
 			
-			// 验证登录状态（用于调用云函数前）
-			async validateLoginBeforeSave() {
-				const token = uni.getStorageSync('uni_id_token')
-				if (!token) {
-					uni.showModal({
-						title: '需要登录',
-						content: '保存儿童信息需要先登录，是否前往登录？',
-						confirmText: '去登录',
-						cancelText: '取消',
-						success: (res) => {
-							if (res.confirm) {
-								// 保存当前表单数据到本地（避免数据丢失）
-								const childInfo = {
-									...this.formData,
-									clinical: this.clinical
-								}
-								uni.setStorageSync('childInfo', childInfo)
-								// 保存当前页面路径
-								uni.setStorageSync('redirectUrl', '/pages/child-info/child-info')
-								uni.navigateTo({
-									url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
-								})
-							}
-						}
-					})
-					return false
-				}
-				return true
-			},
 			
 			// 计算年龄（月）
 			calculateAgeInMonths(birthDate) {
@@ -744,12 +686,7 @@
 			
 			// 跳转到评估页面
 			async goToAssessment() {
-				// 首先验证登录状态
-				const isLoggedIn = await this.validateLoginBeforeSave()
-				if (!isLoggedIn) {
-					return // 用户选择取消登录，不继续执行
-				}
-				
+				// 先验证表单完整性
 				if (!this.isFormValid) {
 					uni.showToast({
 						title: '请完善必填信息',
@@ -775,22 +712,60 @@
 					return
 				}
 				
-				// 再次检查登录状态（双重验证）
-				const token = uni.getStorageSync('uni_id_token')
-				if (!token) {
-					uni.showModal({
-						title: '登录已失效',
-						content: '登录状态已失效，需要重新登录才能保存',
-						confirmText: '去登录',
-						showCancel: false,
-						success: () => {
-							uni.setStorageSync('redirectUrl', '/pages/child-info/child-info')
-							uni.redirectTo({
-								url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
-							})
-						}
+				// 检查登录状态（使用统一的登录检查工具）
+				if (!canCallCloudFunction({ showToast: false })) {
+					// 保存数据到本地，避免丢失（使用用户专属存储）
+					// 注意：不在这里声明 childInfo，避免作用域冲突
+					const loginChildInfo = {
+						...this.formData,
+						clinical: this.clinical
+					}
+					// 提示登录
+					requireLogin({
+						redirectUrl: '/pages/child-info/child-info',
+						saveData: true,
+						dataToSave: loginChildInfo
 					})
 					return
+				}
+				
+				// 检查是否已有 childId 且数据未变化，直接跳转
+				const existingChildId = this.formData.childId || this.clinical.childId;
+				if (existingChildId) {
+					// 检查数据是否有变化（简单比较关键字段）
+					const userKey = getUserStorageKey('childInfo');
+					const savedChildInfo = uni.getStorageSync(userKey) || uni.getStorageSync('childInfo');
+					
+					if (savedChildInfo && savedChildInfo.childId === existingChildId) {
+						const dataChanged = 
+							savedChildInfo.name !== this.formData.name ||
+							savedChildInfo.gender !== this.formData.gender ||
+							savedChildInfo.birthDate !== this.formData.birthDate ||
+							savedChildInfo.caregiver !== this.formData.caregiver ||
+							savedChildInfo.phone !== this.formData.phone;
+						
+						if (!dataChanged) {
+							// 数据未变化，直接跳转，不保存
+							console.log('[child-info] 数据未变化，跳过保存，直接跳转');
+							const childInfo = {
+								...this.formData,
+								clinical: this.clinical,
+								childId: existingChildId
+							}
+							uni.setStorageSync(userKey, childInfo);
+							uni.setStorageSync('childInfo', childInfo);
+							
+							// 清除旧草稿
+							const draftKey = getUserStorageKey('assessmentDraft');
+							uni.removeStorageSync(draftKey);
+							uni.removeStorageSync('assessmentDraft');
+							
+							uni.navigateTo({
+								url: '/pages/assessment/assessment'
+							})
+							return
+						}
+					}
 				}
 				
 				// 显示加载提示
@@ -815,44 +790,230 @@
 						hand: clinical.handedness || ''
 					}
 					
-					// 调用云函数保存到数据库
-					const saveResult = await uniCloud.callFunction({
-						name: 'saveChildProfile',
-						data: {
-							name: this.formData.name,
-							gender: this.formData.gender,
-							birthDate: this.formData.birthDate,
-							diagnosis: diagnosis,
-							habits: habits,
-							vision: clinical.vision || { status: 'normal', sub: [] },
-							hearing: clinical.hearing || { status: 'normal', dbLeft: '', dbRight: '' },
-							epilepsy: clinical.epilepsy || 'none',
-							caregiver: this.formData.caregiver || '',
-							phone: this.formData.phone || '',
-							videos: clinical.videos || [],
-							homeGuide: clinical.homeGuide,
-							notes: this.formData.notes || ''
+					// 优化视频数据：只保留必要信息，不传输大文件
+					// 视频文件应该先上传到云存储，这里只保存引用
+					const optimizedVideos = (clinical.videos || []).map(video => {
+						if (typeof video === 'string') {
+							return { url: video };
 						}
-					})
+						// 如果是临时文件，只保留路径，不传输完整文件数据
+						if (video.tempFilePath) {
+							return { tempFilePath: video.tempFilePath };
+						}
+						// 如果已有云存储URL，只保留URL
+						if (video.url) {
+							return { url: video.url };
+						}
+						return video;
+					});
+					
+					// 提前声明存储键，避免在条件分支中重复声明
+					let userKey = null;
+					
+					// 准备保存数据（排除大文件）
+					const saveData = {
+						name: this.formData.name,
+						gender: this.formData.gender,
+						birthDate: this.formData.birthDate,
+						diagnosis: diagnosis,
+						habits: habits,
+						vision: clinical.vision || { status: 'normal', sub: [] },
+						hearing: clinical.hearing || { status: 'normal', dbLeft: '', dbRight: '' },
+						epilepsy: clinical.epilepsy || 'none',
+						caregiver: this.formData.caregiver || '',
+						phone: this.formData.phone || '',
+						videos: optimizedVideos, // 使用优化后的视频数据
+						homeGuide: clinical.homeGuide,
+						notes: this.formData.notes || ''
+					}
+					
+					// 如果有 childId，添加到保存数据中（用于更新而不是创建）
+					if (existingChildId) {
+						saveData.childId = existingChildId;
+					}
+					
+					// 调用云函数保存到数据库（带重试机制）
+					let saveResult;
+					let retryCount = 0;
+					const maxRetries = 2;
+					
+					while (retryCount <= maxRetries) {
+						try {
+							saveResult = await uniCloud.callFunction({
+								name: 'saveChildProfile',
+								data: saveData
+							})
+							break; // 成功则退出循环
+						} catch (error) {
+							retryCount++;
+							const errorMsg = error.message || String(error);
+							
+							// 检查是否是资源耗尽错误
+							if (errorMsg.includes('resource exhausted') || errorMsg.includes('资源耗尽')) {
+								if (retryCount <= maxRetries) {
+									console.warn(`[child-info] 数据库资源耗尽，等待 ${retryCount * 2} 秒后重试 (${retryCount}/${maxRetries})`);
+									// 等待后重试
+									await new Promise(resolve => setTimeout(resolve, retryCount * 2000));
+									continue;
+								} else {
+									// 重试次数用完，保存到本地
+									console.error('[child-info] 数据库资源耗尽，保存到本地');
+									uni.hideLoading();
+									
+									const childInfo = {
+										...this.formData,
+										clinical: this.clinical,
+										childId: existingChildId || null
+									}
+									userKey = getUserStorageKey('childInfo');
+									uni.setStorageSync(userKey, childInfo);
+									uni.setStorageSync('childInfo', childInfo);
+									
+									uni.showModal({
+										title: '保存失败',
+										content: '数据库暂时繁忙，数据已保存到本地。您可以稍后重试，或直接开始评估（数据会在后台同步）。',
+										showCancel: true,
+										confirmText: '继续评估',
+										cancelText: '稍后重试',
+										success: (res) => {
+											if (res.confirm) {
+												// 清除旧草稿
+												const draftKey = getUserStorageKey('assessmentDraft');
+												uni.removeStorageSync(draftKey);
+												uni.removeStorageSync('assessmentDraft');
+												
+												uni.navigateTo({
+													url: '/pages/assessment/assessment'
+												})
+											}
+										}
+									});
+									return;
+								}
+							} else {
+								// 其他错误，直接抛出
+								throw error;
+							}
+						}
+					}
 					
 					uni.hideLoading()
 					
+					// 检查返回结果
+					if (!saveResult || !saveResult.result) {
+						console.error('[child-info] 保存返回结果异常:', saveResult);
+						// 保存到本地并提示
+						const childInfo = {
+							...this.formData,
+							clinical: this.clinical,
+							childId: existingChildId || null
+						}
+						userKey = getUserStorageKey('childInfo');
+						uni.setStorageSync(userKey, childInfo);
+						uni.setStorageSync('childInfo', childInfo);
+						
+						uni.showModal({
+							title: '保存异常',
+							content: '服务器返回异常，数据已保存到本地。您可以继续评估，或稍后重试保存。',
+							showCancel: true,
+							confirmText: '继续评估',
+							cancelText: '取消',
+							success: (res) => {
+								if (res.confirm) {
+									const draftKey = getUserStorageKey('assessmentDraft');
+									uni.removeStorageSync(draftKey);
+									uni.removeStorageSync('assessmentDraft');
+									
+									uni.navigateTo({
+										url: '/pages/assessment/assessment'
+									})
+								}
+							}
+						});
+						return;
+					}
+					
 					// 调试：打印完整响应
 					console.log('[child-info] 保存结果:', saveResult)
+					console.log('[child-info] success:', saveResult.success)
+					console.log('[child-info] errCode:', saveResult.errCode)
+					// 详细打印响应结构
+					console.log('[child-info] result:', saveResult.result)
 					console.log('[child-info] result.code:', saveResult.result?.code)
 					console.log('[child-info] result.msg:', saveResult.result?.msg)
-					console.log('[child-info] result.message:', saveResult.result?.message)
+					console.log('[child-info] result.data:', saveResult.result?.data)
 					
-					if (saveResult.result && saveResult.result.code === 0) {
-						const childId = saveResult.result.data.id
+					// 判断成功条件：
+					// 1. uniCloud调用成功：success为true且errCode为0
+					// 2. 云函数返回成功：result.code为0或不存在，且不是错误码
+					// 3. 有返回数据：尝试从多个位置提取childId
+					const cloudCallSuccess = saveResult.success === true && saveResult.errCode === 0;
+					
+					const result = saveResult.result || {};
+					
+					// 首先尝试从多个位置提取 childId（更宽松的策略）
+					// 云函数返回格式可能是：
+					// 1. { code: 0, msg: 'success', data: { id: 'xxx', isNew: true } }
+					// 2. { code: 0, data: { id: 'xxx' } }
+					// 3. { id: 'xxx' } （直接在 result 下）
+					const childIdFromDataId = result.data?.id;
+					const childIdFromData_id = result.data?._id;
+					const childIdFromResultId = result.id;
+					const childIdFromResultChildId = result.childId;
+					
+					// 尝试所有可能的位置
+					const possibleChildId = childIdFromDataId || 
+					                        childIdFromData_id || 
+					                        childIdFromResultId || 
+					                        childIdFromResultChildId;
+					
+					// 判断是否成功：
+					// 1. uniCloud 调用成功
+					// 2. 云函数没有返回明确的错误码（code 为 0 或不存在，且 msg 不是错误信息）
+					// 3. 或者找到了 childId（即使其他判断失败，只要有 childId 就认为成功）
+					const hasErrorCode = result.code !== undefined && result.code !== null;
+					const hasErrorMsg = result.msg && 
+					                    result.msg !== 'success' && 
+					                    !result.msg.includes('成功') &&
+					                    (result.msg.includes('失败') || result.msg.includes('错误') || result.msg.includes('无效'));
+					
+					// 如果有明确的错误码且不是 0，或者有错误消息，则失败
+					const hasExplicitError = (hasErrorCode && result.code !== 0) || hasErrorMsg;
+					
+					// 成功判断：调用成功 + 没有明确错误 + 有 childId
+					const isSuccess = cloudCallSuccess && !hasExplicitError && !!possibleChildId;
+					
+					console.log('[child-info] 判断结果:', {
+						cloudCallSuccess,
+						hasExplicitError,
+						possibleChildId,
+						isSuccess,
+						hasErrorCode,
+						hasErrorMsg,
+						resultCode: result.code,
+						resultMsg: result.msg,
+						resultData: result.data,
+						childIdSources: {
+							dataId: childIdFromDataId,
+							data_id: childIdFromData_id,
+							resultId: childIdFromResultId,
+							resultChildId: childIdFromResultChildId
+						},
+						fullResult: JSON.stringify(result, null, 2)
+					});
+					
+					if (isSuccess) {
+						const childId = possibleChildId;
 						
-						// 保存儿童信息到本地存储（包含 childId，用于评估页面）
+						// 保存儿童信息到本地存储（包含 childId，用于评估页面，使用用户专属存储）
 						const childInfo = {
 							...this.formData,
 							clinical: this.clinical,
 							childId: childId // 保存数据库返回的ID
 						}
-						uni.setStorageSync('childInfo', childInfo)
+						userKey = getUserStorageKey('childInfo');
+						uni.setStorageSync(userKey, childInfo);
+						uni.setStorageSync('childInfo', childInfo); // 兼容旧数据
 						
 						// 清除本地备份数据（已成功保存到云端，不再需要备份）
 						// 注意：不要清除 childInfo，因为评估页面需要使用 childId
@@ -862,8 +1023,10 @@
 							icon: 'success'
 						})
 						
-						// 清除旧草稿（新评估开始）
-						uni.removeStorageSync('assessmentDraft')
+						// 清除旧草稿（新评估开始，使用用户专属存储）
+						const draftKey = getUserStorageKey('assessmentDraft');
+						uni.removeStorageSync(draftKey);
+						uni.removeStorageSync('assessmentDraft'); // 兼容旧数据
 						
 						// 跳转到评估页面
 						setTimeout(() => {
@@ -872,70 +1035,143 @@
 							})
 						}, 500)
 					} else {
-						// 保存失败，检查是否是登录问题
-						const errorCode = saveResult.result?.code
-						const errorMsg = saveResult.result?.msg || saveResult.result?.message || '保存失败'
+						// 保存失败，使用统一的错误处理
+						console.error('[child-info] 保存失败:', saveResult)
 						
-						console.error('[child-info] 保存失败:', {
-							code: errorCode,
-							msg: saveResult.result?.msg,
-							message: saveResult.result?.message,
-							fullResult: saveResult.result
-						})
+						// 检查是否是资源耗尽错误
+						const errorMsg = saveResult.result?.msg || saveResult.result?.error || '';
+						const isResourceExhausted = errorMsg.includes('resource exhausted') || 
+						                           errorMsg.includes('资源耗尽') ||
+						                           errorMsg.includes('db write action failed');
 						
-						// 如果是登录问题，引导用户登录
-						if (errorCode === 401 || errorCode === 'NOT_LOGIN' || errorMsg.includes('未登录') || errorMsg.includes('登录')) {
+						if (isResourceExhausted) {
+							console.error('[child-info] 数据库资源耗尽错误');
+							// 保存到本地并提示
+							const childInfo = {
+								...this.formData,
+								clinical: this.clinical,
+								childId: existingChildId || null
+							}
+							userKey = getUserStorageKey('childInfo');
+							uni.setStorageSync(userKey, childInfo);
+							uni.setStorageSync('childInfo', childInfo);
+							
 							uni.showModal({
-								title: '需要登录',
-								content: '保存信息需要登录，是否前往登录？',
-								confirmText: '去登录',
-								cancelText: '稍后',
+								title: '数据库繁忙',
+								content: '数据库暂时繁忙，数据已保存到本地。您可以继续评估，系统会在后台自动重试保存。',
+								showCancel: true,
+								confirmText: '继续评估',
+								cancelText: '稍后重试',
 								success: (res) => {
 									if (res.confirm) {
-										// 保存当前表单数据到本地（避免数据丢失）
-										const childInfo = {
-											...this.formData,
-											clinical: this.clinical
-										}
-										uni.setStorageSync('childInfo', childInfo)
-										// 保存当前页面路径
-										uni.setStorageSync('redirectUrl', '/pages/child-info/child-info')
-										uni.redirectTo({
-											url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
-										})
-									} else {
-										// 用户选择稍后，保存到本地
-										const childInfo = {
-											...this.formData,
-											clinical: this.clinical
-										}
-										uni.setStorageSync('childInfo', childInfo)
-										uni.showToast({
-											title: '已保存到本地，登录后可同步',
-											icon: 'none',
-											duration: 2000
+										const draftKey = getUserStorageKey('assessmentDraft');
+										uni.removeStorageSync(draftKey);
+										uni.removeStorageSync('assessmentDraft');
+										
+										uni.navigateTo({
+											url: '/pages/assessment/assessment'
 										})
 									}
 								}
-							})
-							return
+							});
+							return;
 						}
 						
-						// 其他错误，保存到本地并提示
+						console.error('[child-info] 失败原因分析:', {
+							cloudCallSuccess,
+							hasExplicitError,
+							possibleChildId,
+							isSuccess,
+							resultExists: !!saveResult.result,
+							dataExists: !!saveResult.result?.data,
+							dataContent: saveResult.result?.data,
+							errorMsg: errorMsg
+						});
+						
+						// 如果调用成功但没有明确错误，再次尝试深度搜索 childId（兼容不同的返回格式）
+						if (cloudCallSuccess && !hasExplicitError && !possibleChildId) {
+							console.warn('[child-info] 云函数调用成功但未找到 childId，尝试深度搜索');
+							console.warn('[child-info] result 完整内容:', JSON.stringify(saveResult.result, null, 2));
+							console.warn('[child-info] saveResult 完整内容:', JSON.stringify(saveResult, null, 2));
+							
+							// 深度搜索 childId（可能在嵌套的对象中）
+							const deepSearchChildId = (
+								saveResult.result?.data?.id ||
+								saveResult.result?.data?._id ||
+								saveResult.result?.data?.childId ||
+								saveResult.result?.id ||
+								saveResult.result?._id ||
+								saveResult.result?.childId ||
+								saveResult.id ||
+								saveResult._id ||
+								saveResult.childId
+							);
+							
+							if (deepSearchChildId) {
+								// 找到了ID，继续处理
+								console.log('[child-info] 深度搜索找到 childId:', deepSearchChildId);
+								const childInfo = {
+									...this.formData,
+									clinical: this.clinical,
+									childId: deepSearchChildId
+								}
+								const userKey = getUserStorageKey('childInfo');
+								uni.setStorageSync(userKey, childInfo);
+								uni.setStorageSync('childInfo', childInfo);
+								
+								uni.showToast({
+									title: '保存成功',
+									icon: 'success'
+								});
+								
+								const draftKey = getUserStorageKey('assessmentDraft');
+								uni.removeStorageSync(draftKey);
+								uni.removeStorageSync('assessmentDraft');
+								
+								setTimeout(() => {
+									uni.navigateTo({
+										url: '/pages/assessment/assessment'
+									})
+								}, 500);
+								return;
+							}
+						}
+						
+						// 准备数据（统一使用，避免重复声明）
 						const childInfo = {
 							...this.formData,
 							clinical: this.clinical
 						}
-						uni.setStorageSync('childInfo', childInfo)
+						
+						// 检查是否是登录错误，统一处理
+						// 传入完整的 saveResult，让 handleLoginError 判断
+						// 注意：即使 uniCloud 调用成功，如果云函数返回 NOT_LOGIN，也应该当作登录错误
+						if (handleLoginError(saveResult, {
+							redirectUrl: '/pages/child-info/child-info',
+							saveData: true,
+							dataToSave: childInfo
+						})) {
+							// 已处理登录错误，直接返回
+							return
+						}
+						
+						// 其他错误，保存到本地并提示（使用用户专属存储）
+						// 使用已声明的 errorMsg，如果没有则使用默认值
+						const finalErrorMsg = errorMsg || saveResult.result?.message || '保存失败'
+						userKey = getUserStorageKey('childInfo');
+						uni.setStorageSync(userKey, childInfo);
+						uni.setStorageSync('childInfo', childInfo); // 兼容旧数据
 						
 						uni.showToast({
-							title: errorMsg + '，已保存到本地',
+							title: finalErrorMsg + '，已保存到本地',
 							icon: 'none',
 							duration: 3000
 						})
 						
-						// 清除旧草稿（新评估开始）
-						uni.removeStorageSync('assessmentDraft')
+						// 清除旧草稿（新评估开始，使用用户专属存储）
+						const draftKey = getUserStorageKey('assessmentDraft');
+						uni.removeStorageSync(draftKey);
+						uni.removeStorageSync('assessmentDraft'); // 兼容旧数据
 						
 						// 即使失败也允许继续，因为已保存到本地
 						setTimeout(() => {
@@ -946,30 +1182,62 @@
 					}
 				} catch (error) {
 					uni.hideLoading()
-					console.error('保存儿童信息失败:', error)
+					console.error('[child-info] 保存儿童信息异常:', error)
 					
-					// 出错时仍保存到本地存储
+					const errorMsg = error.message || String(error);
+					const isResourceExhausted = errorMsg.includes('resource exhausted') || 
+					                           errorMsg.includes('资源耗尽') ||
+					                           errorMsg.includes('db write action failed');
+					
+					// 出错时仍保存到本地存储（使用用户专属存储）
+					const existingChildId = this.formData.childId || this.clinical.childId;
 					const childInfo = {
 						...this.formData,
-						clinical: this.clinical
+						clinical: this.clinical,
+						childId: existingChildId || null
 					}
-					uni.setStorageSync('childInfo', childInfo)
+					const errorUserKey = getUserStorageKey('childInfo');
+					uni.setStorageSync(errorUserKey, childInfo);
+					uni.setStorageSync('childInfo', childInfo); // 兼容旧数据
 					
-					uni.showToast({
-						title: '网络错误，已保存到本地',
-						icon: 'none',
-						duration: 2000
-					})
-					
-					// 清除旧草稿（新评估开始）
-					uni.removeStorageSync('assessmentDraft')
-					
-					// 允许继续使用本地数据
-					setTimeout(() => {
-						uni.navigateTo({
-							url: '/pages/assessment/assessment'
+					if (isResourceExhausted) {
+						uni.showModal({
+							title: '数据库繁忙',
+							content: '数据库暂时繁忙，数据已保存到本地。您可以继续评估，或稍后重试保存。',
+							showCancel: true,
+							confirmText: '继续评估',
+							cancelText: '稍后重试',
+							success: (res) => {
+								if (res.confirm) {
+									const draftKey = getUserStorageKey('assessmentDraft');
+									uni.removeStorageSync(draftKey);
+									uni.removeStorageSync('assessmentDraft');
+									
+									uni.navigateTo({
+										url: '/pages/assessment/assessment'
+									})
+								}
+							}
+						});
+					} else {
+						uni.showToast({
+							title: '网络错误，已保存到本地',
+							icon: 'none',
+							duration: 2000
 						})
-					}, 1500)
+						
+						// 清除旧草稿（新评估开始）
+						const draftKey = getUserStorageKey('assessmentDraft');
+						uni.removeStorageSync(draftKey);
+						uni.removeStorageSync('assessmentDraft');
+						
+						// 允许继续使用本地数据
+						setTimeout(() => {
+							uni.navigateTo({
+								url: '/pages/assessment/assessment'
+							})
+						}, 1500)
+					}
 				}
 			}
 		},
@@ -980,18 +1248,56 @@
 			const today = new Date()
 			this.today = today.toISOString().split('T')[0]
 			
-			// 登录守卫：页面加载时立即检查（优先级最高）
-			const isLoggedIn = this.checkLoginStatus()
-			if (!isLoggedIn) {
+			// 登录守卫：页面加载时检查，只在确实需要时跳转
+			const loginStatus = checkLoginStatus();
+			console.log('[child-info] 登录状态:', loginStatus);
+			
+			if (!requireLogin({
+				redirectUrl: '/pages/child-info/child-info'
+			})) {
 				return // 未登录，已跳转到登录页
 			}
 			
-			// 登录成功后，尝试恢复之前保存的本地数据
+			// 检查是否是新用户登录（通过比较当前用户ID和本地存储的用户ID）
+			// 只在用户切换时才清除数据，避免同一用户多次创建 child profile 时丢失数据
+			const currentUserId = getCurrentUserId();
+			const lastUserId = uni.getStorageSync('lastUserId');
+			
+			if (currentUserId && currentUserId !== lastUserId) {
+				// 检测到用户切换，清除旧用户的数据
+				console.log('[child-info] 检测到用户切换，清除旧用户数据');
+				clearUserData();
+				// 保存当前用户ID
+				uni.setStorageSync('lastUserId', currentUserId);
+			} else if (!currentUserId) {
+				// 未登录，清除所有数据
+				clearUserData();
+			} else {
+				// 同一用户，不清除数据（允许用户创建多个 child profile）
+				console.log('[child-info] 同一用户，保留现有数据');
+			}
+			
+			// 尝试恢复当前用户保存的本地数据
 			this.restoreLocalData()
+			
+			// 如果是从结果页返回（重新评估），检查是否有 childId
+			// 如果有 childId，说明是重新评估，不需要重新保存
+			const userKey = getUserStorageKey('childInfo');
+			const savedChildInfo = uni.getStorageSync(userKey) || uni.getStorageSync('childInfo');
+			if (savedChildInfo && savedChildInfo.childId) {
+				// 恢复 childId 到表单数据中
+				this.formData.childId = savedChildInfo.childId;
+				this.clinical.childId = savedChildInfo.childId;
+				console.log('[child-info] 检测到已有 childId，重新评估模式:', savedChildInfo.childId);
+			}
 		},
 		onShow() {
-			// 每次页面显示时也检查登录状态（防止在后台时 token 过期）
-			this.checkLoginStatus()
+			// 静默检查登录状态，不打断用户操作
+			// 只在 token 确实失效时记录日志，等用户操作时再提示
+			const status = checkLoginStatus();
+			if (!status.isLoggedIn) {
+				console.warn('[child-info] Token 已失效，保存时将提示登录');
+			}
 		}
 	}
 </script>

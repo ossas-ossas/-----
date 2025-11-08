@@ -1,0 +1,9 @@
+{
+  "name": "clearAllQuestions",
+  "version": "1.0.0",
+  "description": "清空所有题目数据（危险操作）",
+  "main": "index.js",
+  "dependencies": {}
+}
+
+

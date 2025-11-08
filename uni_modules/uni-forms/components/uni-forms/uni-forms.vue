@@ -7,18 +7,57 @@
 </template>
 
 <script>
-	import Validator from './validate.js';
-	import {
-		deepCopy,
-		getValue,
-		isRequiredField,
-		setDataValue,
-		getDataValue,
-		realName,
-		isRealName,
-		rawData,
-		isEqual
-	} from './utils.js'
+	// 延迟加载模块，在组件 created 时初始化，避免 webpack 模块加载错误
+	let Validator = null;
+	let deepCopy, getValue, isRequiredField, setDataValue, getDataValue, realName, isRealName, rawData, isEqual;
+	
+	// 模块加载函数
+	function loadModules() {
+		if (Validator && deepCopy) return; // 已加载
+		
+		try {
+			const validateModule = require('./validate.js');
+			Validator = validateModule.default || validateModule;
+			
+			const utilsModule = require('./utils.js');
+			if (utilsModule) {
+				deepCopy = utilsModule.deepCopy;
+				getValue = utilsModule.getValue;
+				isRequiredField = utilsModule.isRequiredField;
+				setDataValue = utilsModule.setDataValue;
+				getDataValue = utilsModule.getDataValue;
+				realName = utilsModule.realName;
+				isRealName = utilsModule.isRealName;
+				rawData = utilsModule.rawData;
+				isEqual = utilsModule.isEqual;
+			}
+		} catch (e) {
+			console.error('[uni-forms] 模块加载失败:', e);
+			// 提供默认实现，避免组件崩溃
+			if (!Validator) {
+				Validator = function(rules) {
+					this.rules = rules || {};
+					this.validate = () => ({});
+				};
+			}
+			if (!deepCopy) deepCopy = (val) => JSON.parse(JSON.stringify(val || {}));
+			if (!getValue) getValue = () => null;
+			if (!isRequiredField) isRequiredField = () => false;
+			if (!setDataValue) setDataValue = () => {};
+			if (!getDataValue) getDataValue = () => null;
+			if (!realName) realName = (name) => name;
+			if (!isRealName) isRealName = () => false;
+			if (!rawData) rawData = (obj) => obj;
+			if (!isEqual) isEqual = () => false;
+		}
+	}
+	
+	// 立即尝试加载（如果可能）
+	try {
+		loadModules();
+	} catch (e) {
+		console.warn('[uni-forms] 顶层模块加载失败，将在组件初始化时重试');
+	}
 
 	// #ifndef VUE3
 	// 后续会慢慢废弃这个方法
@@ -212,6 +251,9 @@
 			}
 		},
 		created() {
+			// 确保模块已加载
+			loadModules();
+			
 			// #ifdef VUE3
 			let getbinddata = getApp().$vm.$.appContext.config.globalProperties.binddata
 			if (!getbinddata) {

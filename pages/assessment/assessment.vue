@@ -186,7 +186,11 @@ const subdomainLabels = {
 				isSubmitting: false,
 			
 			// 儿童信息
-			childInfo: {}
+			childInfo: {},
+			
+			// 防抖和智能保存相关
+			saveDraftTimer: null, // 防抖定时器
+			lastSavedAnswers: null // 记录上次保存的答案，用于判断是否需要更新
 			}
 		},
 		computed: {
@@ -280,6 +284,14 @@ const subdomainLabels = {
 				})
 				return
 			}
+			
+			// 每次页面显示时重新加载儿童信息（确保从 child-info 页面返回后能获取最新数据）
+			this.loadChildInfo();
+			
+			console.log('[assessment] onShow: 重新加载儿童信息后', {
+				hasChildId: !!(this.childInfo?.childId || this.childInfo?._id),
+				childId: this.childInfo?.childId || this.childInfo?._id
+			});
 		},
 		onLoad() {
 		console.log('[assessment] onLoad start')
@@ -353,9 +365,69 @@ const subdomainLabels = {
 			console.log('[assessment] initData end')
 		},
 		
-			// 加载儿童信息
-			loadChildInfo() {
-				this.childInfo = uni.getStorageSync('childInfo') || {}
+		// 加载儿童信息（兼容用户专属存储和普通存储）
+		loadChildInfo() {
+			// 尝试从多个位置读取，优先用户专属存储
+			let userKey = null;
+			let foundChildInfo = null;
+			
+			try {
+				// 尝试导入 getUserStorageKey（如果可用）
+				const authModule = require('@/common/auth.js');
+				if (authModule && authModule.getUserStorageKey) {
+					userKey = authModule.getUserStorageKey('childInfo');
+					foundChildInfo = uni.getStorageSync(userKey);
+				}
+			} catch (e) {
+				console.warn('[assessment] 无法导入 auth 模块:', e);
+			}
+			
+			// 如果用户专属存储没有找到，尝试普通存储
+			if (!foundChildInfo || Object.keys(foundChildInfo).length === 0) {
+				foundChildInfo = uni.getStorageSync('childInfo');
+			}
+			
+			// 如果还是没有找到，尝试搜索所有可能的用户专属存储键
+			if (!foundChildInfo || Object.keys(foundChildInfo).length === 0) {
+				try {
+					const authModule = require('@/common/auth.js');
+					if (authModule && authModule.getCurrentUserId) {
+						const userId = authModule.getCurrentUserId();
+						if (userId) {
+							// 尝试所有可能的键名格式
+							const possibleKeys = [
+								`childInfo_${userId}`,
+								`childInfo_${userId}_`,
+								`childInfo_user_${userId}`
+							];
+							for (const key of possibleKeys) {
+								const data = uni.getStorageSync(key);
+								if (data && Object.keys(data).length > 0) {
+									foundChildInfo = data;
+									userKey = key;
+									break;
+								}
+							}
+						}
+					}
+				} catch (e) {
+					console.warn('[assessment] 搜索用户专属存储失败:', e);
+				}
+			}
+			
+			// 设置 childInfo，确保不为空
+			this.childInfo = foundChildInfo || {};
+			
+			// 调试日志
+			console.log('[assessment] 加载儿童信息:', {
+				hasChildInfo: Object.keys(this.childInfo).length > 0,
+				childId: this.childInfo?.childId || this.childInfo?._id,
+				childName: this.childInfo?.name,
+				userKey: userKey,
+				fromUserStorage: !!userKey && !!uni.getStorageSync(userKey),
+				fromLegacyStorage: !!uni.getStorageSync('childInfo'),
+				childInfoKeys: Object.keys(this.childInfo || {})
+			});
 		},
 		
 		// 加载草稿
@@ -387,22 +459,11 @@ const subdomainLabels = {
 			}
 		},
 		
-		// 保存草稿
-		async saveDraft() {
+		// 保存草稿（优化：添加防抖和智能保存）
+		async saveDraft(saveToCloud = true) {
 			const currentChildId = this.childInfo?.childId || this.childInfo?._id
-			if (!currentChildId) {
-				// 如果没有 childId，只保存到本地
-				uni.setStorageSync('assessmentDraft', {
-					childId: currentChildId,
-					answers: this.answers,
-					expandedDomains: this.expandedDomains,
-					expandedSubdomains: this.expandedSubdomains,
-					filters: this.filters
-				})
-				return
-			}
 			
-			// 同时保存到本地和云端
+			// 总是保存到本地（快速响应）
 			uni.setStorageSync('assessmentDraft', {
 				childId: currentChildId,
 				answers: this.answers,
@@ -411,37 +472,62 @@ const subdomainLabels = {
 				filters: this.filters
 			})
 			
-			// 异步保存到云端数据库（不阻塞 UI）
-			try {
-				const result = await uniCloud.callFunction({
-					name: 'saveAssessment',
-					data: {
-						childId: currentChildId,
-						answers: this.answers
-					}
-				})
-				
-				if (result.result && !result.result.ok) {
-					console.error('[saveDraft] 云端保存失败:', result.result.msg)
-				} else {
-					console.log('[saveDraft] 云端保存成功')
-				}
-			} catch (error) {
-				console.error('[saveDraft] 云端保存异常:', error)
-				// 静默失败，不影响用户体验
+			// 如果没有 childId，只保存到本地
+			if (!currentChildId || !saveToCloud) {
+				return
 			}
+			
+			// 检查答案是否真的变化了（减少不必要的数据库写入）
+			const answersStr = JSON.stringify(this.answers);
+			if (this.lastSavedAnswers === answersStr) {
+				// 答案未变化，不需要更新数据库
+				console.log('[saveDraft] 答案未变化，跳过云端保存');
+				return;
+			}
+			
+			// 清除之前的定时器（防抖）
+			if (this.saveDraftTimer) {
+				clearTimeout(this.saveDraftTimer);
+			}
+			
+			// 设置防抖：3秒后才真正保存到云端（减少写入频率）
+			this.saveDraftTimer = setTimeout(async () => {
+				try {
+					const result = await uniCloud.callFunction({
+						name: 'saveAssessment',
+						data: {
+							childId: currentChildId,
+							answers: this.answers
+						}
+					})
+					
+					if (result.result && !result.result.ok) {
+						console.error('[saveDraft] 云端保存失败:', result.result.msg)
+					} else {
+						console.log('[saveDraft] 云端保存成功')
+						// 记录已保存的答案
+						this.lastSavedAnswers = JSON.stringify(this.answers);
+					}
+				} catch (error) {
+					console.error('[saveDraft] 云端保存异常:', error)
+					// 静默失败，不影响用户体验
+				}
+				this.saveDraftTimer = null;
+			}, 3000); // 3秒防抖
 		},
 		
 		// 切换 domain
 		toggleDomain(domain) {
 			this.$set(this.expandedDomains, domain, !this.expandedDomains[domain])
-			this.saveDraft()
+			// 只保存到本地，不触发云端保存（减少数据库写入）
+			this.saveDraft(false)
 		},
 		
 		// 切换 subdomain
 		toggleSubdomain(key) {
 			this.$set(this.expandedSubdomains, key, !this.expandedSubdomains[key])
-			this.saveDraft()
+			// 只保存到本地，不触发云端保存（减少数据库写入）
+			this.saveDraft(false)
 		},
 		
 		// 获取 domain 中的题目
@@ -576,13 +662,15 @@ const subdomainLabels = {
 			} else {
 				this.filters.domains.push(domain)
 			}
-			this.saveDraft()
+			// 筛选变化只保存到本地，不触发云端保存
+			this.saveDraft(false)
 		},
 		
 		// 仅看未完成开关
 		onUnfinishedToggle(e) {
 			this.filters.onlyUnfinished = e.detail.value
-			this.saveDraft()
+			// 筛选变化只保存到本地，不触发云端保存
+			this.saveDraft(false)
 		},
 		
 		// 应用筛选（搜索时）
@@ -603,7 +691,8 @@ const subdomainLabels = {
 						})
 					}
 				})
-				this.saveDraft()
+				// 筛选变化只保存到本地，不触发云端保存
+				this.saveDraft(false)
 			}
 			
 			this.$forceUpdate()
@@ -669,43 +758,306 @@ const subdomainLabels = {
 			async submitAssessment() {
 			if (this.isSubmitting) return
 				
-				const currentChildId = this.childInfo?.childId || this.childInfo?._id
+				// 提交前重新加载儿童信息，确保获取最新数据
+				this.loadChildInfo();
+				
+				let currentChildId = this.childInfo?.childId || this.childInfo?._id;
+				
+				console.log('[assessment] 提交前检查儿童信息:', {
+					hasChildInfo: Object.keys(this.childInfo).length > 0,
+					childId: currentChildId,
+					childName: this.childInfo?.name,
+					childInfoKeys: Object.keys(this.childInfo || {}),
+					storageCheck: {
+						legacy: !!uni.getStorageSync('childInfo'),
+						legacyChildId: uni.getStorageSync('childInfo')?.childId || uni.getStorageSync('childInfo')?._id
+					}
+				});
+				
+				// 如果没有 childId，尝试多种方式获取
 				if (!currentChildId) {
+					console.warn('[assessment] 缺少 childId，尝试从多个位置查找');
+					
+					// 尝试1: 直接读取普通存储
+					const directChildInfo = uni.getStorageSync('childInfo');
+					const directChildId = directChildInfo?.childId || directChildInfo?._id;
+					
+					if (directChildId) {
+						console.log('[assessment] 从普通存储找到 childId:', directChildId);
+						this.childInfo = directChildInfo;
+						currentChildId = directChildId;
+					} else {
+						// 尝试2: 搜索所有用户专属存储
+						try {
+							const authModule = require('@/common/auth.js');
+							if (authModule && authModule.getCurrentUserId) {
+								const userId = authModule.getCurrentUserId();
+								if (userId) {
+									const possibleKeys = [
+										`childInfo_${userId}`,
+										`childInfo_${userId}_`,
+										`childInfo_user_${userId}`
+									];
+									for (const key of possibleKeys) {
+										const data = uni.getStorageSync(key);
+										if (data) {
+											const id = data.childId || data._id;
+											if (id) {
+												console.log('[assessment] 从用户专属存储找到 childId:', id, 'key:', key);
+												this.childInfo = data;
+												currentChildId = id;
+												break;
+											}
+										}
+									}
+								}
+							}
+						} catch (e) {
+							console.warn('[assessment] 搜索用户专属存储失败:', e);
+						}
+					}
+					
+					// 如果仍然没有 childId，但数据存在，尝试重新保存获取 childId
+					if (!currentChildId && this.childInfo && Object.keys(this.childInfo).length > 0) {
+						// 检查是否有必要的字段（姓名、性别、出生日期等）
+						const hasRequiredFields = this.childInfo.name && 
+						                          this.childInfo.gender && 
+						                          this.childInfo.birthDate;
+						
+						if (hasRequiredFields) {
+							console.log('[assessment] 数据完整但缺少 childId，尝试重新保存获取 childId');
+							uni.showLoading({ title: '正在保存儿童信息...', mask: true });
+							
+							try {
+								// 准备数据（与 child-info.vue 中的格式一致）
+								const clinical = this.childInfo.clinical || {};
+								const diagnosis = clinical.medicalDiagnosis || [];
+								const habits = {
+									walkTime: clinical.walkingTime || '',
+									crawl: clinical.crawlStatus || '',
+									crawlMonths: clinical.crawlMonths || '',
+									kneel: clinical.kneelWalk,
+									hand: clinical.handedness || ''
+								};
+								
+								const saveResult = await uniCloud.callFunction({
+									name: 'saveChildProfile',
+									data: {
+										name: this.childInfo.name,
+										gender: this.childInfo.gender,
+										birthDate: this.childInfo.birthDate,
+										diagnosis: diagnosis,
+										habits: habits,
+										vision: clinical.vision || { status: 'normal', sub: [] },
+										hearing: clinical.hearing || { status: 'normal', dbLeft: '', dbRight: '' },
+										epilepsy: clinical.epilepsy || 'none',
+										caregiver: this.childInfo.caregiver || '',
+										phone: this.childInfo.phone || '',
+										videos: clinical.videos || [],
+										homeGuide: clinical.homeGuide,
+										notes: this.childInfo.notes || ''
+									}
+								});
+								
+								uni.hideLoading();
+								
+								// 尝试从返回结果中提取 childId
+								const result = saveResult.result || {};
+								const newChildId = result.data?.id || 
+								                  result.data?._id || 
+								                  result.id || 
+								                  result.childId;
+								
+								if (newChildId) {
+									console.log('[assessment] 重新保存成功，获取到 childId:', newChildId);
+									// 更新 childInfo
+									this.childInfo.childId = newChildId;
+									currentChildId = newChildId;
+									
+									// 保存更新后的 childInfo
+									try {
+										const authModule = require('@/common/auth.js');
+										if (authModule && authModule.getUserStorageKey) {
+											const userKey = authModule.getUserStorageKey('childInfo');
+											uni.setStorageSync(userKey, this.childInfo);
+										}
+										uni.setStorageSync('childInfo', this.childInfo);
+									} catch (e) {
+										console.warn('[assessment] 保存更新后的 childInfo 失败:', e);
+									}
+								} else {
+									console.error('[assessment] 重新保存失败，未获取到 childId');
+									uni.showModal({
+										title: '保存失败',
+										content: '无法保存儿童信息，请返回重新填写儿童信息。',
+										confirmText: '返回填写',
+										cancelText: '取消',
+										success: (res) => {
+											if (res.confirm) {
+												uni.navigateTo({
+													url: '/pages/child-info/child-info'
+												});
+											}
+										}
+									});
+									return;
+								}
+							} catch (error) {
+								uni.hideLoading();
+								console.error('[assessment] 重新保存儿童信息异常:', error);
+								uni.showModal({
+									title: '保存失败',
+									content: '无法保存儿童信息：' + (error.message || '网络错误') + '。请返回重新填写儿童信息。',
+									confirmText: '返回填写',
+									cancelText: '取消',
+									success: (res) => {
+										if (res.confirm) {
+											uni.navigateTo({
+												url: '/pages/child-info/child-info'
+											});
+										}
+									}
+								});
+								return;
+							}
+						} else {
+							// 数据不完整，提示用户返回填写
+							uni.showModal({
+								title: '缺少儿童信息',
+								content: '儿童信息不完整，请返回重新填写完整的儿童信息。',
+								confirmText: '返回填写',
+								cancelText: '取消',
+								success: (res) => {
+									if (res.confirm) {
+										uni.navigateTo({
+											url: '/pages/child-info/child-info'
+										});
+									}
+								}
+							});
+							return;
+						}
+					} else if (!currentChildId) {
+						// 确实没有数据，提示用户
+						uni.showModal({
+							title: '缺少儿童信息',
+							content: '未找到儿童信息，请先填写儿童信息。',
+							confirmText: '去填写',
+							cancelText: '取消',
+							success: (res) => {
+								if (res.confirm) {
+									uni.navigateTo({
+										url: '/pages/child-info/child-info'
+									});
+								}
+							}
+						});
+						return;
+					}
+				}
+				
+				// 确保使用最新的 childId
+				const finalChildId = this.childInfo?.childId || this.childInfo?._id || currentChildId;
+				if (!finalChildId) {
+					console.error('[assessment] 最终仍然没有 childId');
 					uni.showToast({
-						title: '缺少儿童信息，请重新填写',
+						title: '缺少儿童信息，无法提交',
 						icon: 'none',
 						duration: 2000
-					})
-					setTimeout(() => {
-						uni.navigateBack()
-					}, 2000)
-					return
+					});
+					return;
 				}
 				
 				this.isSubmitting = true
 				uni.showLoading({ title: '提交中...', mask: true })
 				
 				try {
-					// 调用云函数提交到数据库
+					// 清理答案数据：只保留值为 0 或 1 的答案
+					const cleanAnswers = {};
+					let invalidCount = 0;
+					Object.keys(this.answers).forEach(qid => {
+						const value = this.answers[qid];
+						// 确保答案为数字 0 或 1
+						if (value === 0 || value === 1 || value === '0' || value === '1') {
+							cleanAnswers[qid] = value === '0' ? 0 : (value === '1' ? 1 : value);
+						} else {
+							invalidCount++;
+							console.warn(`[assessment] 跳过无效答案: qid=${qid}, value=${value} (类型: ${typeof value})`);
+						}
+					});
+					
+					if (invalidCount > 0) {
+						console.warn(`[assessment] 清理了 ${invalidCount} 个无效答案`);
+					}
+					
+					console.log('[assessment] 提交答案统计:', {
+						总数: Object.keys(this.answers).length,
+						有效答案: Object.keys(cleanAnswers).length,
+						无效答案: invalidCount
+					});
+					
+					// 检查是否有有效答案
+					if (Object.keys(cleanAnswers).length === 0) {
+						uni.hideLoading();
+						uni.showModal({
+							title: '提交失败',
+							content: '没有有效的答案数据，请至少完成一道题目后再提交。',
+							showCancel: false,
+							confirmText: '确定'
+						});
+						this.isSubmitting = false;
+						return;
+					}
+					
+					// 调用云函数提交到数据库（使用最终确定的 childId）
 					const submitResult = await uniCloud.callFunction({
 						name: 'submitAssessment',
 						data: {
-							childId: currentChildId,
-							answers: this.answers
+							childId: finalChildId,
+							answers: cleanAnswers
 						}
 					})
 					
 					uni.hideLoading()
 					
-					if (!submitResult.result || !submitResult.result.ok) {
-						const errorMsg = submitResult.result?.msg || '提交失败，请重试'
+					// 检查返回结果
+					if (!submitResult || !submitResult.result) {
+						console.error('[assessment] 提交返回结果异常:', submitResult);
 						uni.showToast({
-							title: errorMsg,
+							title: '提交失败：服务器返回异常',
 							icon: 'none',
-							duration: 2000
-						})
-						this.isSubmitting = false
-						return
+							duration: 3000
+						});
+						this.isSubmitting = false;
+						return;
+					}
+					
+					if (!submitResult.result.ok) {
+						const errorMsg = submitResult.result?.msg || '提交失败，请重试';
+						const errorCode = submitResult.result?.code;
+						
+						console.error('[assessment] 提交失败:', {
+							code: errorCode,
+							msg: errorMsg,
+							result: submitResult.result
+						});
+						
+						// 根据错误码显示不同的提示
+						let userMsg = errorMsg;
+						if (errorCode === 404) {
+							userMsg = '未找到对应的题目数据，可能是题目数据未初始化。请联系管理员。';
+						} else if (errorCode === 500) {
+							userMsg = '服务器错误：' + errorMsg;
+						}
+						
+						uni.showModal({
+							title: '提交失败',
+							content: userMsg,
+							showCancel: false,
+							confirmText: '确定'
+						});
+						this.isSubmitting = false;
+						return;
 					}
 					
 					// 生成评估结果（包含云端返回的数据）
