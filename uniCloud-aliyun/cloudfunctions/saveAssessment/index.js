@@ -176,19 +176,43 @@ exports.main = async (event, context) => {
       };
     }
 
-    // 5. 加载题目数据
-    console.log('[saveAssessment] 加载题目，答案数量:', answerKeys.length, '答案键示例:', answerKeys.slice(0, 5));
-    const questions = await loadQuestionsByQids(answerKeys);
-    console.log('[saveAssessment] 找到题目数量:', questions.length);
-    if (questions.length === 0) {
-      console.error('[saveAssessment] 未找到题目数据，可能原因：1.数据库中无对应qid 2.qid格式不匹配');
-      console.error('[saveAssessment] 答案键示例（前10个）:', answerKeys.slice(0, 10));
-      return {
-        ok: false,
-        code: 404,
-        msg: `未找到对应的题目数据，答案数量：${answerKeys.length}，请检查题目ID是否正确`
-      };
+    // 5. 加载所有启用的题目（不论年龄段，应为995题）
+    // 这样可以确保统计包含所有领域和年龄段
+    let questions = [];
+    try {
+      // 始终加载所有启用的题目，不按年龄段过滤
+      // 注意：uniCloud 的 .get() 默认最多返回 100 条，需要显式设置 limit
+      const allQuestionsResult = await db.collection('questions_master')
+        .where({ enabled: true })
+        .limit(1000) // 设置足够大的 limit 以获取所有995题
+        .get();
+      questions = allQuestionsResult.data || [];
+      console.log(`[saveAssessment] 加载所有启用的题目，数量:`, questions.length);
+      
+      // 验证题目数量（应为995题）
+      const expectedCount = 995;
+      if (questions.length !== expectedCount) {
+        console.warn(`[saveAssessment] 题目数量不匹配！期望: ${expectedCount}，实际: ${questions.length}`);
+        if (questions.length === 0) {
+          throw new Error('未找到任何启用的题目');
+        }
+      } else {
+        console.log(`[saveAssessment] 题目数量验证通过: ${questions.length}题`);
+      }
+    } catch (allQuestionsError) {
+      console.warn('[saveAssessment] 加载所有题目失败，回退到按答案加载:', allQuestionsError);
+      // 回退到原来的方式
+      questions = await loadQuestionsByQids(answerKeys);
+      if (questions.length === 0) {
+        return {
+          ok: false,
+          code: 404,
+          msg: `未找到对应的题目数据，答案数量：${answerKeys.length}，请检查题目ID是否正确`
+        };
+      }
     }
+    
+    console.log('[saveAssessment] 最终找到题目数量:', questions.length);
 
     // 6. 过滤有效答案（只处理实际存在的题目）
     const validAnswers = {};

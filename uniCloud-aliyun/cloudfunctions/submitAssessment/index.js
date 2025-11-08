@@ -250,35 +250,36 @@ exports.main = async (event, context) => {
       console.warn('[submitAssessment] 检查题目总数失败:', countError);
     }
     
-    // **重要修改**：加载所有启用的题目，而不仅仅是答案中的题目
-    // 这样可以确保统计包含所有领域和年龄段
+    // **重要修改**：始终加载所有启用的题目（不论年龄段）
+    // 这样可以确保统计包含所有领域和年龄段，题目总数应为995题
     let questions = [];
     try {
-      // 优先按年龄段加载（如果已知）
-      if (childAgeBand) {
-        const allQuestionsResult = await db.collection('questions_master')
-          .where({
-            ageBand: childAgeBand,
-            enabled: true
-          })
-          .get();
-        questions = allQuestionsResult.data || [];
-        console.log(`[submitAssessment] 加载年龄段 ${childAgeBand} 的所有题目，数量:`, questions.length);
-      }
+      // 始终加载所有启用的题目，不按年龄段过滤
+      // 注意：uniCloud 的 .get() 默认最多返回 100 条，需要显式设置 limit
+      const allQuestionsResult = await db.collection('questions_master')
+        .where({ enabled: true })
+        .limit(1000) // 设置足够大的 limit 以获取所有995题
+        .get();
+      questions = allQuestionsResult.data || [];
+      console.log(`[submitAssessment] 加载所有启用的题目，数量:`, questions.length);
       
-      // 如果按年龄段加载的题目为空，加载所有启用的题目
-      if (questions.length === 0) {
-        console.log('[submitAssessment] 按年龄段加载的题目为空，加载所有启用的题目');
-        const allQuestionsResult = await db.collection('questions_master')
-          .where({ enabled: true })
-          .get();
-        questions = allQuestionsResult.data || [];
-        console.log(`[submitAssessment] 加载所有启用的题目，数量:`, questions.length);
+      // 验证题目数量（应为995题）
+      const expectedCount = 995;
+      if (questions.length !== expectedCount) {
+        console.warn(`[submitAssessment] 题目数量不匹配！期望: ${expectedCount}，实际: ${questions.length}`);
+        if (questions.length === 0) {
+          throw new Error('未找到任何启用的题目');
+        }
+      } else {
+        console.log(`[submitAssessment] 题目数量验证通过: ${questions.length}题`);
       }
     } catch (allQuestionsError) {
       console.warn('[submitAssessment] 加载所有题目失败，回退到按答案加载:', allQuestionsError);
       // 回退到原来的方式
       questions = await loadQuestionsByQids(answerKeys);
+      if (questions.length === 0) {
+        throw allQuestionsError;
+      }
     }
     
     console.log('[submitAssessment] 最终找到题目数量:', questions.length);
