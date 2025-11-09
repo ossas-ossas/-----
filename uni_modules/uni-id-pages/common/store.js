@@ -137,6 +137,32 @@ export const mutations = {
 	loginBack (e = {}) {
 		let {uniIdRedirectUrl = ''} = e
 		
+		// 检查是否是管理员，如果是则跳转到管理员面板
+		try {
+			const token = uni.getStorageSync('uni_id_token') || '';
+			if (token) {
+				const tokenArr = token.split('.');
+				if (tokenArr.length === 3) {
+					try {
+						const payload = JSON.parse(decodeURIComponent(escape(atob(tokenArr[1]))));
+						const role = payload.role || [];
+						const isAdmin = Array.isArray(role) ? role.includes('admin') : role === 'admin';
+						
+						if (isAdmin) {
+							// 管理员直接跳转到管理员面板
+							return uni.reLaunch({
+								url: '/pages/admin/dashboard/dashboard'
+							})
+						}
+					} catch (e) {
+						console.warn('[store] 解析 token 失败:', e);
+					}
+				}
+			}
+		} catch (error) {
+			console.warn('[store] 检查管理员权限失败:', error);
+		}
+		
 		// 如果登录参数中没有跳转地址，尝试从本地存储读取
 		if (!uniIdRedirectUrl) {
 			uniIdRedirectUrl = uni.getStorageSync('redirectUrl') || ''

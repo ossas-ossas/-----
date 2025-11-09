@@ -77,8 +77,61 @@ export default {
 	},
 	onLoad() {
 		console.log('[index] page loaded')
+		// 不在 onLoad 中检查，因为此时可能还未登录
+	},
+	
+	onShow() {
+		// 不在首页自动检查管理员身份
+		// 管理员跳转由登录成功后的 loginBack 处理
+		// 这里不检查，避免未登录时或首次打开时误跳转
 	},
 	methods: {
+		// 检查是否是管理员并跳转
+		checkAdminAndRedirect() {
+			try {
+				// 检查是否已登录
+				const userInfo = uniCloud.getCurrentUserInfo && uniCloud.getCurrentUserInfo();
+				if (!userInfo || !userInfo.uid) {
+					return; // 未登录，不处理
+				}
+
+				// 检查角色（从 token 中解析）
+				const token = uni.getStorageSync('uni_id_token') || '';
+				if (!token) {
+					return; // 没有 token，不处理
+				}
+				
+				const tokenArr = token.split('.');
+				if (tokenArr.length === 3) {
+					try {
+						// 解码 token payload
+						const payload = JSON.parse(decodeURIComponent(escape(atob(tokenArr[1]))));
+						const role = payload.role || [];
+						// 检查是否是管理员（role 是数组，包含 'admin'）
+						const isAdmin = Array.isArray(role) ? role.includes('admin') : role === 'admin';
+						
+						if (isAdmin) {
+							// 检查当前页面路径，避免重复跳转
+							const pages = getCurrentPages();
+							const currentPage = pages[pages.length - 1];
+							if (currentPage && currentPage.route === 'pages/admin/dashboard/dashboard') {
+								return; // 已经在管理员面板，不跳转
+							}
+							
+							// 跳转到管理员面板
+							uni.reLaunch({
+								url: '/pages/admin/dashboard/dashboard'
+							})
+						}
+					} catch (e) {
+						console.warn('[index] 解析 token 失败:', e);
+					}
+				}
+			} catch (error) {
+				console.warn('[index] 检查管理员权限失败:', error);
+			}
+		},
+		
 		startAssessment() {
 			uni.navigateTo({
 				url: '/pages/child-info/child-info'

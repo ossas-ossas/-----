@@ -106,20 +106,66 @@
 					this['focus'+key] = true
 				})
 			},
-			submitForm(params) {
-				uniIdCo.registerAdmin(this.formData).then(e => {
+		submitForm(params) {
+			// 显示加载提示
+			uni.showLoading({
+				title: '注册中...',
+				mask: true
+			})
+			
+			uniIdCo.registerAdmin(this.formData).then(e => {
+				uni.hideLoading()
+				uni.showToast({
+					title: '注册成功',
+					icon: 'success',
+					duration: 2000
+				})
+				// 延迟返回，让用户看到成功提示
+				setTimeout(() => {
 					uni.navigateBack()
-				})
-				.catch(e => {
-					//更好的体验：登录错误，直接刷新验证码
-					this.$refs.captcha.getImageCaptcha()
+				}, 1500)
+			})
+			.catch(e => {
+				uni.hideLoading()
+				console.error('[register-admin] 注册失败:', e)
+				
+				// 检查是否是资源耗尽错误
+				const errorMsg = e.message || e.errMsg || String(e) || ''
+				const isResourceExhausted = errorMsg.includes('resource exhausted') || 
+				                             errorMsg.includes('资源耗尽') ||
+				                             errorMsg.includes('PrePayResourceExhausted') ||
+				                             errorMsg.includes('db write action failed')
+				
+				if (isResourceExhausted) {
 					uni.showModal({
-						title: '提示',
-						content: e.errMsg || `创建失败: ${e.errCode}`,
-						showCancel: false
+						title: '数据库繁忙',
+						content: '数据库暂时繁忙，可能是数据库配额已用完。请稍后重试，或联系管理员检查数据库配额。',
+						showCancel: false,
+						confirmText: '我知道了'
 					})
+					return
+				}
+				
+				// 检查是否已存在管理员
+				if (e.errCode === 'uni-id-admin-exists' || (errorMsg.includes('admin') && errorMsg.includes('exists'))) {
+					uni.showModal({
+						title: '注册失败',
+						content: '系统中已存在管理员账号，无法重复注册。',
+						showCancel: false,
+						confirmText: '我知道了'
+					})
+					return
+				}
+				
+				// 其他错误
+				uni.showModal({
+					title: '注册失败',
+					content: e.errMsg || e.message || `创建失败: ${e.errCode || '未知错误'}`,
+					showCancel: false,
+					confirmText: '我知道了'
 				})
-			},
+			})
+		},
 			navigateBack() {
 				uni.navigateBack()
 			},

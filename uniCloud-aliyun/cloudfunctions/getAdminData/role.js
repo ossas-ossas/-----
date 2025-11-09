@@ -5,6 +5,34 @@
  */
 
 /**
+ * 从 token 中解析用户信息
+ * @param {string} token - JWT token
+ * @returns {Object|null} - { uid: string, role: array }，解析失败返回 null
+ */
+function parseToken(token) {
+  if (!token || typeof token !== 'string') {
+    return null;
+  }
+  
+  try {
+    const tokenArr = token.split('.');
+    if (tokenArr.length !== 3) {
+      return null;
+    }
+    
+    // 解码 payload
+    const payload = JSON.parse(decodeURIComponent(escape(atob(tokenArr[1]))));
+    return {
+      uid: payload.uid || payload._id || null,
+      role: payload.role || []
+    };
+  } catch (error) {
+    console.warn('[role] Token 解析失败:', error.message);
+    return null;
+  }
+}
+
+/**
  * 获取当前用户角色
  * @param {Object} context - uniCloud 上下文
  * @param {Object} event - 事件参数
@@ -18,36 +46,57 @@ async function getRole(context, event) {
     return mock;
   }
 
-  // 获取用户ID
-  const uid = (context && context.auth && context.auth.uid) || context.uid;
-  console.log('[role] getRole 被调用，uid:', uid, 'context.auth:', JSON.stringify(context.auth || {}));
+  // 获取用户ID和角色
+  let uid = (context && context.auth && context.auth.uid) || context.uid;
+  let roleFromContext = context && context.auth && context.auth.role;
+  
+  // 如果 context 中没有 uid，尝试从 token 解析
+  let tokenData = null;
+  if (!uid || !roleFromContext) {
+    const token = (event && event.uniIdToken) || (event && event.args && event.args.uniIdToken);
+    if (token) {
+      console.log('[role] context.auth 为空或不完整，尝试从 token 解析');
+      tokenData = parseToken(token);
+      if (tokenData) {
+        if (!uid && tokenData.uid) {
+          uid = tokenData.uid;
+          console.log('[role] 从 token 解析成功，uid:', uid);
+        }
+        if (!roleFromContext && tokenData.role) {
+          roleFromContext = tokenData.role;
+          console.log('[role] 从 token 解析成功，role:', roleFromContext);
+        }
+      }
+    }
+  }
+  
+  console.log('[role] getRole 被调用，uid:', uid, 'roleFromContext:', roleFromContext, 'context.auth:', JSON.stringify(context.auth || {}));
+  
+  // 优先从 context.auth.role 或 token 中的 role 读取
+  if (roleFromContext) {
+    console.log('[role] 从 context.auth.role 或 token 获取角色:', roleFromContext, '类型:', typeof roleFromContext, '是否为数组:', Array.isArray(roleFromContext));
+    
+    if (Array.isArray(roleFromContext)) {
+      if (roleFromContext.includes('admin')) {
+        console.log('[role] 识别为 admin');
+        return 'admin';
+      }
+      if (roleFromContext.includes('teacher')) {
+        console.log('[role] 识别为 teacher');
+        return 'teacher';
+      }
+      console.log('[role] 角色数组不包含 admin 或 teacher，返回 parent');
+      return 'parent';
+    }
+    if (roleFromContext === 'admin' || roleFromContext === 'teacher') {
+      console.log('[role] 识别为:', roleFromContext);
+      return roleFromContext;
+    }
+  }
   
   if (!uid) {
     console.warn('[role] 无法获取用户UID，默认为parent');
     return 'parent'; // 未登录，默认为家长
-  }
-
-  // 从 context.auth.role 读取（如果存在）
-  const r = context && context.auth && context.auth.role;
-  console.log('[role] 从 context.auth.role 获取角色:', r, '类型:', typeof r, '是否为数组:', Array.isArray(r));
-  
-  if (r) {
-    if (Array.isArray(r)) {
-      if (r.includes('admin')) {
-        console.log('[role] 从 context.auth.role 识别为 admin');
-        return 'admin';
-      }
-      if (r.includes('teacher')) {
-        console.log('[role] 从 context.auth.role 识别为 teacher');
-        return 'teacher';
-      }
-      console.log('[role] context.auth.role 数组不包含 admin 或 teacher，返回 parent');
-      return 'parent';
-    }
-    if (r === 'admin' || r === 'teacher') {
-      console.log('[role] 从 context.auth.role 识别为:', r);
-      return r;
-    }
   }
 
   // 如果 context.auth.role 不存在，从数据库查询
@@ -205,5 +254,4 @@ module.exports = {
   isParent,
   isTeacher
 };
-
 

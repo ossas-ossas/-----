@@ -1,0 +1,7 @@
+{
+  "name": "getAdminData",
+  "version": "1.0.0",
+  "description": "获取管理员数据",
+  "main": "index.js"
+}
+

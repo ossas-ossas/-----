@@ -47,6 +47,15 @@
 				"navigationBarBackgroundColor": "#E8F4FD",
 				"navigationBarTextStyle": "black"
 			}
+		},
+		{
+			"path": "pages/admin/dashboard/dashboard",
+			"style": {
+				"navigationBarTitleText": "管理员面板",
+				"navigationBarBackgroundColor": "#E8F4FD",
+				"navigationBarTextStyle": "black",
+				"enablePullDownRefresh": true
+			}
 		}
 	,{
     "path": "uni_modules/uni-id-pages/pages/register/register",
