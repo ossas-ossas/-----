@@ -382,32 +382,9 @@
 							<text class="radio-text">有（未服药）</text>
 						</view>
 					</view>
-				</view>
-				
-				<!-- 提供视频 -->
-				<view class="form-item">
-					<text class="label">提供视频</text>
-					<text class="sub-note">生活中，关于孩子衣食住行，吃喝玩乐，喜怒哀乐、行走活动及运动等各方面视频（最多6个）</text>
-					<view class="video-list">
-						<view 
-							v-for="(video, index) in clinical.videos" 
-							:key="index" 
-							class="video-item"
-							@click="removeVideo(index)"
-						>
-							<text>视频{{ index + 1 }}</text>
-						</view>
-						<view 
-							class="video-item" 
-							v-if="clinical.videos.length < 6"
-							@click="chooseVideo"
-						>
-							<text>+ 添加视频</text>
-						</view>
-					</view>
-				</view>
-				
-				<!-- 后续居家辅导 -->
+			</view>
+			
+			<!-- 后续居家辅导 -->
 				<view class="form-item">
 					<text class="label">后续居家辅导</text>
 					<view class="radio-group">
@@ -481,12 +458,11 @@
 					crawlMonths: '',
 					kneelWalk: null,
 					handedness: '',
-					vision: { status: 'normal', sub: [] },
-					hearing: { status: 'normal', dbLeft: '', dbRight: '' },
-					epilepsy: 'none',
-					videos: [],
-					homeGuide: null
-				},
+				vision: { status: 'normal', sub: [] },
+				hearing: { status: 'normal', dbLeft: '', dbRight: '' },
+				epilepsy: 'none',
+				homeGuide: null
+			},
 				today: ''
 			}
 		},
@@ -652,40 +628,10 @@
 					this.clinical.hearing.dbLeft = ''
 					this.clinical.hearing.dbRight = ''
 				}
-			},
-			
-			// 选择视频
-			chooseVideo() {
-				uni.chooseVideo({
-					sourceType: ['album', 'camera'],
-					maxDuration: 30,
-					success: (res) => {
-						if (this.clinical.videos.length >= 6) {
-							uni.showToast({
-								title: '最多只能上传6个视频',
-								icon: 'none'
-							})
-							return
-						}
-						this.clinical.videos.push({
-							tempFilePath: res.tempFilePath,
-							size: res.size,
-							duration: res.duration
-						})
-					},
-					fail: (err) => {
-						console.error('选择视频失败', err)
-					}
-				})
-			},
-			
-			// 删除视频
-			removeVideo(index) {
-				this.clinical.videos.splice(index, 1)
-			},
-			
-			// 跳转到评估页面
-			async goToAssessment() {
+		},
+		
+		// 跳转到评估页面
+		async goToAssessment() {
 				// 先验证表单完整性
 				if (!this.isFormValid) {
 					uni.showToast({
@@ -787,45 +733,27 @@
 						crawl: clinical.crawlStatus || '',
 						crawlMonths: clinical.crawlMonths || '',
 						kneel: clinical.kneelWalk,
-						hand: clinical.handedness || ''
-					}
+					hand: clinical.handedness || ''
+				}
+				
+				// 提前声明存储键，避免在条件分支中重复声明
+				let userKey = null;
 					
-					// 优化视频数据：只保留必要信息，不传输大文件
-					// 视频文件应该先上传到云存储，这里只保存引用
-					const optimizedVideos = (clinical.videos || []).map(video => {
-						if (typeof video === 'string') {
-							return { url: video };
-						}
-						// 如果是临时文件，只保留路径，不传输完整文件数据
-						if (video.tempFilePath) {
-							return { tempFilePath: video.tempFilePath };
-						}
-						// 如果已有云存储URL，只保留URL
-						if (video.url) {
-							return { url: video.url };
-						}
-						return video;
-					});
-					
-					// 提前声明存储键，避免在条件分支中重复声明
-					let userKey = null;
-					
-					// 准备保存数据（排除大文件）
-					const saveData = {
-						name: this.formData.name,
-						gender: this.formData.gender,
-						birthDate: this.formData.birthDate,
-						diagnosis: diagnosis,
-						habits: habits,
-						vision: clinical.vision || { status: 'normal', sub: [] },
-						hearing: clinical.hearing || { status: 'normal', dbLeft: '', dbRight: '' },
-						epilepsy: clinical.epilepsy || 'none',
-						caregiver: this.formData.caregiver || '',
-						phone: this.formData.phone || '',
-						videos: optimizedVideos, // 使用优化后的视频数据
-						homeGuide: clinical.homeGuide,
-						notes: this.formData.notes || ''
-					}
+				// 准备保存数据
+				const saveData = {
+					name: this.formData.name,
+					gender: this.formData.gender,
+					birthDate: this.formData.birthDate,
+					diagnosis: diagnosis,
+					habits: habits,
+					vision: clinical.vision || { status: 'normal', sub: [] },
+					hearing: clinical.hearing || { status: 'normal', dbLeft: '', dbRight: '' },
+					epilepsy: clinical.epilepsy || 'none',
+					caregiver: this.formData.caregiver || '',
+					phone: this.formData.phone || '',
+					homeGuide: clinical.homeGuide,
+					notes: this.formData.notes || ''
+				}
 					
 					// 如果有 childId，添加到保存数据中（用于更新而不是创建）
 					if (existingChildId) {
@@ -1686,32 +1614,5 @@
 		color: #7F8C8D;
 		margin-top: 8rpx;
 		line-height: 1.5;
-	}
-	
-	/* 视频列表 */
-	.video-list {
-		margin-top: 12rpx;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 12rpx;
-	}
-	
-	.video-item {
-		width: 180rpx;
-		height: 120rpx;
-		border-radius: 10rpx;
-		background: #F5F8FF;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: #7F8C8D;
-		font-size: 24rpx;
-		border: 2rpx solid #E8F4FD;
-		transition: all 0.3s;
-	}
-	
-	.video-item:active {
-		border-color: #E93A8A;
-		background: #FFF0F5;
 	}
 </style>

@@ -105,7 +105,6 @@ async function parseTokenToUid(token) {
  * - epilepsy: 癫痫症（可选）
  * - caregiver: 主要照顾者（可选）
  * - phone: 联系电话（可选）
- * - videos: 视频列表（可选）
  * - homeGuide: 居家辅导需求（可选）
  * - notes: 备注信息（可选）
  * - childId: 儿童档案ID（可选，如果提供则更新，否则创建新档案）
@@ -184,7 +183,6 @@ exports.main = async (event, context) => {
       epilepsy,
       caregiver,
       phone,
-      videos,
       homeGuide,
       notes,
       childId
@@ -250,24 +248,6 @@ exports.main = async (event, context) => {
       profileData.phone = String(phone).trim();
     }
 
-    if (videos && Array.isArray(videos)) {
-      // 处理视频：只保存必要信息，不保存大文件数据
-      // 视频文件应该先上传到云存储，这里只保存引用
-      profileData.videos = videos.map(video => {
-        if (typeof video === 'string') {
-          return { url: video };
-        }
-        // 只保留必要字段，排除大文件数据
-        const optimizedVideo = {};
-        if (video.url) optimizedVideo.url = video.url;
-        if (video.tempFilePath) optimizedVideo.tempFilePath = video.tempFilePath;
-        if (video.size) optimizedVideo.size = video.size;
-        if (video.duration) optimizedVideo.duration = video.duration;
-        // 不保存完整的文件数据（如 base64、buffer 等）
-        return optimizedVideo;
-      });
-    }
-
     if (homeGuide !== undefined && homeGuide !== null) {
       profileData.homeGuide = Boolean(homeGuide);
     }
@@ -290,16 +270,7 @@ exports.main = async (event, context) => {
         };
         const dataSize = JSON.stringify(updateData).length;
         if (dataSize > 1000000) { // 1MB
-          console.warn('[saveChildProfile] 更新数据较大，尝试优化:', dataSize, 'bytes');
-          // 优化视频数据
-          if (updateData.videos && Array.isArray(updateData.videos)) {
-            updateData.videos = updateData.videos.map(v => ({
-              url: v.url,
-              tempFilePath: v.tempFilePath,
-              size: v.size,
-              duration: v.duration
-            }));
-          }
+          console.warn('[saveChildProfile] 更新数据较大:', dataSize, 'bytes');
         }
         
         const updateResult = await db.collection('child_profiles')
@@ -353,16 +324,7 @@ exports.main = async (event, context) => {
         // 检查数据大小（避免数据过大导致写入失败）
         const dataSize = JSON.stringify(profileData).length;
         if (dataSize > 1000000) { // 1MB
-          console.warn('[saveChildProfile] 数据较大，尝试优化:', dataSize, 'bytes');
-          // 优化视频数据
-          if (profileData.videos && Array.isArray(profileData.videos)) {
-            profileData.videos = profileData.videos.map(v => ({
-              url: v.url,
-              tempFilePath: v.tempFilePath,
-              size: v.size,
-              duration: v.duration
-            }));
-          }
+          console.warn('[saveChildProfile] 数据较大:', dataSize, 'bytes');
         }
         
         const insertResult = await db.collection('child_profiles').add(profileData);

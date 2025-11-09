@@ -853,7 +853,6 @@ const subdomainLabels = {
 										epilepsy: clinical.epilepsy || 'none',
 										caregiver: this.childInfo.caregiver || '',
 										phone: this.childInfo.phone || '',
-										videos: clinical.videos || [],
 										homeGuide: clinical.homeGuide,
 										notes: this.childInfo.notes || ''
 									}
