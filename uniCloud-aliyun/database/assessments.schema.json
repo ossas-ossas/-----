@@ -33,6 +33,11 @@
           "label": "各领域统计",
           "description": "格式: { [domain]: { passed: number, total: number, ratio: number } }"
         },
+        "subdomains": {
+          "bsonType": "object",
+          "label": "各子领域统计",
+          "description": "格式: { [domain::subdomain]: { passed: number, total: number, ratio: number, domain: string, subdomain: string } }"
+        },
         "ageBands": {
           "bsonType": "object",
           "label": "各年龄段统计",

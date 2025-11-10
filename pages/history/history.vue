@@ -1,13 +1,21 @@
 <template>
 	<view class="container">
-		<!-- 页面标题 -->
-		<view class="page-header">
-			<text class="page-title">评估历史记录</text>
-			<text class="page-subtitle">查看过往的评估记录和发育趋势</text>
-		</view>
-		
+	<!-- 页面标题 -->
+	<view class="page-header">
+		<text class="page-title">评估历史记录</text>
+		<text class="page-subtitle">查看过往的评估记录和发育趋势</text>
+	</view>
+	
+	<!-- 加载中 -->
+	<view v-if="loading" class="loading-container">
+		<view class="loading-spinner"></view>
+		<text class="loading-text">加载中...</text>
+	</view>
+	
+	<!-- 有数据时显示 -->
+	<template v-else-if="assessmentHistory.length > 0">
 		<!-- 统计概览 -->
-		<view class="stats-container" v-if="assessmentHistory.length > 0">
+		<view class="stats-container">
 			<view class="stat-item">
 				<text class="stat-number">{{ assessmentHistory.length }}</text>
 				<text class="stat-label">总评估次数</text>
@@ -23,7 +31,7 @@
 		</view>
 		
 		<!-- 历史记录列表 -->
-		<view class="history-container" v-if="assessmentHistory.length > 0">
+		<view class="history-container">
 			<view 
 				class="history-item" 
 				v-for="(record, index) in assessmentHistory" 
@@ -56,20 +64,8 @@
 				<view class="record-footer">
 					<text class="view-text">点击查看详情 →</text>
 				</view>
-			</view>
 		</view>
-		
-		<!-- 空状态 -->
-		<view class="empty-state" v-else>
-			<view class="empty-icon">
-				<text class="icon-text">📋</text>
-			</view>
-			<text class="empty-title">暂无评估记录</text>
-			<text class="empty-desc">开始第一次评估，记录孩子的成长历程</text>
-			<button class="start-button" @click="startAssessment">
-				<text class="button-text">开始评估</text>
-			</button>
-		</view>
+	</view>
 		
 		<!-- 趋势分析 -->
 		<view class="trend-section" v-if="assessmentHistory.length > 1">
@@ -103,15 +99,25 @@
 			</view>
 		</view>
 		
-		<!-- 操作按钮 -->
-		<view class="action-container" v-if="assessmentHistory.length > 0">
-			<button class="action-button secondary" @click="clearHistory">
-				<text class="button-text">清空记录</text>
-			</button>
-			<button class="action-button primary" @click="startAssessment">
-				<text class="button-text">新的评估</text>
-			</button>
+	<!-- 操作按钮 -->
+	<view class="action-container">
+		<button class="action-button primary" @click="startAssessment">
+			<text class="button-text">新的评估</text>
+		</button>
+	</view>
+	</template>
+	
+	<!-- 空状态 -->
+	<view class="empty-state" v-else>
+		<view class="empty-icon">
+			<text class="icon-text">📋</text>
 		</view>
+		<text class="empty-title">暂无评估记录</text>
+		<text class="empty-desc">开始第一次评估，记录孩子的成长历程</text>
+		<button class="start-button" @click="startAssessment">
+			<text class="button-text">开始评估</text>
+		</button>
+	</view>
 	</view>
 </template>
 
@@ -119,20 +125,26 @@
 	export default {
 		data() {
 			return {
-				assessmentHistory: []
+				assessmentHistory: [],
+				loading: true
 			}
 		},
 		computed: {
 			// 最新得分
 			latestScore() {
 				if (this.assessmentHistory.length === 0) return 0
-				return this.assessmentHistory[0].scorePercent
+				const latest = this.assessmentHistory[0]
+				// 支持多种数据格式
+				return latest.scorePercent || Math.round((latest.stats?.ratio || 0) * 100) || 0
 			},
 			
 			// 平均得分
 			averageScore() {
 				if (this.assessmentHistory.length === 0) return 0
-				const sum = this.assessmentHistory.reduce((total, record) => total + record.scorePercent, 0)
+				const sum = this.assessmentHistory.reduce((total, record) => {
+					const score = record.scorePercent || Math.round((record.stats?.ratio || 0) * 100) || 0
+					return total + score
+				}, 0)
 				return Math.round(sum / this.assessmentHistory.length)
 			}
 		},
@@ -144,9 +156,125 @@
 			this.loadHistory()
 		},
 		methods: {
-			// 加载历史记录
-			loadHistory() {
-				this.assessmentHistory = uni.getStorageSync('assessmentHistory') || []
+			// 加载历史记录（从云数据库）
+			async loadHistory() {
+				this.loading = true
+				
+				try {
+					// 获取当前用户 ID
+					const token = uni.getStorageSync('uni_id_token')
+					if (!token) {
+						console.warn('[history] 未登录，无法加载历史记录')
+						this.assessmentHistory = []
+						return
+					}
+					
+					// 从 token 获取 uid
+					const tokenArr = token.split('.')
+					let uid = ''
+					if (tokenArr.length === 3) {
+						try {
+							const payload = JSON.parse(decodeURIComponent(escape(atob(tokenArr[1]))))
+							uid = payload.uid
+						} catch (e) {
+							console.error('[history] 解析 token 失败:', e)
+						}
+					}
+					
+					if (!uid) {
+						console.warn('[history] 无法获取用户 ID')
+						this.assessmentHistory = []
+						return
+					}
+					
+				console.log('[history] 从云数据库加载评估记录，用户 ID:', uid)
+				
+				// 1. 查询评估记录
+				const db = uniCloud.database()
+				const res = await db.collection('assessments')
+					.where({
+						ownerUid: uid,  // ✅ 修正：字段名是 ownerUid
+						source: 'submit'
+					})
+					.orderBy('createdAt', 'desc')  // ✅ 修正：按创建时间排序
+					.limit(50)
+					.get()
+				
+				console.log('[history] 查询到的评估记录数:', res.result?.data?.length || 0)
+					
+				if (res.result && res.result.data && res.result.data.length > 0) {
+					// 2. 获取所有唯一的 childId
+					const childIds = [...new Set(res.result.data.map(r => r.childId).filter(Boolean))]
+					console.log('[history] 需要查询的儿童档案 ID:', childIds)
+					
+					// 3. 批量查询儿童档案信息
+					let childProfiles = {}
+					if (childIds.length > 0) {
+						try {
+							const dbCmd = db.command
+							const profilesRes = await db.collection('child_profiles')
+								.where({
+									_id: dbCmd.in(childIds)
+								})
+								.field({ _id: true, name: true, birthDate: true, gender: true })
+								.get()
+							
+							// 将儿童信息转换为 map，方便查找
+							if (profilesRes.result && profilesRes.result.data) {
+								profilesRes.result.data.forEach(profile => {
+									childProfiles[profile._id] = profile
+								})
+								console.log('[history] 查询到的儿童档案数:', Object.keys(childProfiles).length)
+							}
+						} catch (profileError) {
+							console.error('[history] 查询儿童档案失败:', profileError)
+						}
+					}
+					
+					// 4. 转换数据格式，关联儿童信息
+					this.assessmentHistory = res.result.data.map(record => {
+						// 计算得分百分比
+						const ratio = record.stats?.overall?.ratio || record.stats?.ratio || 0
+						const scorePercent = record.scorePercent || Math.round(ratio * 100)
+						
+						// 关联儿童信息
+						const childProfile = childProfiles[record.childId] || {}
+						
+						return {
+							...record,
+							scorePercent,
+							assessmentDate: record.createdAt || Date.now(),  // ✅ 使用 createdAt
+							childInfo: {
+								name: childProfile.name || '未知',
+								birthDate: childProfile.birthDate || '',
+								gender: childProfile.gender || ''
+							}
+						}
+					})
+					
+					console.log('[history] 加载了 ' + this.assessmentHistory.length + ' 条记录')
+					if (this.assessmentHistory.length > 0) {
+						console.log('[history] 第一条记录示例:', {
+							scorePercent: this.assessmentHistory[0].scorePercent,
+							childName: this.assessmentHistory[0].childInfo.name,
+							createdAt: new Date(this.assessmentHistory[0].assessmentDate).toLocaleString()
+						})
+					}
+				} else {
+					this.assessmentHistory = []
+					console.log('[history] 没有找到评估记录')
+				}
+					
+				} catch (error) {
+					console.error('[history] 加载历史记录失败:', error)
+					uni.showToast({
+						title: '加载失败',
+						icon: 'none'
+					})
+					this.assessmentHistory = []
+				} finally {
+					this.loading = false
+				}
 			},
 			
 			// 格式化日期
@@ -200,41 +328,33 @@
 				return 'score-attention'
 			},
 			
-			// 查看记录详情
-			viewRecord(record) {
-				// 保存当前记录到本地存储
-				uni.setStorageSync('assessmentResult', record)
-				
-				// 跳转到结果页面
-				uni.navigateTo({
-					url: '/pages/result/result'
-				})
-			},
+		// 查看记录详情
+		viewRecord(record) {
+			console.log('[history] 查看评估详情')
+			console.log('[history] 记录 ID:', record._id)
+			console.log('[history] 得分:', record.scorePercent)
+			console.log('[history] stats 结构:', {
+				hasStats: !!record.stats,
+				hasOverall: !!(record.stats && record.stats.overall),
+				hasDomains: !!(record.stats && record.stats.domains),
+				hasSubdomains: !!(record.stats && record.stats.subdomains)
+			})
 			
-			// 开始评估
-			startAssessment() {
-				uni.navigateTo({
-					url: '/pages/child-info/child-info'
-				})
-			},
+			// 保存当前记录到本地存储
+			uni.setStorageSync('assessmentResult', record)
 			
-			// 清空历史记录
-			clearHistory() {
-				uni.showModal({
-					title: '清空记录',
-					content: '确定要清空所有评估记录吗？此操作不可恢复。',
-					success: (res) => {
-						if (res.confirm) {
-							uni.removeStorageSync('assessmentHistory')
-							this.assessmentHistory = []
-							uni.showToast({
-								title: '记录已清空',
-								icon: 'success'
-							})
-						}
-					}
-				})
-			}
+			// 跳转到结果页面
+			uni.navigateTo({
+				url: '/pages/result/result'
+			})
+		},
+			
+		// 开始评估
+		startAssessment() {
+			uni.navigateTo({
+				url: '/pages/child-info/child-info'
+			})
+		}
 		}
 	}
 </script>
@@ -251,11 +371,39 @@
 	
 	/* 移除背景图装饰，微信小程序不支持 WXSS 中使用本地图片 */
 	
-	/* 页面标题 */
-	.page-header {
-		text-align: center;
-		margin-bottom: 40rpx;
+/* 页面标题 */
+.page-header {
+	text-align: center;
+	margin-bottom: 40rpx;
+}
+
+/* 加载状态 */
+.loading-container {
+	text-align: center;
+	padding: 100rpx 0;
+}
+
+.loading-spinner {
+	width: 60rpx;
+	height: 60rpx;
+	margin: 0 auto 20rpx;
+	border: 4rpx solid #E8F4FD;
+	border-top-color: #E93A8A;
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
 	}
+}
+
+.loading-text {
+	display: block;
+	font-size: 26rpx;
+	color: #999;
+}
 	
 	.page-title {
 		display: block;

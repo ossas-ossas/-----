@@ -1,6 +1,9 @@
 <template>
 	<view class="container">
 		<view class="header">
+			<view class="header-top">
+				<text class="back-btn" @click="goToDashboard">← 返回管理员面板</text>
+			</view>
 			<text class="title">初始化题目数据</text>
 			<text class="subtitle">将题目数据导入到数据库</text>
 		</view>
@@ -87,6 +90,7 @@ import { questions } from '@/common/questionBank.js'
 export default {
 		data() {
 			return {
+			isAdmin: false,
 			questionsCount: questions.length,
 			isInitializing: false,
 			isCleaning: false,
@@ -99,23 +103,92 @@ export default {
 			}
 		},
 	onLoad() {
-		// 检查登录状态
-		const token = uni.getStorageSync('uni_id_token')
-		if (!token) {
-			uni.showModal({
-				title: '需要登录',
-				content: '初始化题目数据需要登录，请先登录',
-				showCancel: false,
-				success: () => {
-					uni.navigateBack()
-				}
-			})
-			return
-		}
+		this.checkAdminPermission();
 	},
 	methods: {
+		// 检查管理员权限
+		async checkAdminPermission() {
+			try {
+				// 检查登录状态
+				const token = uni.getStorageSync('uni_id_token');
+				if (!token) {
+					uni.showModal({
+						title: '需要登录',
+						content: '初始化题目数据需要管理员权限，请先登录',
+						showCancel: false,
+						success: () => {
+							uni.reLaunch({
+								url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+							});
+						}
+					});
+					return;
+				}
+
+				// 检查管理员角色
+				const tokenArr = token.split('.');
+				if (tokenArr.length === 3) {
+					try {
+						const payload = JSON.parse(decodeURIComponent(escape(atob(tokenArr[1]))));
+						const role = payload.role || [];
+						// 检查是否是管理员
+						this.isAdmin = Array.isArray(role) ? role.includes('admin') : role === 'admin';
+					} catch (e) {
+						console.warn('解析 token 失败:', e);
+						this.isAdmin = false;
+					}
+				}
+
+				if (!this.isAdmin) {
+					uni.showModal({
+						title: '权限不足',
+						content: '此页面仅限管理员访问',
+						showCancel: true,
+						confirmText: '返回首页',
+						cancelText: '返回',
+						success: (res) => {
+							if (res.confirm) {
+								uni.reLaunch({
+									url: '/pages/index/index'
+								});
+							} else {
+								uni.navigateBack();
+							}
+						}
+					});
+				}
+			} catch (error) {
+				console.error('检查权限失败:', error);
+				uni.showModal({
+					title: '权限验证失败',
+					content: '无法验证您的权限，请重新登录',
+					showCancel: false,
+					success: () => {
+						uni.reLaunch({
+							url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+						});
+					}
+				});
+			}
+		},
+		
+		// 返回管理员面板
+		goToDashboard() {
+			uni.navigateTo({
+				url: '/pages/admin/dashboard/dashboard'
+			});
+		},
+		
 		async initQuestions() {
-			if (this.isInitializing) return
+		if (!this.isAdmin) {
+			uni.showToast({
+				title: '权限不足',
+				icon: 'none'
+			});
+			return;
+		}
+		
+		if (this.isInitializing) return
 			
 			// 确认操作
 			const confirmResult = await new Promise((resolve) => {
@@ -275,8 +348,16 @@ export default {
 			}
 		},
 		
-		async cleanDuplicates() {
-			if (this.isCleaning) return
+	async cleanDuplicates() {
+		if (!this.isAdmin) {
+			uni.showToast({
+				title: '权限不足',
+				icon: 'none'
+			});
+			return;
+		}
+		
+		if (this.isCleaning) return
 			
 			// 确认操作
 			const confirmResult = await new Promise((resolve) => {
@@ -353,8 +434,16 @@ export default {
 			}
 		},
 		
-		async diagnoseQuestions() {
-			if (this.isDiagnosing) return
+	async diagnoseQuestions() {
+		if (!this.isAdmin) {
+			uni.showToast({
+				title: '权限不足',
+				icon: 'none'
+			});
+			return;
+		}
+		
+		if (this.isDiagnosing) return
 			
 			this.isDiagnosing = true
 			this.statusText = '诊断中...'
@@ -439,8 +528,16 @@ export default {
 			}
 		},
 		
-		async clearAllQuestions() {
-			if (this.isClearing) return
+	async clearAllQuestions() {
+		if (!this.isAdmin) {
+			uni.showToast({
+				title: '权限不足',
+				icon: 'none'
+			});
+			return;
+		}
+		
+		if (this.isClearing) return
 			
 			// 双重确认
 			const confirm1 = await new Promise((resolve) => {
@@ -557,6 +654,22 @@ export default {
 .header {
 	text-align: center;
 	margin-bottom: 40rpx;
+	position: relative;
+}
+
+.header-top {
+	display: flex;
+	justify-content: flex-start;
+	margin-bottom: 20rpx;
+}
+
+.back-btn {
+	font-size: 26rpx;
+	color: #E93A8A;
+	padding: 10rpx 20rpx;
+	background: rgba(255, 255, 255, 0.8);
+	border-radius: 20rpx;
+	cursor: pointer;
 }
 
 .title {

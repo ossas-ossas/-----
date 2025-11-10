@@ -3,10 +3,10 @@
 		<!-- 1️⃣ 报告头部 -->
 		<view class="header">
 			<image src="/static/logo.png" class="logo" mode="aspectFit" />
-			<view class="child-info">
-				<text class="name">{{ childInfo.name || '未填写' }}</text>
-				<text class="meta">{{ childInfo.ageBand || '' }} · {{ childInfo.gender || '' }}</text>
-			</view>
+		<view class="child-info">
+			<text class="name">{{ childInfo.name || '未填写' }}</text>
+			<text class="meta">{{ childInfo.ageBand || '' }}</text>
+		</view>
 		<view class="score-box">
 			<text class="score">{{ summary.overallScore }}%</text>
 			<text class="level">{{ summary.level }}</text>
@@ -70,11 +70,11 @@
 			</view>
 		</view>
 
-		<!-- 4️⃣ 操作按钮 -->
-		<view class="footer-buttons">
-			<button class="btn secondary" @click="goHome">返回首页</button>
-			<button class="btn primary" @click="startNew">重新评估</button>
-		</view>
+	<!-- 4️⃣ 操作按钮 -->
+	<view class="footer-buttons">
+		<button class="btn secondary" @click="goToUserCenter">个人中心</button>
+		<button class="btn primary" @click="startNew">重新评估</button>
+	</view>
 	</view>
 </template>
 
@@ -125,36 +125,121 @@ const subdomainLabels = {
 			this.loadFromLocal()
 		},
 		methods: {
-			// 从本地存储加载数据
-			loadFromLocal() {
-				const result = uni.getStorageSync('assessmentResult')
-				console.log('=== 加载评估结果 ===')
-				console.log('评估结果:', result)
+	// 从本地存储加载数据
+	loadFromLocal() {
+		const result = uni.getStorageSync('assessmentResult')
+		console.log('=== 加载评估结果 ===')
+		console.log('评估结果:', result)
+		
+		if (!result) {
+			uni.showToast({
+				title: '未找到评估结果',
+				icon: 'none'
+			})
+			setTimeout(() => {
+				uni.navigateBack()
+			}, 1500)
+			return
+		}
+		
+		// 设置基本信息
+		this.childInfo = {
+			name: result.childInfo?.name || result.childName || '',
+			ageBand: result.childInfo?.ageBand || '',
+			gender: result.childInfo?.gender || result.gender || ''
+		}
+		
+		// ✅ 优先使用云数据库返回的 stats 数据
+		if (result.stats && result.stats.overall) {
+			console.log('=== 使用云数据库统计数据 ===')
+			this.loadFromCloudData(result)
+		} else {
+			// 兜底：使用 formState 重新计算（旧数据格式）
+			console.log('=== 使用 formState 计算统计数据 ===')
+			this.calculateSummary(result)
+		}
+		
+		// TODO: 教师端还需要计算 notAchieved
+		// this.notAchieved = this.calculateNotAchieved(result)
+	},
+	
+	// 从云数据库数据加载（新增）
+	loadFromCloudData(result) {
+		const stats = result.stats
+		
+		console.log('=== 云数据详情 ===')
+		console.log('stats.overall:', stats.overall)
+		console.log('stats.domains keys:', stats.domains ? Object.keys(stats.domains) : [])
+		console.log('stats.subdomains keys:', stats.subdomains ? Object.keys(stats.subdomains).slice(0, 10) : [])
+		
+		// 计算总得分
+		const overallScore = result.scorePercent || Math.round((stats.overall?.ratio || 0) * 100)
+		console.log('计算得分:', overallScore, '来源:', result.scorePercent ? 'scorePercent' : 'stats.overall.ratio')
+		
+		// 转换 domains 格式
+		const domains = {}
+		
+		// 处理 domains 统计
+		if (stats.domains) {
+			Object.keys(stats.domains).forEach(domainKey => {
+				const domainStats = stats.domains[domainKey]
+				console.log(`领域 ${domainKey}:`, domainStats)
 				
-				if (!result) {
-					uni.showToast({
-						title: '未找到评估结果',
-						icon: 'none'
-					})
-					setTimeout(() => {
-						uni.navigateBack()
-					}, 1500)
+				domains[domainKey] = {
+					ratio: domainStats.ratio || 0,
+					subdomains: {}
+				}
+			})
+		}
+		
+		// 处理 subdomains 统计
+		if (stats.subdomains) {
+			Object.keys(stats.subdomains).forEach(subdomainKey => {
+				// subdomainKey 格式: "domain::subdomain"
+				const parts = subdomainKey.split('::')
+				if (parts.length !== 2) {
+					console.warn('子领域 key 格式不正确:', subdomainKey)
 					return
 				}
 				
-				// 设置基本信息
-				this.childInfo = {
-					name: result.childInfo?.name || result.childInfo?.childName || '',
-					ageBand: result.childInfo?.ageBand || '',
-					gender: result.childInfo?.gender || ''
+				const [domain, subdomain] = parts
+				const subdomainStats = stats.subdomains[subdomainKey]
+				
+				// 如果 domain 不存在，创建它
+				if (!domains[domain]) {
+					console.log(`创建缺失的领域: ${domain}`)
+					domains[domain] = {
+						ratio: 0,
+						subdomains: {}
+					}
 				}
 				
-				// 计算汇总数据
-				this.calculateSummary(result)
-				
-				// TODO: 教师端还需要计算 notAchieved
-				// this.notAchieved = this.calculateNotAchieved(result)
-			},
+				domains[domain].subdomains[subdomain] = {
+					passed: subdomainStats.passed,
+					total: subdomainStats.total,
+					ratio: subdomainStats.ratio
+				}
+			})
+		}
+		
+		this.summary = {
+			overallScore,
+			level: result.level || this.getLevelText(overallScore),
+			domains
+		}
+		
+		console.log('=== 加载完成 ===')
+		console.log('完成率:', overallScore + '%')
+		console.log('等级:', this.summary.level)
+		console.log('领域数量:', Object.keys(domains).length)
+		console.log('领域列表:', Object.keys(domains))
+		
+		// 输出每个领域的子领域数量
+		Object.keys(domains).forEach(domain => {
+			const subdomainCount = Object.keys(domains[domain].subdomains).length
+			console.log(`  ${domain}: ${subdomainCount} 个子领域, 完成率: ${(domains[domain].ratio * 100).toFixed(1)}%`)
+		})
+	},
 			
 		// 计算汇总数据
 		calculateSummary(result) {
@@ -240,12 +325,12 @@ const subdomainLabels = {
 				return '需干预'
 			},
 			
-			// 返回首页
-			goHome() {
-				uni.switchTab({
-					url: '/pages/index/index'
-				})
-			},
+		// 跳转到个人中心
+		goToUserCenter() {
+			uni.navigateTo({
+				url: '/pages/user-center/user-center'
+			})
+		},
 			
 			// 重新评估
 			startNew() {

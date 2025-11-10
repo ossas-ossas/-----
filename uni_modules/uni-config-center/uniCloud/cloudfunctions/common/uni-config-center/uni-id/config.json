@@ -1,6 +1,6 @@
 {
-  "passwordSecret": "dev_password_secret_change_me_please",
-  "tokenSecret": "dev_token_secret_change_me_please",
+  "passwordSecret": "6e2f8c3a9d7b42c5a1f4e93bb7dcd88f",
+  "tokenSecret": "c4f0b3a8e2d9f7b1a6e3c9d2b5a0f8e1",
   "tokenExpiresIn": 2592000,
   "tokenExpiresThreshold": 43200,
   "mp-weixin": {
@@ -8,4 +8,5 @@
     "appsecret": "4855fcb04dbb6c4a7171cf4b6a812c65"
   }
 }
+
 

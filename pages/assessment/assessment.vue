@@ -51,7 +51,7 @@
 					<template v-for="subdomain in getSubdomainsInDomain(domain)">
 					<view 
 							v-if="hasMatchingQuestionsInSubdomain(domain, subdomain)"
-							:key="`${domain}::${subdomain}`"
+							:key="domain + '_' + subdomain"
 							class="subdomain-section"
 						>
 							<!-- subdomain 头部 -->

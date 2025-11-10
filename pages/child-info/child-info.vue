@@ -6,8 +6,18 @@
 			<text class="page-subtitle">请填写孩子的详细信息，以便进行准确的发育评估</text>
 		</view>
 		
-		<!-- 表单区域 -->
-		<view class="form-container">
+		<!-- 未登录提示 -->
+		<view v-if="!isLoggedIn" class="login-required">
+			<view class="login-required-card">
+				<text class="login-required-icon">🔒</text>
+				<text class="login-required-title">需要登录</text>
+				<text class="login-required-desc">请先登录后再填写儿童信息</text>
+				<button class="login-required-btn" @click="goToLogin">去登录</button>
+			</view>
+		</view>
+		
+		<!-- 表单区域（只有登录后才显示） -->
+		<view v-if="isLoggedIn" class="form-container">
 			<!-- 基本信息 -->
 			<view class="form-section">
 				<view class="section-title">
@@ -442,6 +452,7 @@
 	export default {
 		data() {
 			return {
+				isLoggedIn: false, // 登录状态
 				formData: {
 					name: '',
 					gender: '',
@@ -621,17 +632,24 @@
 				}
 			},
 			
-			// 选择听觉状态
-			pickHearing(value) {
-				this.clinical.hearing.status = value
-				if (value !== 'impaired') {
-					this.clinical.hearing.dbLeft = ''
-					this.clinical.hearing.dbRight = ''
-				}
-		},
-		
-		// 跳转到评估页面
-		async goToAssessment() {
+		// 选择听觉状态
+		pickHearing(value) {
+			this.clinical.hearing.status = value
+			if (value !== 'impaired') {
+				this.clinical.hearing.dbLeft = ''
+				this.clinical.hearing.dbRight = ''
+			}
+	},
+	
+	// 跳转到登录页
+	goToLogin() {
+		uni.navigateTo({
+			url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+		});
+	},
+	
+	// 跳转到评估页面
+	async goToAssessment() {
 				// 先验证表单完整性
 				if (!this.isFormValid) {
 					uni.showToast({
@@ -1176,15 +1194,19 @@
 			const today = new Date()
 			this.today = today.toISOString().split('T')[0]
 			
-			// 登录守卫：页面加载时检查，只在确实需要时跳转
-			const loginStatus = checkLoginStatus();
-			console.log('[child-info] 登录状态:', loginStatus);
-			
-			if (!requireLogin({
-				redirectUrl: '/pages/child-info/child-info'
-			})) {
-				return // 未登录，已跳转到登录页
-			}
+		// 登录守卫：页面加载时检查，只在确实需要时跳转
+		const loginStatus = checkLoginStatus();
+		console.log('[child-info] 登录状态:', loginStatus);
+		
+		// 更新登录状态
+		this.isLoggedIn = loginStatus.isLoggedIn;
+		
+		if (!requireLogin({
+			redirectUrl: '/pages/child-info/child-info'
+		})) {
+			this.isLoggedIn = false; // 明确设置为未登录
+			return // 未登录，已跳转到登录页
+		}
 			
 			// 检查是否是新用户登录（通过比较当前用户ID和本地存储的用户ID）
 			// 只在用户切换时才清除数据，避免同一用户多次创建 child profile 时丢失数据
@@ -1219,14 +1241,18 @@
 				console.log('[child-info] 检测到已有 childId，重新评估模式:', savedChildInfo.childId);
 			}
 		},
-		onShow() {
-			// 静默检查登录状态，不打断用户操作
-			// 只在 token 确实失效时记录日志，等用户操作时再提示
-			const status = checkLoginStatus();
-			if (!status.isLoggedIn) {
-				console.warn('[child-info] Token 已失效，保存时将提示登录');
-			}
+	onShow() {
+		// 静默检查登录状态，不打断用户操作
+		// 只在 token 确实失效时记录日志，等用户操作时再提示
+		const status = checkLoginStatus();
+		
+		// 更新登录状态
+		this.isLoggedIn = status.isLoggedIn;
+		
+		if (!status.isLoggedIn) {
+			console.warn('[child-info] Token 已失效，保存时将提示登录');
 		}
+	}
 	}
 </script>
 
@@ -1260,6 +1286,56 @@
 		font-size: 26rpx;
 		color: #7F8C8D;
 		line-height: 1.5;
+	}
+	
+	/* 未登录提示 */
+	.login-required {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		min-height: 60vh;
+		padding: 40rpx;
+	}
+
+	.login-required-card {
+		background: #fff;
+		border-radius: 20rpx;
+		padding: 60rpx 40rpx;
+		text-align: center;
+		box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 20rpx;
+	}
+
+	.login-required-icon {
+		font-size: 80rpx;
+		margin-bottom: 10rpx;
+	}
+
+	.login-required-title {
+		font-size: 32rpx;
+		font-weight: bold;
+		color: #333;
+	}
+
+	.login-required-desc {
+		font-size: 26rpx;
+		color: #7F8C8D;
+		margin-bottom: 20rpx;
+	}
+
+	.login-required-btn {
+		width: 300rpx;
+		height: 80rpx;
+		background: linear-gradient(135deg, #E93A8A, #009FC2);
+		color: #fff;
+		border-radius: 40rpx;
+		font-size: 28rpx;
+		font-weight: 500;
+		line-height: 80rpx;
+		box-shadow: 0 8rpx 30rpx rgba(233, 58, 138, 0.4);
 	}
 	
 	/* 表单容器 */

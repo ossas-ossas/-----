@@ -41,6 +41,14 @@
 			}
 		},
 		{
+			"path": "pages/user-center/user-center",
+			"style": {
+				"navigationBarTitleText": "个人中心",
+				"navigationBarBackgroundColor": "#E8F4FD",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
 			"path": "pages/admin/init-questions",
 			"style": {
 				"navigationBarTitleText": "初始化题目",

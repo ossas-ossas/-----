@@ -48,17 +48,23 @@
 			</view>
 		</view>
 		
-		<!-- 开始评估按钮 -->
-		<view class="button-section">
-			<button class="start-button" @click="startAssessment">
-				<text class="button-text">开始评估</text>
-			</button>
-			
-			<!-- 登录/个人中心入口（调试用） -->
-			<button class="login-button" @click="goLogin">
-				<text class="login-button-text">登录 / 个人中心</text>
-			</button>
-		</view>
+	<!-- 按钮区域 -->
+	<view class="button-section">
+		<!-- 已登录：显示开始评估按钮 -->
+		<button v-if="isLoggedIn" class="start-button" @click="startAssessment">
+			<text class="button-text">开始评估</text>
+		</button>
+		
+		<!-- 未登录：显示大号登录按钮 -->
+		<button v-if="!isLoggedIn" class="login-button-primary" @click="goLogin">
+			<text class="button-text">登录 / 注册</text>
+		</button>
+		
+		<!-- 已登录：显示次要的个人中心按钮 -->
+		<button v-if="isLoggedIn" class="login-button-secondary" @click="goLogin">
+			<text class="login-button-text">个人中心</text>
+		</button>
+	</view>
 		
 		<!-- 版权信息 -->
 		<view class="footer">
@@ -72,20 +78,37 @@
 export default {
 	data() {
 		return {
-			title: '知动儿童综合发育测评'
+			title: '知动儿童综合发育测评',
+			isLoggedIn: false
 		}
 	},
 	onLoad() {
-		console.log('[index] page loaded')
-		// 不在 onLoad 中检查，因为此时可能还未登录
+		console.log('[index] page loaded');
 	},
 	
 	onShow() {
-		// 不在首页自动检查管理员身份
-		// 管理员跳转由登录成功后的 loginBack 处理
-		// 这里不检查，避免未登录时或首次打开时误跳转
+		// 检查登录状态
+		this.checkLoginStatus();
 	},
 	methods: {
+		// 检查登录状态
+		checkLoginStatus() {
+			try {
+				const token = uni.getStorageSync('uni_id_token');
+				console.log('[index] 检查登录状态, token存在:', !!token);
+				
+				this.isLoggedIn = !!token;
+				
+				if (token) {
+					// 已登录，检查是否是管理员
+					this.checkAdminAndRedirect();
+				}
+			} catch (error) {
+				console.error('[index] 检查登录状态失败:', error);
+				this.isLoggedIn = false;
+			}
+		},
+		
 		// 检查是否是管理员并跳转
 		checkAdminAndRedirect() {
 			try {
@@ -132,15 +155,29 @@ export default {
 			}
 		},
 		
-		startAssessment() {
-			uni.navigateTo({
-				url: '/pages/child-info/child-info'
-			})
-		},
+	// 开始评估（已登录后才显示此按钮）
+	startAssessment() {
+		// 进入儿童信息页
+		uni.navigateTo({
+			url: '/pages/child-info/child-info'
+		});
+	},
+		
+		// 跳转到登录/用户中心
 		goLogin() {
-			uni.navigateTo({
-				url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
-			})
+			const token = uni.getStorageSync('uni_id_token');
+			
+			if (token) {
+				// 已登录，跳转到用户中心
+				uni.navigateTo({
+					url: '/pages/user-center/user-center'
+				});
+			} else {
+				// 未登录，跳转到登录页
+				uni.navigateTo({
+					url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+				});
+			}
 		}
 	}
 }
@@ -329,8 +366,38 @@ export default {
 	color: #fff;
 }
 
-/* 登录按钮 */
-.login-button {
+/* 未登录时的主要登录按钮（大号） */
+.login-button-primary {
+	width: 100%;
+	height: 96rpx;
+	background: linear-gradient(135deg, #E93A8A, #009FC2);
+	border-radius: 48rpx;
+	border: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 8rpx 30rpx rgba(233, 58, 138, 0.4);
+	position: relative;
+	overflow: hidden;
+}
+
+.login-button-primary::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: -100%;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+	transition: left 0.5s;
+}
+
+.login-button-primary:active::before {
+	left: 100%;
+}
+
+/* 已登录后的次要个人中心按钮（小号） */
+.login-button-secondary {
 	width: 100%;
 	height: 80rpx;
 	background: #fff;
@@ -343,7 +410,7 @@ export default {
 	box-shadow: 0 4rpx 12rpx rgba(233, 58, 138, 0.2);
 }
 
-.login-button:active {
+.login-button-secondary:active {
 	background: #F5F9FC;
 }
 

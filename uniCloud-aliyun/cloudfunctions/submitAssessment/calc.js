@@ -34,10 +34,11 @@ async function loadQuestionsByQids(qids) {
  * 聚合评估结果
  * @param {Object} answers - 作答数据 { qid: 0|1 }
  * @param {Array} questionDocs - 题目文档数组，每个包含 { qid, domain, subdomain, ageBand, title }
- * @returns {Object} - { domains, ageBands, overall, notAchieved }
+ * @returns {Object} - { domains, subdomains, ageBands, overall, notAchieved }
  */
 function aggregate(answers, questionDocs) {
   const domains = {};
+  const subdomains = {}; // 添加子领域统计
   const ageBands = {};
   const notAchieved = [];
   let total = 0;
@@ -74,6 +75,22 @@ function aggregate(answers, questionDocs) {
       domains[domain].passed += 1;
     }
 
+    // 按子领域统计（按 domain + subdomain 组合）
+    const subdomain = question.subdomain || '未知';
+    const subdomainKey = `${domain}::${subdomain}`; // 使用 domain::subdomain 作为键
+    if (!subdomains[subdomainKey]) {
+      subdomains[subdomainKey] = { 
+        passed: 0, 
+        total: 0,
+        domain: domain,
+        subdomain: subdomain
+      };
+    }
+    subdomains[subdomainKey].total += 1;
+    if (isPassed) {
+      subdomains[subdomainKey].passed += 1;
+    }
+
     // 按年龄段统计
     const ageBand = question.ageBand || '未知';
     if (!ageBands[ageBand]) {
@@ -89,6 +106,7 @@ function aggregate(answers, questionDocs) {
       notAchieved.push({
         qid: question.qid || qid,
         domain: domain,
+        subdomain: subdomain,
         ageBand: ageBand,
         title: question.title || question.text || ''
       });
@@ -103,7 +121,10 @@ function aggregate(answers, questionDocs) {
         {
           passed: value.passed,
           total: value.total,
-          ratio: value.total > 0 ? +(value.passed / value.total).toFixed(4) : 0
+          ratio: value.total > 0 ? +(value.passed / value.total).toFixed(4) : 0,
+          // 保留 domain 和 subdomain 信息（如果存在）
+          ...(value.domain && { domain: value.domain }),
+          ...(value.subdomain && { subdomain: value.subdomain })
         }
       ])
     );
@@ -111,6 +132,7 @@ function aggregate(answers, questionDocs) {
 
   return {
     domains: normalize(domains),
+    subdomains: normalize(subdomains), // 添加子领域统计
     ageBands: normalize(ageBands),
     overall: {
       passed,

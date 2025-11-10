@@ -388,6 +388,7 @@ exports.main = async (event, context) => {
       answers: validAnswers,
       stats: {
         domains: stats.domains,
+        subdomains: stats.subdomains, // 添加子领域统计
         ageBands: stats.ageBands,
         overall: stats.overall
       },
