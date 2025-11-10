@@ -268,187 +268,64 @@
 							<!-- 表格视图 -->
 							<view v-if="assessmentViewMode === 'table' && assessment.stats && assessment.stats.subdomains" class="assessment-table-view">
 								<view class="table-container">
-									<view class="table-title">综合能力检测分析图（细项分析）</view>
+									<view class="table-title-row">
+										<text class="table-title">综合能力检测分析图（细项分析）</text>
+										<button class="export-excel-btn" @click="exportAssessmentToExcel(assessment)">
+											导出Excel
+										</button>
+									</view>
 									<scroll-view scroll-x="true" class="table-scroll">
-										<view class="data-table-flex">
-											<!-- 表头容器 -->
-											<view class="table-header-container">
-												<!-- 固定列：发育时间（跨两行） -->
-												<view class="header-fixed-column">
-													<view class="header-cell-rowspan">发育时间</view>
-												</view>
+										<view class="simple-table">
+											<!-- 表头容器（包含两行） -->
+											<view class="table-header-wrapper">
+												<!-- 跨行的发育时间单元格 -->
+												<view class="time-cell-rowspan">发育时间</view>
 												
-												<!-- 右侧表头内容 -->
-												<view class="header-content-column">
-													<!-- 表头：第一行 - 大领域 -->
-													<view class="header-domains-row">
-														<!-- 五大感知觉发展 -->
+												<view class="header-content">
+													<!-- 表头第一行：大领域 -->
+													<view class="table-row header-row-1">
 														<view 
-															v-if="getSubdomainCount(assessment.stats.subdomains, 'sens') > 0"
-															class="domain-header" 
-															:style="{ width: (getSubdomainCount(assessment.stats.subdomains, 'sens') * 100) + 'rpx' }"
+															v-for="domain in getTableDomains(assessment.stats.subdomains)" 
+															:key="domain.key"
+															class="table-cell header-cell domain-header-cell"
+															:style="{ width: (domain.colspan * 120) + 'rpx', minWidth: (domain.colspan * 120) + 'rpx', maxWidth: (domain.colspan * 120) + 'rpx' }"
 														>
-															五大感知觉发展
-														</view>
-														<!-- 动作 -->
-														<view 
-															v-if="getActionSubdomainCount(assessment.stats.subdomains) > 0"
-															class="domain-header" 
-															:style="{ width: (getActionSubdomainCount(assessment.stats.subdomains) * 100) + 'rpx' }"
-														>
-															动作
-														</view>
-														<!-- 社会互动 -->
-														<view 
-															v-if="getSubdomainCount(assessment.stats.subdomains, 'social') > 0"
-															class="domain-header" 
-															:style="{ width: (getSubdomainCount(assessment.stats.subdomains, 'social') * 100) + 'rpx' }"
-														>
-															社会互动
-														</view>
-														<!-- 认知 -->
-														<view 
-															v-if="getSubdomainCount(assessment.stats.subdomains, 'cog') > 0"
-															class="domain-header" 
-															:style="{ width: (getSubdomainCount(assessment.stats.subdomains, 'cog') * 100) + 'rpx' }"
-														>
-															认知
-														</view>
-														<!-- 语言 -->
-														<view 
-															v-if="getSubdomainCount(assessment.stats.subdomains, 'lang') > 0"
-															class="domain-header" 
-															:style="{ width: (getSubdomainCount(assessment.stats.subdomains, 'lang') * 100) + 'rpx' }"
-														>
-															语言
-														</view>
-														<!-- 口腔动作 -->
-														<view 
-															v-if="getSubdomainCount(assessment.stats.subdomains, 'oral') > 0"
-															class="domain-header" 
-															:style="{ width: (getSubdomainCount(assessment.stats.subdomains, 'oral') * 100) + 'rpx' }"
-														>
-															口腔动作
+															{{ domain.label }}
 														</view>
 													</view>
 													
-													<!-- 表头：第二行 - 子领域 -->
-													<view class="header-subdomains-row">
-														<view class="header-subdomains-container">
-													<!-- 感知觉子领域 -->
-													<view 
-														v-for="subdomain in getSubdomainsByDomainOrdered(assessment.stats.subdomains, 'sens')" 
-														:key="subdomain.key"
-														class="subdomain-header"
-													>
-														{{ getSubdomainLabel(subdomain.subdomain) }}
-													</view>
-													<!-- 动作子领域 -->
-													<view 
-														v-for="subdomain in getActionSubdomainsOrdered(assessment.stats.subdomains)" 
-														:key="subdomain.key"
-														class="subdomain-header"
-													>
-														{{ getSubdomainLabel(subdomain.subdomain) }}
-													</view>
-													<!-- 社会互动子领域 -->
-													<view 
-														v-for="subdomain in getSubdomainsByDomainOrdered(assessment.stats.subdomains, 'social')" 
-														:key="subdomain.key"
-														class="subdomain-header"
-													>
-														{{ getSubdomainLabel(subdomain.subdomain) }}
-													</view>
-													<!-- 认知子领域 -->
-													<view 
-														v-for="subdomain in getSubdomainsByDomainOrdered(assessment.stats.subdomains, 'cog')" 
-														:key="subdomain.key"
-														class="subdomain-header"
-													>
-														{{ getSubdomainLabel(subdomain.subdomain) }}
-													</view>
-													<!-- 语言子领域 -->
-													<view 
-														v-for="subdomain in getSubdomainsByDomainOrdered(assessment.stats.subdomains, 'lang')" 
-														:key="subdomain.key"
-														class="subdomain-header"
-													>
-														{{ getSubdomainLabel(subdomain.subdomain) }}
-													</view>
-													<!-- 口腔动作子领域 -->
-													<view 
-														v-for="subdomain in getSubdomainsByDomainOrdered(assessment.stats.subdomains, 'oral')" 
-														:key="subdomain.key"
-														class="subdomain-header"
-													>
-														{{ getSubdomainLabel(subdomain.subdomain) }}
-													</view>
+													<!-- 表头第二行：子领域 -->
+													<view class="table-row header-row-2">
+														<view 
+															v-for="(subdomain, subIndex) in getAllSubdomainsOrdered(assessment.stats.subdomains)" 
+															:key="subdomain.key"
+															class="table-cell header-cell subdomain-cell"
+															:class="{ 'domain-first-subdomain': isFirstSubdomainInDomain(assessment.stats.subdomains, subIndex) }"
+															style="width: 120rpx; min-width: 120rpx; max-width: 120rpx;"
+														>
+															{{ getSubdomainShortLabel(subdomain.subdomain) }}
 														</view>
 													</view>
 												</view>
 											</view>
 											
-											<!-- 数据行：按年龄段显示子领域统计 -->
+											<!-- 数据行 -->
 											<view 
 												v-for="ageBand in getAllAgeBands()" 
 												:key="ageBand"
-												class="table-data-row-flex"
+												class="table-row data-row"
 											>
-												<view class="data-cell fixed-cell">{{ getAgeBandLabel(ageBand) }}</view>
-												<view class="data-cells-container">
-													<!-- 感知觉子领域数据 -->
-													<view 
-														v-for="subdomain in getSubdomainsByDomainOrdered(assessment.stats.subdomains, 'sens')" 
-														:key="subdomain.key"
-														class="data-cell"
-													>
-														{{ getAgeBandSubdomainValue(assessment.ageBandSubdomainStats, ageBand, subdomain.subdomain) }}
-													</view>
-													
-													<!-- 动作子领域数据 -->
-													<view 
-														v-for="subdomain in getActionSubdomainsOrdered(assessment.stats.subdomains)" 
-														:key="subdomain.key"
-														class="data-cell"
-													>
-														{{ getAgeBandSubdomainValue(assessment.ageBandSubdomainStats, ageBand, subdomain.subdomain) }}
-													</view>
-													
-													<!-- 社会互动子领域数据 -->
-													<view 
-														v-for="subdomain in getSubdomainsByDomainOrdered(assessment.stats.subdomains, 'social')" 
-														:key="subdomain.key"
-														class="data-cell"
-													>
-														{{ getAgeBandSubdomainValue(assessment.ageBandSubdomainStats, ageBand, subdomain.subdomain) }}
-													</view>
-													
-													<!-- 认知子领域数据 -->
-													<view 
-														v-for="subdomain in getSubdomainsByDomainOrdered(assessment.stats.subdomains, 'cog')" 
-														:key="subdomain.key"
-														class="data-cell"
-													>
-														{{ getAgeBandSubdomainValue(assessment.ageBandSubdomainStats, ageBand, subdomain.subdomain) }}
-													</view>
-													
-													<!-- 语言子领域数据 -->
-													<view 
-														v-for="subdomain in getSubdomainsByDomainOrdered(assessment.stats.subdomains, 'lang')" 
-														:key="subdomain.key"
-														class="data-cell"
-													>
-														{{ getAgeBandSubdomainValue(assessment.ageBandSubdomainStats, ageBand, subdomain.subdomain) }}
-													</view>
-													
-													<!-- 口腔动作子领域数据 -->
-													<view 
-														v-for="subdomain in getSubdomainsByDomainOrdered(assessment.stats.subdomains, 'oral')" 
-														:key="subdomain.key"
-														class="data-cell"
-													>
-														{{ getAgeBandSubdomainValue(assessment.ageBandSubdomainStats, ageBand, subdomain.subdomain) }}
-													</view>
+												<view class="table-cell data-cell fixed-cell" style="width: 120rpx; min-width: 120rpx; max-width: 120rpx;">
+													{{ getAgeBandLabel(ageBand) }}
+												</view>
+												<view 
+													v-for="(subdomain, subIndex) in getAllSubdomainsOrdered(assessment.stats.subdomains)" 
+													:key="subdomain.key"
+													class="table-cell data-cell"
+													:class="{ 'domain-first-subdomain': isFirstSubdomainInDomain(assessment.stats.subdomains, subIndex) }"
+													style="width: 120rpx; min-width: 120rpx; max-width: 120rpx;"
+												>
+													{{ getAgeBandSubdomainValue(assessment.ageBandSubdomainStats, ageBand, subdomain.subdomain) }}
 												</view>
 											</view>
 										</view>
@@ -667,6 +544,7 @@ const getDomainLabel = (domain) => {
 	return map[domain] || domain;
 };
 
+// 完整标签（用于详细显示）
 const getSubdomainLabel = (subdomain) => {
 	const map = {
 		'OSV': '视知觉',
@@ -694,6 +572,38 @@ const getSubdomainLabel = (subdomain) => {
 		'MLUN': '语言（非语言理解）',
 		'MLEY': '语言（口语表达）',
 		'MLEN': '语言（非语言表达）'
+	};
+	return map[subdomain] || subdomain;
+};
+
+// 简化标签（用于表格显示）
+const getSubdomainShortLabel = (subdomain) => {
+	const map = {
+		'OSV': '视知觉',
+		'OSH': '听知觉',
+		'OST': '触知觉',
+		'ISP': '本体运动知觉',
+		'ISV': '前庭平衡知觉',
+		'GM': '躯肢体粗大动作',
+		'UEM': '双上肢粗大（视动）',
+		'UES': '双上肢粗大（操作）',
+		'FM': '精细动作',
+		'OM': '口腔动作',
+		'SIP': '与人互动',
+		'SIE': '与其他互动',
+		'SIS': '情绪自我',
+		'MAN': '注意（非动作）',
+		'MRN': '记忆（非动作）',
+		'MCN': '概念（非动作）',
+		'MIN': '推理（非动作）',
+		'MAY': '注意（动作）',
+		'MRY': '记忆（动作）',
+		'MCY': '概念（动作）',
+		'MIY': '推理（动作）',
+		'MLUY': '口语理解',
+		'MLUN': '非语言理解',
+		'MLEY': '口语表达',
+		'MLEN': '非语言表达'
 	};
 	return map[subdomain] || subdomain;
 };
@@ -877,9 +787,14 @@ export default {
 			return getDomainLabel(domain);
 		},
 
-		// 获取子领域标签
+		// 获取子领域标签（完整版）
 		getSubdomainLabel(subdomain) {
 			return getSubdomainLabel(subdomain);
+		},
+		
+		// 获取子领域标签（简化版，用于表格）
+		getSubdomainShortLabel(subdomain) {
+			return getSubdomainShortLabel(subdomain);
 		},
 
 		// 从子领域数据中提取所有领域
@@ -982,6 +897,114 @@ export default {
 		// 获取所有年龄段（按顺序）
 		getAllAgeBands() {
 			return ['60_72m', '48_60m', '36_48m', '30_36m', '24_30m', '18_24m', '12_18m', '9_12m', '6_9m', '3_6m', '1_3m'];
+		},
+		
+		// 获取表格的大领域信息（包含colspan）
+		getTableDomains(subdomains) {
+			const domains = [
+				{ key: 'sens', code: 'sens', label: '五大感知觉发展' },
+				{ key: 'action', code: 'action', label: '动作' },
+				{ key: 'social', code: 'social', label: '社会互动' },
+				{ key: 'cog', code: 'cog', label: '认知' },
+				{ key: 'lang', code: 'lang', label: '语言' },
+				{ key: 'oral', code: 'oral', label: '口腔动作' }
+			];
+			
+			const result = [];
+			domains.forEach(domain => {
+				let count = 0;
+				if (domain.code === 'action') {
+					// 动作 = 粗大动作 + 精细动作
+					count = this.getActionSubdomainCount(subdomains);
+				} else {
+					count = this.getSubdomainCount(subdomains, domain.code);
+				}
+				
+				if (count > 0) {
+					result.push({
+						...domain,
+						colspan: count
+					});
+				}
+			});
+			
+			return result;
+		},
+		
+		// 获取所有子领域（按顺序，扁平化）
+		getAllSubdomainsOrdered(subdomains) {
+			const sens = this.getSubdomainsByDomainOrdered(subdomains, 'sens');
+			const action = this.getActionSubdomainsOrdered(subdomains);
+			const social = this.getSubdomainsByDomainOrdered(subdomains, 'social');
+			const cog = this.getSubdomainsByDomainOrdered(subdomains, 'cog');
+			const lang = this.getSubdomainsByDomainOrdered(subdomains, 'lang');
+			const oral = this.getSubdomainsByDomainOrdered(subdomains, 'oral');
+			
+			return [...sens, ...action, ...social, ...cog, ...lang, ...oral];
+		},
+		
+		// 判断当前子领域是否是该大领域的第一个子领域
+		isFirstSubdomainInDomain(subdomains, subIndex) {
+			const allSubs = this.getAllSubdomainsOrdered(subdomains);
+			if (subIndex >= allSubs.length) return false;
+			
+			const currentSub = allSubs[subIndex];
+			const currentDomain = currentSub.domain;
+			
+			// 检查前面是否有相同domain的子领域
+			for (let i = 0; i < subIndex; i++) {
+				if (allSubs[i].domain === currentDomain) {
+					return false;
+				}
+			}
+			
+			return true;
+		},
+		
+		// 判断当前子领域是否是该大领域的最后一个子领域（但不是第一个）
+		isLastSubdomainInDomain(subdomains, subIndex) {
+			const allSubs = this.getAllSubdomainsOrdered(subdomains);
+			if (subIndex >= allSubs.length) return false;
+			
+			const currentSub = allSubs[subIndex];
+			const currentDomain = currentSub.domain;
+			
+			// 如果是第一个子领域，不算作最后一个
+			if (this.isFirstSubdomainInDomain(subdomains, subIndex)) {
+				return false;
+			}
+			
+			// 检查后面是否还有相同domain的子领域
+			for (let i = subIndex + 1; i < allSubs.length; i++) {
+				if (allSubs[i].domain === currentDomain) {
+					return false;
+				}
+			}
+			
+			return true;
+		},
+		
+		// 根据domain代码获取大领域标签
+		getDomainLabelForSubdomain(domain) {
+			// domain可能是中文或代码
+			const domainMap = {
+				'sens': '五大感知觉发展',
+				'感知觉': '五大感知觉发展',
+				'gross': '动作',
+				'fine': '动作',
+				'粗大动作': '动作',
+				'精细动作': '动作',
+				'social': '社会互动',
+				'社会互动': '社会互动',
+				'cog': '认知',
+				'认知': '认知',
+				'lang': '语言',
+				'语言': '语言',
+				'oral': '口腔动作',
+				'口腔动作': '口腔动作'
+			};
+			
+			return domainMap[domain] || domain;
 		},
 
 		// 获取指定年龄段和子领域的统计值
@@ -1192,6 +1215,251 @@ export default {
 					}
 				}
 			});
+		},
+		
+		// 导出评估记录到Excel
+		exportAssessmentToExcel(assessment) {
+			try {
+				console.log('[exportToExcel] 开始导出评估记录', assessment);
+				
+				// 动态加载xlsx库
+				let XLSX;
+				try {
+					XLSX = require('xlsx');
+				} catch (e) {
+					console.error('[exportToExcel] xlsx库加载失败:', e);
+					uni.showModal({
+						title: '导出失败',
+						content: 'xlsx库未安装，请先运行: npm install',
+						showCancel: false
+					});
+					return;
+				}
+				
+				// 创建工作簿
+				const wb = XLSX.utils.book_new();
+				
+				// ===== Sheet 1: 综合能力检测分析图（细项分析） =====
+				const sheet1Data = this.generateDetailedAnalysisSheet(assessment);
+				const ws1 = XLSX.utils.aoa_to_sheet(sheet1Data);
+				
+				// 设置列宽
+				ws1['!cols'] = [{ wch: 12 }]; // 发育时间列
+				const subdomains = this.getAllSubdomainsOrdered(assessment.stats.subdomains);
+				subdomains.forEach(() => {
+					ws1['!cols'].push({ wch: 15 }); // 每个子领域列
+				});
+				
+				// 设置合并单元格
+				ws1['!merges'] = this.generateMergesForSheet1(assessment);
+				
+				XLSX.utils.book_append_sheet(wb, ws1, '细项分析');
+				
+				// ===== Sheet 2: 未完成题目列表 =====
+				const sheet2Data = this.generateNotAchievedSheet(assessment);
+				const ws2 = XLSX.utils.aoa_to_sheet(sheet2Data);
+				
+				// 设置列宽
+				ws2['!cols'] = [
+					{ wch: 20 }, // 领域
+					{ wch: 25 }, // 子领域
+					{ wch: 80 }  // 题目内容
+				];
+				
+				XLSX.utils.book_append_sheet(wb, ws2, '未完成题目');
+				
+				// 生成文件名（包含儿童姓名和时间）
+				const childName = assessment.childName || '未知儿童';
+				const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+				const filename = `${childName}_发育评估报告_${timestamp}.xlsx`;
+				
+				// 导出文件
+				XLSX.writeFile(wb, filename);
+				
+				uni.showToast({
+					title: '导出成功',
+					icon: 'success'
+				});
+			} catch (error) {
+				console.error('[exportToExcel] 导出失败:', error);
+				uni.showModal({
+					title: '导出失败',
+					content: error.message || '导出Excel时发生错误',
+					showCancel: false
+				});
+			}
+		},
+		
+		// 生成细项分析表格数据
+		generateDetailedAnalysisSheet(assessment) {
+			const data = [];
+			const subdomains = this.getAllSubdomainsOrdered(assessment.stats.subdomains);
+			const domains = this.getTableDomains(assessment.stats.subdomains);
+			const ageBands = this.getAllAgeBands();
+			
+			// 第一行：发育时间 + 大领域
+			const row1 = ['发育时间'];
+			domains.forEach(domain => {
+				row1.push(domain.label);
+				// 为合并单元格填充空值
+				for (let i = 1; i < domain.colspan; i++) {
+					row1.push('');
+				}
+			});
+			data.push(row1);
+			
+			// 第二行：子领域
+			const row2 = [''];
+			subdomains.forEach(subdomain => {
+				row2.push(this.getSubdomainShortLabel(subdomain.subdomain));
+			});
+			data.push(row2);
+			
+			// 数据行：按年龄段
+			ageBands.forEach(ageBand => {
+				const row = [this.getAgeBandLabel(ageBand)];
+				subdomains.forEach(subdomain => {
+					const value = this.getAgeBandSubdomainValue(
+						assessment.ageBandSubdomainStats,
+						ageBand,
+						subdomain.subdomain
+					);
+					row.push(value);
+				});
+				data.push(row);
+			});
+			
+			return data;
+		},
+		
+		// 生成Sheet1的合并单元格配置
+		generateMergesForSheet1(assessment) {
+			const merges = [];
+			const subdomains = this.getAllSubdomainsOrdered(assessment.stats.subdomains);
+			const domains = this.getTableDomains(assessment.stats.subdomains);
+			
+			// 合并"发育时间"单元格（A1:A2，跨两行）
+			merges.push({
+				s: { r: 0, c: 0 }, // 起始：第1行第1列
+				e: { r: 1, c: 0 }  // 结束：第2行第1列
+			});
+			
+			// 合并大领域单元格（第一行）
+			let colIndex = 1; // 从第2列开始（第1列是发育时间）
+			domains.forEach(domain => {
+				if (domain.colspan > 1) {
+					merges.push({
+						s: { r: 0, c: colIndex },
+						e: { r: 0, c: colIndex + domain.colspan - 1 }
+					});
+				}
+				colIndex += domain.colspan;
+			});
+			
+			return merges;
+		},
+		
+		// 生成未完成题目表格数据（按年龄段和子领域分组）
+		generateNotAchievedSheet(assessment) {
+			const data = [];
+			
+			// 标题行
+			data.push(['未完成题目详细列表']);
+			data.push(['儿童姓名：', assessment.childName || '未知儿童']);
+			data.push(['评估时间：', this.formatTime(assessment.createdAt)]);
+			data.push(['总未完成数：', (assessment.notAchieved || []).length + '题']);
+			data.push([]); // 空行
+			
+			if (!assessment.notAchieved || assessment.notAchieved.length === 0) {
+				data.push(['所有题目已完成！']);
+				return data;
+			}
+			
+			// 按年龄段 -> 领域 -> 子领域 三级分组
+			const grouped = {};
+			assessment.notAchieved.forEach(item => {
+				const ageBand = item.ageBand || '未知';
+				const domain = item.domain || '未知';
+				const subdomain = item.subdomain || '未知';
+				
+				if (!grouped[ageBand]) {
+					grouped[ageBand] = {};
+				}
+				if (!grouped[ageBand][domain]) {
+					grouped[ageBand][domain] = {};
+				}
+				if (!grouped[ageBand][domain][subdomain]) {
+					grouped[ageBand][domain][subdomain] = [];
+				}
+				
+				grouped[ageBand][domain][subdomain].push(item);
+			});
+			
+			// 按年龄段顺序输出
+			const ageBands = this.getAllAgeBands();
+			let hasContent = false;
+			
+			ageBands.forEach(ageBand => {
+				if (grouped[ageBand]) {
+					hasContent = true;
+					
+					// 年龄段标题行（加粗效果用Excel格式实现）
+					data.push([]);
+					data.push(['【' + this.getAgeBandLabel(ageBand) + '】']);
+					data.push(['领域', '子领域', '题目内容']);
+					
+					// 遍历该年龄段下的所有领域
+					const domains = Object.keys(grouped[ageBand]).sort((a, b) => {
+						// 按领域顺序排序：sens -> gross/fine -> social -> cog -> lang -> oral
+						const order = ['sens', 'gross', 'fine', 'social', 'cog', 'lang', 'oral'];
+						return order.indexOf(a) - order.indexOf(b);
+					});
+					
+					domains.forEach(domain => {
+						const domainLabel = this.getDomainLabel(domain);
+						
+						// 遍历该领域下的所有子领域
+						const subdomains = Object.keys(grouped[ageBand][domain]).sort();
+						
+						subdomains.forEach((subdomain, subIndex) => {
+							const subdomainLabel = this.getSubdomainLabel(subdomain);
+							const items = grouped[ageBand][domain][subdomain];
+							
+							// 输出该子领域的所有题目
+							items.forEach((item, itemIndex) => {
+								if (subIndex === 0 && itemIndex === 0) {
+									// 第一个子领域的第一题，显示领域名
+									data.push([
+										domainLabel,
+										subdomainLabel,
+										item.title || ''
+									]);
+								} else if (itemIndex === 0) {
+									// 新子领域的第一题，领域列为空
+									data.push([
+										'',
+										subdomainLabel,
+										item.title || ''
+									]);
+								} else {
+									// 同一子领域的后续题目，领域和子领域列都为空
+									data.push([
+										'',
+										'',
+										item.title || ''
+									]);
+								}
+							});
+						});
+					});
+				}
+			});
+			
+			if (!hasContent) {
+				data.push(['暂无未完成题目']);
+			}
+			
+			return data;
 		}
 	}
 }
@@ -1774,7 +2042,7 @@ export default {
 	margin-top: 3rpx;
 }
 
-/* 表格视图 - 使用Flexbox布局 */
+/* 表格视图 - 简化版 */
 .assessment-table-view {
 	margin-top: 30rpx;
 }
@@ -1786,198 +2054,216 @@ export default {
 	border: 1rpx solid #E8E8E8;
 }
 
+.table-title-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20rpx;
+	padding: 0 10rpx;
+}
+
 .table-title {
 	font-size: 28rpx;
 	font-weight: bold;
 	color: #333;
-	margin-bottom: 20rpx;
+	flex: 1;
 	text-align: center;
+}
+
+.export-excel-btn {
+	background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+	color: #fff;
+	border: none;
+	border-radius: 8rpx;
+	padding: 12rpx 24rpx;
+	font-size: 24rpx;
+	cursor: pointer;
+	box-shadow: 0 2rpx 8rpx rgba(76, 175, 80, 0.3);
+	transition: all 0.3s;
+}
+
+.export-excel-btn:active {
+	transform: scale(0.95);
+	box-shadow: 0 1rpx 4rpx rgba(76, 175, 80, 0.3);
 }
 
 .table-scroll {
 	width: 100%;
 }
 
-/* Flexbox表格容器 */
-.data-table-flex {
+/* 简化表格 */
+.simple-table {
 	display: flex;
 	flex-direction: column;
-	min-width: 800rpx;
 	border: 1rpx solid #D0D0D0;
+	min-width: 100%;
+}
+
+.table-row {
+	display: flex;
+	flex-direction: row;
 }
 
 /* 表头容器 */
-.table-header-container {
+.table-header-wrapper {
 	display: flex;
-	border-bottom: 2rpx solid #D0D0D0;
-}
-
-/* 固定列容器（跨两行） */
-.header-fixed-column {
-	width: 120rpx;
-	min-width: 120rpx;
-	flex-shrink: 0;
-	position: sticky;
-	left: 0;
-	z-index: 10;
-	background: #E8F4FD;
-	border-right: 1rpx solid #D0D0D0;
-	min-height: 120rpx;  /* 确保能够容纳两行的高度 */
+	flex-direction: row;
+	position: relative;
+	border-bottom: 1rpx solid #D0D0D0;
 }
 
 /* 跨行的发育时间单元格 */
-.header-cell-rowspan {
-	width: 100%;
-	min-height: 120rpx;
+.time-cell-rowspan {
+	width: 120rpx;
+	min-width: 120rpx;
+	max-width: 120rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	background: #D0E8FF !important;
+	border-right: 1rpx solid #D0D0D0;
 	font-weight: bold;
 	color: #333;
-	padding: 15rpx 10rpx;
-	text-align: center;
+	font-size: 20rpx;
+	padding: 8rpx 6rpx;
 	box-sizing: border-box;
-	font-size: 24rpx;
+	position: sticky;
+	left: 0;
+	z-index: 10;
+	flex-shrink: 0;
 }
 
-/* 右侧表头内容列 */
-.header-content-column {
+/* 表头内容区域（包含两行） */
+.header-content {
 	display: flex;
 	flex-direction: column;
 	flex: 1;
 }
 
-/* 大领域行 */
-.header-domains-row {
-	display: flex;
-	background: #E8F4FD;
+.table-cell {
+	padding: 8rpx 6rpx;
+	text-align: center;
+	border-right: 1rpx solid #D0D0D0;
 	border-bottom: 1rpx solid #D0D0D0;
-	min-height: 60rpx;
+	vertical-align: middle;
+	box-sizing: border-box;
+	font-size: 20rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	line-height: 1.3;
+	background: #fff; /* 默认白色背景 */
 }
 
-/* 子领域行 */
-.header-subdomains-row {
-	display: flex;
-	background: #F5F8FF;
-	min-height: 60rpx;
+.table-cell:last-child {
+	border-right: none;
+}
+
+.table-row:last-child .table-cell {
+	border-bottom: none;
+}
+
+/* 表头单元格 */
+.header-cell {
+	background: #E8F4FD !important;
+	font-weight: bold;
+	color: #333;
+}
+
+/* 固定列表头 */
+.fixed-header {
+	background: #D0E8FF !important;
+	position: sticky;
+	left: 0;
+	z-index: 10;
+}
+
+/* 表头第一行和第二行 */
+.header-row-1,
+.header-row-2 {
+	border-bottom: 1rpx solid #D0D0D0;
+}
+
+.header-row-2 {
+	border-bottom: none;
+}
+
+/* 大领域标题单元格（第一行） */
+.domain-header-cell {
+	background: #D0E8FF !important;
+	font-size: 22rpx;
+	font-weight: bold;
+	padding: 12rpx 8rpx;
+	line-height: 1.4;
+	word-break: break-all;
+	border-right: 2rpx solid #666;
+	border-bottom: 1rpx solid #D0D0D0;
+}
+
+.domain-header-cell:last-child {
+	border-right: 1rpx solid #D0D0D0;
+}
+
+/* 子领域单元格 */
+.subdomain-cell {
+	background: #F5F8FF !important;
+	font-size: 18rpx;
+	font-weight: 500;
+	color: #666;
+	line-height: 1.3;
+	word-break: break-all;
+	padding: 6rpx 4rpx;
+}
+
+/* 大领域的第一个子领域（添加左边框分隔） */
+.domain-first-subdomain {
+	border-left: 2rpx solid #666 !important;
+}
+
+/* 第一个子领域（第一个大领域的第一个子领域）不需要左边框 */
+.header-row-2 .domain-first-subdomain:first-child,
+.data-row .domain-first-subdomain:first-child {
+	border-left: 1rpx solid #D0D0D0 !important;
 }
 
 /* 数据行 */
-.table-data-row-flex {
-	display: flex;
+.data-row {
 	background: #fff;
-	border-bottom: 1rpx solid #E0E0E0;
 }
 
-.table-data-row-flex:nth-child(even) {
+/* 偶数数据行（斑马纹效果） */
+.data-row:nth-child(odd) {
+	background: #fff;
+}
+
+.data-row:nth-child(even) {
 	background: #F8F9FA;
 }
 
+/* 固定列数据单元格 */
 .fixed-cell {
-	width: 120rpx;
-	min-width: 120rpx;
-	flex-shrink: 0;
-	background: #F0F7FF;
+	background: #F0F7FF !important;
 	font-weight: 500;
-	color: #333;
 	position: sticky;
 	left: 0;
 	z-index: 5;
-	border-right: 1rpx solid #D0D0D0;
-	padding: 12rpx 8rpx;
-	text-align: center;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	box-sizing: border-box;
 }
 
-/* 大领域单元格 - 使用固定宽度计算 */
-.domain-header {
-	background: #D0E8FF;
-	border-right: 1rpx solid #D0D0D0;
-	padding: 10rpx 5rpx;
-	text-align: center;
-	font-weight: bold;
-	color: #333;
-	font-size: 22rpx;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	white-space: normal;  /* 允许换行 */
-	word-break: break-all;  /* 强制换行 */
-	line-height: 1.3;
-	flex-shrink: 0;
-	box-sizing: border-box;
-	margin: 0;  /* 清除边距 */
-	letter-spacing: 0;  /* 清除字间距 */
-}
-
-.domain-header:last-child {
-	border-right: none;
-}
-
-/* 子领域容器 */
-.header-subdomains-container {
-	display: flex;
-	flex: 1;
-}
-
-/* 子领域单元格 - 固定宽度 */
-.subdomain-header {
-	width: 100rpx;
-	min-width: 100rpx;
-	max-width: 100rpx;
-	flex-shrink: 0;
-	border-right: 1rpx solid #D0D0D0;
-	padding: 10rpx 4rpx;
-	text-align: center;
-	font-size: 20rpx;
-	color: #666;
-	font-weight: 500;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	word-break: break-all;
-	line-height: 1.2;
-	box-sizing: border-box;
-	overflow: hidden;
-	margin: 0;
-	letter-spacing: 0;
-}
-
-.subdomain-header:last-child {
-	border-right: none;
-}
-
-/* 数据单元格容器 */
-.data-cells-container {
-	display: flex;
-	flex: 1;
-}
-
-/* 数据单元格 - 固定宽度与子领域一致 */
+/* 数据单元格 */
 .data-cell {
-	width: 100rpx;
-	min-width: 100rpx;
-	max-width: 100rpx;
-	flex-shrink: 0;
-	padding: 10rpx 4rpx;
-	text-align: center;
-	border-right: 1rpx solid #E0E0E0;
-	font-size: 22rpx;
 	color: #333;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	box-sizing: border-box;
-	overflow: hidden;
-	margin: 0;
-	letter-spacing: 0;
+	background: inherit; /* 继承父级行的背景色 */
 }
 
-.data-cell:last-child {
-	border-right: none;
+/* 确保数据单元格在奇数行有白色背景 */
+.data-row:nth-child(odd) .data-cell:not(.fixed-cell) {
+	background: #fff;
+}
+
+/* 确保数据单元格在偶数行有灰色背景 */
+.data-row:nth-child(even) .data-cell:not(.fixed-cell) {
+	background: #F8F9FA;
 }
 
 

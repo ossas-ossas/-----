@@ -94,10 +94,15 @@ export const mutations = {
 					...res.result.data[0],
 					realNameAuth: realNameRes
 				})
-			} catch (e) {
-				this.setUserInfo({},{cover:true})
-				console.error(e.message, e.errCode);
+		} catch (e) {
+			this.setUserInfo({},{cover:true})
+			console.error(e.message, e.errCode);
+			
+			// 如果是账号不存在的错误，给出友好提示
+			if (e.errCode === 'uni-id-account-not-exists' || e.message?.includes('账号未注册')) {
+				console.warn('[uni-id-pages] 账号未注册，请先注册')
 			}
+		}
 		}
 	},
 	setUserInfo(data, {cover}={cover:false}) {
@@ -122,6 +127,11 @@ export const mutations = {
 						console.error(e);
 					}
 				}
+			}
+			
+			// ✅ 清除管理员自动跳转标记
+			if (userInfo && userInfo.uid) {
+				uni.removeStorageSync('admin_auto_redirected_' + userInfo.uid);
 			}
 		} catch (e) {
 			console.warn('[uni-id-pages] 注销时出错:', e)

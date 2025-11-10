@@ -113,34 +113,74 @@ const subdomainLabels = {
 				notAchieved: [] // [{domain, title, ageBand}] - 仅教师端可见
 			}
 		},
-		onLoad(options) {
-			// TODO: 后续对接云函数
-			// if (options.id) {
-			//   this.loadFromCloud(options.id)
-			// } else {
-			//   this.loadFromLocal()
-			// }
-			
-			// 临时：从本地存储加载
-			this.loadFromLocal()
-		},
-		methods: {
-	// 从本地存储加载数据
-	loadFromLocal() {
-		const result = uni.getStorageSync('assessmentResult')
-		console.log('=== 加载评估结果 ===')
-		console.log('评估结果:', result)
+	onLoad(options) {
+		console.log('[result] 页面加载')
 		
-		if (!result) {
-			uni.showToast({
-				title: '未找到评估结果',
-				icon: 'none'
+		// ✅ 登录守卫：检查登录状态
+		const token = uni.getStorageSync('uni_id_token')
+		if (!token) {
+			console.warn('[result] 未登录，跳转到登录页')
+			uni.showModal({
+				title: '需要登录',
+				content: '请先登录后查看评估结果',
+				showCancel: false,
+				confirmText: '去登录',
+				success: () => {
+					uni.reLaunch({
+						url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+					})
+				}
 			})
-			setTimeout(() => {
-				uni.navigateBack()
-			}, 1500)
 			return
 		}
+		
+		// ✅ 数据验证：检查是否有评估结果
+		const result = uni.getStorageSync('assessmentResult')
+		if (!result) {
+			console.warn('[result] 未找到评估结果')
+			uni.showModal({
+				title: '未找到评估结果',
+				content: '没有找到评估数据，请重新进行评估',
+				showCancel: false,
+				confirmText: '返回首页',
+				success: () => {
+					uni.reLaunch({
+						url: '/pages/index/index'
+					})
+				}
+			})
+			return
+		}
+		
+		// TODO: 后续对接云函数
+		// if (options.id) {
+		//   this.loadFromCloud(options.id)
+		// } else {
+		//   this.loadFromLocal()
+		// }
+		
+		// 临时：从本地存储加载
+		this.loadFromLocal()
+	},
+	methods: {
+// 从本地存储加载数据
+loadFromLocal() {
+	const result = uni.getStorageSync('assessmentResult')
+	console.log('=== 加载评估结果 ===')
+	console.log('评估结果:', result)
+	
+	// 这里已经在 onLoad 中检查过了，但保留防御性检查
+	if (!result) {
+		console.warn('[result] loadFromLocal: 未找到评估结果')
+		uni.showToast({
+			title: '未找到评估结果',
+			icon: 'none'
+		})
+		setTimeout(() => {
+			uni.navigateBack()
+		}, 1500)
+		return
+	}
 		
 		// 设置基本信息
 		this.childInfo = {

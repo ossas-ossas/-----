@@ -33,24 +33,33 @@ module.exports = async function (params = {}) {
     password,
     nickname
   } = params
+  // 查询当前管理员数量（最多允许5个）
   const getAdminRes = await userCollection.where({
     role: 'admin'
-  }).limit(1).get()
-  if (getAdminRes.data.length > 0) {
-    const [admin] = getAdminRes.data
-    const appId = this.getUniversalClientInfo().appId
-
-    if (!admin.dcloud_appid || (admin.dcloud_appid && admin.dcloud_appid.includes(appId))) {
-      return {
-        errCode: ERROR.ADMIN_EXISTS,
-        errMsg: this.t('uni-id-admin-exists')
-      }
-    } else {
-      return {
-        errCode: ERROR.ADMIN_EXISTS,
-        errMsg: this.t('uni-id-admin-exist-in-other-apps')
-      }
+  }).get()
+  
+  // 检查管理员数量是否已达上限
+  if (getAdminRes.data.length >= 5) {
+    return {
+      errCode: ERROR.ADMIN_EXISTS,
+      errMsg: `管理员数量已达上限（当前${getAdminRes.data.length}个，最多5个）`
     }
+  }
+  
+  // 如果有管理员，检查应用权限（保留原有逻辑）
+  if (getAdminRes.data.length > 0) {
+    const appId = this.getUniversalClientInfo().appId
+    const hasAdminInCurrentApp = getAdminRes.data.some(admin => {
+      return !admin.dcloud_appid || (admin.dcloud_appid && admin.dcloud_appid.includes(appId))
+    })
+    
+    // 注释掉这个检查，允许同一应用创建多个管理员
+    // if (hasAdminInCurrentApp) {
+    //   return {
+    //     errCode: ERROR.ADMIN_EXISTS,
+    //     errMsg: this.t('uni-id-admin-exists')
+    //   }
+    // }
   }
   const {
     user,

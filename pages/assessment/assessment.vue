@@ -275,28 +275,42 @@ const subdomainLabels = {
 			return stats
 			}
 		},
-		onShow() {
-			// 登录守卫：检查是否已登录
-			const token = uni.getStorageSync('uni_id_token')
-			if (!token) {
-				uni.navigateTo({
-					url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
-				})
-				return
-			}
-			
-			// 每次页面显示时重新加载儿童信息（确保从 child-info 页面返回后能获取最新数据）
-			this.loadChildInfo();
-			
-			console.log('[assessment] onShow: 重新加载儿童信息后', {
-				hasChildId: !!(this.childInfo?.childId || this.childInfo?._id),
-				childId: this.childInfo?.childId || this.childInfo?._id
-			});
-		},
-		onLoad() {
-		console.log('[assessment] onLoad start')
-			this.loadChildInfo()
+	onShow() {
+		// 每次页面显示时重新加载儿童信息（确保从 child-info 页面返回后能获取最新数据）
+		this.loadChildInfo();
 		
+		console.log('[assessment] onShow: 重新加载儿童信息后', {
+			hasChildId: !!(this.childInfo?.childId || this.childInfo?._id),
+			childId: this.childInfo?.childId || this.childInfo?._id
+		});
+	},
+	onLoad() {
+		console.log('[assessment] onLoad start')
+		
+		// ✅ 登录守卫：页面加载时检查登录状态
+		const token = uni.getStorageSync('uni_id_token')
+		if (!token) {
+			console.warn('[assessment] 未登录，跳转到登录页')
+			
+			// 保存当前草稿（如果有的话）
+			this.saveDraft()
+			
+			uni.showModal({
+				title: '需要登录',
+				content: '请先登录后再进行评估',
+				showCancel: false,
+				confirmText: '去登录',
+				success: () => {
+					uni.redirectTo({
+						url: '/uni_modules/uni-id-pages/pages/login/login-withpwd'
+					})
+				}
+			})
+			return
+		}
+		
+		this.loadChildInfo()
+	
 		// 检查是否需要清除旧草稿
 		const draft = uni.getStorageSync('assessmentDraft')
 		const currentChildId = this.childInfo?.childId || this.childInfo?._id

@@ -9,5 +9,8 @@
   },
   "keywords": ["uni-app", "miniprogram", "child-assessment"],
   "author": "Developer",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "xlsx": "^0.18.5"
+  }
 }
